@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web APP DC - Dashboard</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%- include('partials/head'); %>
+    <script type="text/javascript" src="http://localhost:5000/logout-script"></script>
+</head>
+<body>
+    <form name="frmDashboard" class="was-validated">
+        <%- include('partials/header'); %>
+        <div class="container-fluid">
+            <h5>
+                <span class="glyphicon glyphicon-home"></span>&nbsp;
+                Dashboard <span class="badge bg-warning" style="float:right;">
+                    <%= new Date().getDate() %>/<%= new Date().getMonth()+1 %>/<%= new Date().getFullYear() %> </span>
+                <hr style="border: 1px solid #d1d1d1;" />
+            </h5>
+        </div>
+    </form>
+</body>
+</html>

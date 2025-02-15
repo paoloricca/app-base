@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web APP DC - Product Recommended</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%- include('partials/head'); %>
+    <script type="text/javascript" src="http://localhost:5000/product-recommended-script"></script>
+    <script type="text/javascript" src="http://localhost:5000/logout-script"></script>
+</head>
+<body>
+    <form name="frmProductRecommended" class="was-validated" novalidate>
+
+        <input type="hidden" name="OffsetRows" id="OffsetRows" value="0" />
+    
+        <%- include('partials/header'); %>
+        <div class="container-fluid">
+            <h5>
+                <span class="glyphicon glyphicon-bookmark"></span>&nbsp;
+                <b>Raccomandati</b>
+                <span class="badge" style="background-color:#d9534f;"></span>
+                <hr style="border: 1px solid #d1d1d1;" />
+            </h5>
+
+            <div class="data-container">
+            <% products.forEach(function(product) { %>
+
+                <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
+
+                    <div class="jumbotron" style="padding:20px; border:2px solid #d9534f; background-color:#fff;">
+                        <div class="container-fluid">
+                            <% if (product.PercentualeSconto != '0.00') { %>
+                            <h6 class="rounded" style="position:relative; width:52px !important; height:20px !important; padding:4px; padding-left:6px; margin-right:-32px; float:right; top:-26px; background-color:#d9534f; color:#fff;">
+                                -<%= parseFloat(product.PercentualeSconto) %>%
+                            </h6>
+                            <% } %>
+                            <h3 class="glyphicon glyphicon-bookmark" 
+                                style="position:absolute; left:30px; top:-25px; color:#d9534f;"></h3>
+                            <div class="col-lg-7 col-md-12">
+                                <h4 class="text-info">
+                                    <a class="text-decoration-none" href="http://localhost:5000/productDetail/<%= product.CodiceArticolo %>">
+                                        <b class="text-dark">
+                                            <%= product.Denominazione %>
+                                        </b>
+                                    </a>
+                                </h4>
+                                <h6 class="text-muted">Articolo (<%= product.QuantitaPacco %> unit&agrave;)</h6>
+                                <h6 class="text-muted">Confezione (<%= product.QuantitaBox %> unit&agrave;)</h6>
+                            </div>
+                            <div class="col-lg-5 col-md-12">
+                                <a href="http://localhost:5000/productDetail/<%= product.CodiceArticolo %>" style="color:#333;">
+                                    <img src="https://ik.imagekit.io/dccasa/FOTODC_AGENTI/<%= product.CodiceArticolo %>.jpg" 
+                                    onerror="this.onerror=null; this.src='images/image.png';"
+                                    style="width:177px !important; height:177px !important;" class="img-thumbnail" />
+                                </a>
+                            </div>
+                            <div class="col-lg-12 col-md-12 col-sm-12">
+                                <% if (product.PercentualeSconto != '0.00') { %>
+                                    <h3 style="color:#d9534f;">&euro;&nbsp;<%= product.PrezzoUnitarioScontato %></h3>
+                                    <h4>&euro;&nbsp;<span style="text-decoration: line-through;"><%= product.PrezzoUnitario %></span></h4>
+                                <% } else { %>
+                                    <h3 style="color:#d9534f;">&euro;&nbsp;<%= product.PrezzoUnitario %></h3>
+                                    <h4>&nbsp;</h4>
+                                <% } %>
+                            </div>
+                            <hr style="border: 1px solid #c1c1c1;" />
+                            <div class="col-lg-12 col-md-12 col-sm-12">
+                                <h6>
+                                    <a class="btn btn-default btn-sm" href="http://localhost:5000/cart"
+                                        data-toggle="tooltip" data-placement="top" title="Rimuovi dal Carrello">
+                                        <span class="glyphicon glyphicon-minus"></span>
+                                    </a>
+                                    <a class="btn btn-default btn-sm" style="cursor:default; padding: 5px; width: calc(53% - 10px);">
+                                        <b><span class="glyphicon glyphicon-shopping-cart"></span> Articolo</b>
+                                    </a>
+                                    <a class="btn btn-default btn-sm" href="http://localhost:5000/cart"
+                                        data-toggle="tooltip" data-placement="top" title="Aggiungi al Carrello">
+                                        <span class="glyphicon glyphicon-plus"></span>
+                                    </a>
+                                </h6>
+                                <h6>
+                                    <a class="btn btn-default btn-sm" href="http://localhost:5000/cart"
+                                        data-toggle="tooltip" data-placement="top" title="Rimuovi dal Carrello">
+                                        <span class="glyphicon glyphicon-minus"></span>
+                                    </a>
+                                    <a class="btn btn-default btn-sm" style="cursor:default; padding: 5px; width: calc(53% - 10px);">
+                                        <b><span class="glyphicon glyphicon-shopping-cart"></span> Confezione</b>
+                                    </a>
+                                    <a class="btn btn-default btn-sm" href="http://localhost:5000/cart"
+                                        data-toggle="tooltip" data-placement="top" title="Aggiungi al Carrello">
+                                        <span class="glyphicon glyphicon-plus"></span>
+                                    </a>
+                                </h6>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+              <% }); %>
+              
+              </div>
+
+        </div>
+    </form>
+</body>
+</html>
