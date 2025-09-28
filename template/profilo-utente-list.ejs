@@ -1,7 +1,7 @@
 <div class="col-xs-12 p-2 px-2 pb-2" style="border-bottom:1px solid #e1e1e1;">
     <!-- LIST ITEMS -->
     <div class="col-xs-10 p-2 px-0">
-        <a class="f-roboto gruppo-operativo-<%= profiloutente.IDGruppoOperativo %>" href="/gruppi-operativi/<%= profiloutente.IDGruppoOperativo %>" data-idgruppooperativo="<%= profiloutente.IDGruppoOperativo %>">
+        <a class="f-roboto profilo-utente-<%= profiloutente.IDProfiloUtente %>" href="/gruppi-operativi/<%= profiloutente.IDGruppoOperativo %>" data-idgruppooperativo="<%= profiloutente.IDGruppoOperativo %>">
             <%= profiloutente.ProfiloUtente %>
         </a>
     </div>
@@ -21,7 +21,8 @@
                     <hr class="dropdown-divider">
                 </li>
                 <li class="dropdown-item">
-                    <button type="button" class="btn btn-light col-xs-12 gruppi-operativi-edit"
+                    <button type="button" class="btn btn-light col-xs-12 profilo-utente-<%= profiloutente.IDProfiloUtente %>-edit"
+                        data-toggle="modal" data-target="#profilo-utente-modal"
                         data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
                         data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>"
                         data-gruppioperativoid="<%= profiloutente.IDGruppoOperativo %>">
@@ -31,7 +32,7 @@
                 <li class="dropdown-item">
                     <button type="button" class="btn btn-light col-xs-12"
                         data-toggle="modal" data-target="#confirm-delete"
-                        data-callback="DeleteGruppoOperativo"
+                        data-callback="DeleteProfiloUtente"
                         data-args="<%= profiloutente.IDProfiloUtente %>"
                         data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
                         data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>"
@@ -68,7 +69,5 @@
                 </li>
             </ul>
         </div>
-
     </div>
-
 </div>
