@@ -1,4 +1,5 @@
 const express = require('express');
+
 var exception = require('../model/exception');
 
 function DeleteProcessRecord(IDProcesso, IDRecord, IDAccount, sql) {
