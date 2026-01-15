@@ -14,43 +14,75 @@ const crud = require('../crud/login');
 
 // Define routes
 
-login.get('/login-script', (req,res) => {
+login.get('/login-script', (req, res) => {
     const filePath = path.resolve(__dirname, '../controller/login.js');
     res.sendFile(filePath);
 });
-
+login.get('/validation-script', (req, res) => {
+    const filePath = path.resolve(__dirname, '../utils/validation.js');
+    res.sendFile(filePath);
+});
 login.get('/login', function (req, res) {
     if (req.session.user) {
         res.redirect('/dashboard');
     } else {
-        const htmlFile = 'view/login.html';
-        fs.stat(`./${htmlFile}`, (err, stats) => {
-            if (stats) {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'text/html');
-                fs.createReadStream(htmlFile).pipe(res);
-            }
+        res.status(200).render('login', {
+            LanguageContext: 'IT',
+            error: null,
+            //storeduser: req.cookies.storeduser,
         });
     }
 });
-
+login.get('/login/:LanguageContext', function (req, res) {
+    res.render('login', {
+        LanguageContext: req.params.LanguageContext,
+        error: null,
+        //storeduser: req.cookies.storeduser,
+    });
+});
 login.post('/login', (req, res) => {
     if (req.session.user) {
         res.redirect('/dashboard');
     } else {
         res.set('Access-Control-Allow-Origin', '*');
         var myLogin = new modelLogin(
+            req.body.LanguageContext,
             req.body.Userid,
             req.body.Password,
         );
         /* Chiama la crud per la gestione del login */
         crud.login(myLogin).then(listOf => {
-            req.session.user = JSON.parse(listOf);
+            var response = JSON.parse(listOf);
+            req.session.user = response;
             req.session.save();
-            res.status(200).json(new modelResponse('OK', listOf, null));
+
+            if (response.ActivePassword == 0) {
+                res.render('password-edit', {
+                    user: req.session.user,
+                    LanguageContext: req.body.LanguageContext,
+                    error: null
+                });
+            } else {
+                /* Ricorda il mio username */
+                //res.cookie('storeduser', req.session.user, {
+                //    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
+                //    httpOnly: true
+                //});
+                /* Non ricordare il mio username
+                    cookies.set('storeduser', {expires: Date.now()});
+                */
+
+                res.render('dashboard', {
+                    user: req.session.user,
+                    LanguageContext: req.body.LanguageContext,
+                    error: null
+                });
+            }
         }).catch(err => {
-            console.log('Errors: ' + err)
-            res.status(200).json(new modelResponse('ERR', null, err));
+            res.render('login', {
+                LanguageContext: req.body.LanguageContext,
+                error: JSON.parse(err).message
+            });
         }).finally(() => {
             //console.log("Code has been executed")
         })

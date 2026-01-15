@@ -1,0 +1,23 @@
+<div class="col-xs-12 p-2 px-2 item-bg">
+    <div class="col-xs-7 p-0">
+        <span class="c-base f-roboto utente-<%= utente.IDAccount %>" data-idaccount="<%= utente.IDAccount %>">
+            <%= utente.Nominativo %>
+        </span>
+    </div>
+    <div class="col-xs-3 form-switch">
+        <div class="col-xs-12 p-0">
+            <input data-default="<%= utente.IsDefault %>" <% if (utente.IsDefault == 1) { %> checked <% } %>
+                style="display:none;" class="form-check-input p-0 m-0 btn-set-profilo-utente-default-<%= utente.IDAccount %>" type="checkbox" id="ProfiloUtente-rbIsVisible" name="rbIsVisible">
+        </div>
+    </div>
+    <div class="col-xs-2 text-right">
+        <div class="utenti">
+            <a href="#" class="btn btn-default btn-xs btn-select-<%= utente.IDAccount %>">Collega</a>
+        </div>
+        <div class="utenti">
+            <a href="#" style="display:none;" 
+            data-args="<%= utente.IDAccount %>"
+            class="btn btn-default btn-xs btn-unselect-<%= utente.IDAccount %>">Scollega</a>
+        </div>
+    </div>
+</div>

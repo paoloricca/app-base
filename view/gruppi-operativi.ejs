@@ -5,141 +5,429 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <%- include('partials/head'); %>
+    <%- include('partials/confirm-delete'); %>
+    <script type="text/javascript" src="/control-utenti-script"></script>
+    <script type="text/javascript" src="/processi-script"></script>
+    <script type="text/javascript" src="/control-processi-script"></script>
+    <script type="text/javascript" src="/control-processi-azioni-script"></script>
+    <script type="text/javascript" src="/control-pager-script"></script>
+    <script type="text/javascript" src="/utility-script"></script>    
     <script type="text/javascript" src="/gruppi-operativi-script"></script>
     <script type="text/javascript" src="/logout-script"></script>
 </head>
 <body>
-        <input type="hidden" name="OffsetRows" id="OffsetRows" value="0" />
-        <%- include('partials/header'); %>
-        <div class="container-fluid">
-            <h4>
-                <span class="bi bi-people-fill" style="font-size:2rem;"></span>&nbsp;
-                <b>Gruppi Operativi</b>
-                <span class="badge" style="background-color:orange;"></span>
-            </h4>
-            <div class="container-fluid" style="border-bottom:1px solid #d4d0d8; padding-bottom:10px; padding-left:0;">
-                <% if (root.length > 0) { %>
-                    <div class="col-xs-12">
-                        <a href="/gruppi-operativi" class="btn btn-light btn-md bi bi-arrow-90deg-left rounded-circle" style="margin-bottom:8px; margin-top:4px; width:34px; height:34px; padding-top:8px; padding-left:8px;"></a>
-                    </div>
-                <% } %>
-                <div class="col-xs-12">
+    <input type="hidden" name="IDOwner" id="IDOwner" value="<%= user.IdAttore %>" />
+    <input type="hidden" name="OffsetRows" id="OffsetRows" value="0" />
+    <%- include('partials/header'); %>
+    <div class="container-fluid p-0 px-4">
+        <h4 class="p-0">
+            <span class="bi bi-people-fill" style="font-size:2rem;"></span>&nbsp;
+            <span class="f-roboto b">Gruppi Operativi</span>
+            <span class="badge" style="background-color:orange;"></span>
+        </h4>
+        <!-- BREADCRUMB -->
+        <div class="container-fluid p-3 px-0" style="border-bottom:1px solid #e1e1e1;">
+            <% if (root.length > 0) { %>
+                <div class="col-xs-12 p-0">
+                    <a href="/gruppi-operativi" class="btn btn-light btn-md bi bi-arrow-90deg-left rounded-circle" style="margin-bottom:8px; margin-top:4px; width:34px; height:34px; padding-top:8px; padding-left:8px;"></a>
+                </div>
+            <% } %>
+            <div class="col-xs-12 p-2 px-2">
                 <% if (root.length > 0) {
                     root.forEach(function(item, index) { %>
                         <% if (index >= 1) { %>
                             <i class="bi bi-arrow-right-short" style="color:#337ab7;"></i>
                         <% } %>
-                        <a href="/gruppi-operativi/<%= item.IDGruppoOperativo %>"><%= item.Text_IT %></a>
-                  <% }); 
-                  }
-                  %>
-                  </div>
+                        <a class="f-roboto gruppo-operativo-<%= item.IdGruppoOperativo %>" href="/gruppi-operativi/<%= item.IDGruppoOperativo %>"><%= item.Text_IT %></a>
+                    <% }); 
+                }
+                %>
             </div>
-            <% if (data.length > 0) {
-                data.forEach(function(item) { %>
-                <div class="col-xs-12" style="border-bottom:1px solid #d4d0d8; padding:10px;">
-                    <div class="col-xs-10" style="padding:0;">
-                        <span class="bi bi-people-fill" style="font-size:1.6rem;"></span>&nbsp;
-                        <a href="/gruppi-operativi/<%= item.IdGruppoOperativo %>" data-idgruppooperativo="<%= item.IdGruppoOperativo %>">
-                            <%= item.Text_IT %>
-                        </a>
-                    </div>
-                    <div class="col-xs-2 text-right" style="padding:0;">
-
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-light bi bi-three-dots-vertical rounded-circle"
-                                data-bs-toggle="dropdown" style="width:34px; height:34px; padding:0;">
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-lg-end" style="width:250px;">
-                                <li>
-                                    <div class="col-xs-12">
-                                        <b><%= item.Text_IT %></b>
-                                    </div>
-                                </li>
-                                <li class="dropdown-item">
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li class="dropdown-item">
-                                    <button type="button" class="btn btn-light col-xs-12 gruppi-operativi-edit"
-                                        data-gruppioperativotext="<%= item.Text_IT %>" data-gruppioperativoid="<%= item.IdGruppoOperativo %>">
-                                        Modifica
-                                    </button>
-                                </li>
-                                <li class="dropdown-item">
-                                    <button type="button" class="btn btn-light col-xs-12">
-                                        Profili Utente
-                                    </button>
-                                </li>
-                                <li class="dropdown-item">
-                                    <button type="button" class="btn btn-light col-xs-12">
-                                        Annulla
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-
+        </div>
+        <% if (data.length > 0) {
+            data.forEach(function(item) { %>
+            <div class="col-xs-12 p-2 px-4 pb-1 item-bg">
+                <!-- LIST ITEMS -->
+                <div class="col-xs-10 p-1">
+                    <a class="f-roboto gruppo-operativo-<%= item.IdGruppoOperativo %>" href="/gruppi-operativi/<%= item.IdGruppoOperativo %>" data-idgruppooperativo="<%= item.IdGruppoOperativo %>">
+                        <%= item.Text_IT %>
+                    </a>
+                </div>
+                <!-- RIGHT CONTEXT MENU -->
+                <div class="col-xs-2 text-right p-0">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-light bi bi-three-dots-vertical rounded-circle"
+                            data-bs-toggle="dropdown" style="width:30px; height:30px; padding:0; font-size:1.25em;">
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-lg-end" style="width:250px;">
+                            <li>
+                                <div class="col-xs-12">
+                                    <b class="gruppo-operativo-<%= item.IdGruppoOperativo %>"><%= item.Text_IT %></b>
+                                </div>
+                            </li>
+                            <li class="dropdown-item">
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li class="dropdown-item">
+                                <button type="button" class="btn btn-light col-xs-12 gruppi-operativi-edit"
+                                    data-gruppioperativotext="<%= item.Text_IT %>" 
+                                    data-gruppioperativoid="<%= item.IdGruppoOperativo %>"
+                                    data-gruppioperativoparentid="<%= item.IdGruppoOperativoParent %>">
+                                    Modifica
+                                </button>
+                            </li>
+                            <li class="dropdown-item">
+                                <button type="button" class="btn btn-light col-xs-12"
+                                    data-toggle="modal" data-target="#confirm-delete"
+                                    data-callback="DeleteGruppoOperativo"
+                                    data-args="<%= item.IdGruppoOperativo %>"
+                                    data-gruppioperativotext="<%= item.Text_IT %>" 
+                                    data-gruppioperativoid="<%= item.IdGruppoOperativo %>"
+                                    data-gruppioperativoparentid="<%= item.IdGruppoOperativoParent %>">
+                                    Elimina
+                                </button>
+                            </li>
+                            <li class="dropdown-item">
+                                <button type="button" class="btn btn-light col-xs-12 gruppi-operativi-profili-utente"
+                                    data-gruppioperativotext="<%= item.Text_IT %>" 
+                                    data-gruppioperativoid="<%= item.IdGruppoOperativo %>"
+                                    data-gruppioperativoparentid="<%= item.IdGruppoOperativoParent %>"
+                                    data-toggle="modal" data-target="#profili-utente-modal">
+                                    Profili Utente
+                                </button>
+                            </li>
+                            <li class="dropdown-item">
+                                <button type="button" class="btn btn-light col-xs-12">
+                                    Annulla
+                                </button>
+                            </li>
+                        </ul>
                     </div>
 
                 </div>
-                <% }); 
-                }
-            %>
-        </div>
-        <form name="frmGruppiOperativi" class="was-validated" novalidate>
-        <div class="modal" id="gruppi-operativi-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-          <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-              <div class="modal-header">
-                <i class="bi bi-people-fill" style="font-size:2rem; margin:8px;"></i><h4 class="modal-title"></h4>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                  <div class="mb-3">
-                    <label for="codice" class="col-form-label">Codice:</label>
-                    <input type="text" class="form-control" id="codice">
-                  </div>
-                  <div class="mb-3">
-                    <label for="descrizione" class="col-form-label">Descrizione:</label>
-                    <input type="text" class="form-control" id="descrizione" required>
-                  </div>
-                  <div class="mb-3">
-                    <label for="Text_IT" class="col-form-label">Text IT:</label>
-                    <input type="text" class="form-control" id="Text_IT" required>
-                  </div>
-                  <div class="mb-3">
-                    <label for="Text_GB" class="col-form-label">Text GB:</label>
-                    <input type="text" class="form-control" id="Text_GB" required>
-                  </div>
-                  <div class="mb-3">
-                    <label for="supervisor" class="col-form-label">Supervisor:</label>
-                    <select id="supervisor" class="form-select form-select-lg" required>
-                        <option value="">&hellip;</option>
-                    </select>
-                  </div>
-                  <div class="mb-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="rbIsPublic" name="rbIsPublic">
-                        <label class="form-check-label text-dark" for="rbIsPublic">Pubblico</label>
-                    </div>
-                    
-                  </div>
-                  <div class="mb-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="rbIsVisible" name="rbIsVisible" >
-                        <label class="form-check-label text-dark" for="rbIsVisible">Visibile</label>
-                    </div>
-                  </div>
-                
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-bs-dismiss="modal">
-                    Annulla
-                </button>
-                <input type="button" class="btn btn-primary btn-ok" value="OK">
-              </div>
+
             </div>
-          </div>
+            <% }); 
+            }
+        %>
+    </div>
+    <div class="container-fluid col-xs-12 text-center">
+        <button type="button" class="btn btn-primary rounded-circle glyphicon glyphicon-plus gruppi-operativi-new"
+            style="width:34px; height:34px; padding:0; margin:10px;">
+        </button>
+    </div>
+    <form name="frmGruppiOperativi" class="was-validated" novalidate>
+        <input type="hidden" id="idgruppooperativo" />
+        <input type="hidden" id="idgruppooperativoparent" value="<%= IdGruppoOperativoParent %>" />
+        <div class="modal" id="gruppi-operativi-modal" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalGruppiOperativi">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <i class="bi bi-people-fill" style="font-size:2rem; margin:8px;"></i><h4 class="modal-title"></h4>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="codice" class="col-form-label">Codice:</label>
+                            <input type="text" class="form-control" id="codice">
+                        </div>
+                        <div class="mb-3">
+                            <label for="descrizione" class="col-form-label">Descrizione:</label>
+                            <input type="text" class="form-control" id="descrizione" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Text_IT" class="col-form-label">Text IT:</label>
+                            <input type="text" class="form-control" id="Text_IT" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Text_GB" class="col-form-label">Text GB:</label>
+                            <input type="text" class="form-control" id="Text_GB" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="supervisor" class="col-form-label">Supervisor:</label>
+                            <select id="supervisor" class="form-select form-select-lg" required>
+                                <option value="">&hellip;</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="rbIsPublic" name="rbIsPublic">
+                                <label class="form-check-label text-dark" for="rbIsPublic">Pubblico</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="rbIsVisible" name="rbIsVisible" >
+                                <label class="form-check-label text-dark" for="rbIsVisible">Visibile</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">
+                        Annulla
+                    </button>
+                    <input type="button" class="btn btn-primary gruppo-operativo-btn-ok" value="OK">
+                    </div>
+                </div>
+            </div>
         </div>  
-        </form>
+    </form>
+    <form name="frmProfiliUtente" class="was-validated" novalidate>
+        <input type="hidden" id="idgruppooperativo" />
+        <input type="hidden" id="idprofiloutente" />
+        <div class="modal fade" id="profili-utente-modal" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalProfiliUtente">
+            <div class="modal-dialog modal-dialog-top modal-lg h-100">
+                <div class="modal-content h-100" style="height:90% !important;">
+                    <div class="modal-header">
+                        <h5>
+                            <span class="bi bi-gear-fill text-secondary" style="font-size:2rem;"></span>&nbsp;
+                            <b class="text-primary f-roboto">Profili Utente</b> <span class="gruppo-operativo-profili-utente text-secondary"></b></span>
+                        </h5>
+                        <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body pt-0">
+                        <div class="profili-utente-data-container">
+                        </div>
+                        <div class="container-fluid col-xs-12 text-center">
+                            <button type="button" class="btn btn-primary rounded-circle glyphicon glyphicon-plus profili-utente-new"
+                                data-toggle="modal" data-target="#profilo-utente-modal"
+                                style="width:34px; height:34px; padding:0; margin:10px;">
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default btn-cancel-profilo-utente" data-dismiss="modal">
+                            Annulla
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>  
+    </form>
+    <form name="frmProfiloUtente" class="was-validated" novalidate>
+        <div class="modal" id="profilo-utente-modal" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalProfiloUtente">
+            <div class="modal-dialog modal-dialog-centered modal-lg h-50">
+                <div class="modal-content h-50" style="margin-top:-15px !important; height:60% !important;">
+                    <div class="modal-header">
+                        <h5>
+                            <span class="bi bi-gear-fill text-secondary" style="font-size:2rem;"></span>&nbsp;
+                            <b class="text-primary f-roboto">Profilo Utente</b> <span class="gruppo-operativo-profilo-utente text-secondary"></b></span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-profilo-utente" data-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="ProfiloUtenteIDGruppoOperativoParent" />
+                        <input type="hidden" id="ProfiloUtenteIDGruppoOperativo" />
+                        <input type="hidden" id="ProfiloUtenteGruppoOperativoText" />
+                        <input type="hidden" id="ProfiloUtenteID" />
+                        <div class="mb-3">
+                            <label for="ProfiloUtente-Text-IT" class="col-form-label">Text IT:</label>
+                            <input type="text" class="form-control" id="ProfiloUtente-Text-IT" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ProfiloUtente-Text-GB" class="col-form-label">Text GB:</label>
+                            <input type="text" class="form-control" id="ProfiloUtente-Text-GB" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="ProfiloUtente-rbIsPublic" name="rbIsPublic">
+                                <label class="form-check-label text-dark" for="ProfiloUtente-rbIsPublic">Pubblico</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="ProfiloUtente-rbIsVisible" name="rbIsVisible">
+                                <label class="form-check-label text-dark" for="ProfiloUtente-rbIsVisible">Visibile</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default btn-close-profilo-utente" data-dismiss="modal">
+                            Annulla
+                        </button>
+                        <input type="button" class="btn btn-primary profilo-utente-btn-ok" value="OK">
+                    </div>
+                </div>
+            </div>
+        </div>  
+    </form>
+    <form name="frmProfiloUtenteRisorse" class="was-validated" novalidate>
+        <div class="modal" id="profilo-utente-risorse-modal" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalProfiloUtenteRisorse">
+            <div class="modal-dialog modal-dialog-centered modal-lg h-75">
+                <div class="modal-content h-75" style="margin-top:-7% !important; height:75% !important;">
+                    <div class="modal-header">
+                        <h5>
+                            <span class="bi bi-person-plus text-secondary" style="font-size:2rem;"></span>&nbsp;
+                            <b class="text-secondary f-roboto"><span class="gruppo-operativo-profilo-utente-risorse text-primary"></b> / Utenti collegati</span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-profilo-utente-risorse" data-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div class="col-xs-12">
+                            <div class="col-xs-12 p-2 px-2 item-header">
+                                <div class="col-xs-7 p-0 b text-secondary">
+                                    Nominativo
+                                </div>
+                                <div class="col-xs-3 b text-secondary">
+                                    Predefinito
+                                </div>
+                                <div class="col-xs-2">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 profilo-utente-risorse-container" style="height:60%;">
+                        </div>
+                        <div class="col-xs-12 profilo-utente-risorse-pager">
+                        </div>
+                        <div class="container-fluid col-xs-12 text-center">
+                            <button type="button" class="btn btn-primary rounded-circle glyphicon glyphicon-plus profilo-utente-risorse-new"
+                                data-toggle="modal" data-target="#utenti-modal"
+                                style="width:34px; height:34px; padding:0; margin:10px;">
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default btn-close-profilo-utente-risorse" data-dismiss="modal">
+                            Annulla
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <div class="modal" id="utenti-modal" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalUtenti">
+        <div class="modal-dialog modal-dialog-centered modal-lg h-50">
+            <div class="modal-content h-50" style="margin-top:-7% !important; height:60% !important;">
+                <div class="modal-header">
+                    <h5>
+                        <span class="bi bi-person text-secondary" style="font-size:2rem;"></span>&nbsp;
+                        <b class="text-secondary f-roboto"><span class="gruppo-operativo-profilo-utente-risorse text-primary"></b> / Risorse umane</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-utenti" data-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <div id="utenti-container">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default btn-close-utenti" data-dismiss="modal">
+                        Annulla
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="processi-modal" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalProcessi">
+        <div class="modal-dialog modal-dialog-centered modal-lg h-50">
+            <div class="modal-content h-75" style="margin-top:-7% !important; height:75% !important;">
+                <div class="modal-header">
+                    <h5>
+                        <span class="bi bi-person text-secondary" style="font-size:2rem;"></span>&nbsp;
+                        <b class="text-secondary f-roboto"><span class="gruppo-operativo-profilo-utente-processi text-primary"></b> / Autorizzazioni</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-processi" data-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-1 pt-1" style="overflow-y:hidden;">
+                    <div class="col-xs-6 p-0 h-100">
+                        <div class="panel panel-default h-100 p-0">
+                            <div class="panel-heading p-3 f-roboto">
+                                <b>Processi</b>
+                            </div>
+                            <div class="panel-body h-100 p-2 f-roboto">
+                                <div id="processi-container" style="overflow-y:auto; height:90%;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-6 p-0 h-100 px-1">
+                        <div class="panel panel-default h-100 p-0">
+                            <div class="panel-heading p-3 f-roboto">
+                                <b>Autorizzazioni <span class="autorizzazioni-processo-text"></span></b>
+                            </div>
+                            <div class="panel-body h-100 p-2 f-roboto">
+                                <div id="autorizzazioni-container" style="overflow-y:auto; height:90%;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default btn-close-processi" data-dismiss="modal">
+                        Annulla
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal" id="confirm-delete-profilo-utente" tabindex="-1" role="dialog" data-args="" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title f-roboto b">
+                        Conferma operazione
+                    </h4>
+                </div>
+                <div class="modal-body text-secondary">
+                    <h5 class="f-roboto">Sei sicuro di voler procedere?</h5>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default btn-cancel-confirm-delete-profilo-utente">Cancel</button>
+                    <a class="btn btn-danger btn-ok-confirm-delete-profilo-utente" data-dismiss="modal">OK</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirm-unselect-utente" tabindex="-1" role="dialog" data-args="" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title f-roboto b">
+                        Conferma operazione
+                    </h4>
+                </div>
+                <div class="modal-body text-secondary">
+                    <h5 class="f-roboto">Sei sicuro di voler procedere?</h5>
+                    <div class="panel panel-danger warning" style="display:none;">
+                        <div class="panel-heading">
+                            <h5 class="f-roboto warning lh-base m-0">Attenzione: se confermi l&apos;operazione l&apos;utente selezionato non potr&agrave; pi&ugrave; accedere correttamente al sistema.</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default btn-cancel-confirm-unselect-utente">Annulla</button>
+                    <a class="btn btn-danger btn-ok-confirm-unselect-utente">OK</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirm-set-profilo-utente-default" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title f-roboto b">
+                        Conferma operazione
+                    </h4>
+                </div>
+                <div class="modal-body text-secondary">
+                    <h5 class="f-roboto">Sei sicuro di voler procedere?</h5>
+                    <div class="panel panel-danger warning" style="display:none;">
+                        <div class="panel-heading">
+                            <h5 class="f-roboto warning lh-base m-0">Attenzione: se confermi l&apos;operazione l&apos;utente selezionato non potr&agrave; pi&ugrave; accedere correttamente al sistema.</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" data-bs-dismiss="modal" class="btn btn-default btn-cancel-confirm-set-profilo-utente-default">Annulla</button>
+                    <a class="btn btn-primary btn-ok-confirm-set-profilo-utente-default">OK</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <%- include('partials/system-message'); %>
 </body>
 </html>

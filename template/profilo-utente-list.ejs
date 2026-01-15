@@ -1,13 +1,13 @@
-<div class="col-xs-12 p-2 px-2 pb-2" style="border-bottom:1px solid #e1e1e1;">
+<div class="col-xs-12 p-2 px-2 pb-2 item-bg">
     <!-- LIST ITEMS -->
-    <div class="col-xs-10 p-2 px-0">
-        <a class="f-roboto profilo-utente-<%= profiloutente.IDProfiloUtente %>" href="/gruppi-operativi/<%= profiloutente.IDGruppoOperativo %>" data-idgruppooperativo="<%= profiloutente.IDGruppoOperativo %>">
+    <div class="col-xs-8 p-2 px-0">
+        <span class="c-base f-roboto profilo-utente-<%= profiloutente.IDProfiloUtente %>" data-idgruppooperativo="<%= profiloutente.IDGruppoOperativo %>">
             <%= profiloutente.ProfiloUtente %>
-        </a>
+        </span>
     </div>
     <!-- RIGHT CONTEXT MENU -->
-    <div class="col-xs-2 text-right p-0">
-        <div class="btn-group">
+    <div class="col-xs-4 text-right p-0">
+        <div class="btn-group action-tool-sub">
             <button type="button" class="btn btn-light bi bi-three-dots-vertical rounded-circle"
                 data-bs-toggle="dropdown" style="width:30px; height:30px; padding:0; font-size:1.25em;">
             </button>
@@ -30,9 +30,7 @@
                     </button>
                 </li>
                 <li class="dropdown-item">
-                    <button type="button" class="btn btn-light col-xs-12"
-                        data-toggle="modal" data-target="#confirm-delete"
-                        data-callback="DeleteProfiloUtente"
+                    <button type="button" class="btn btn-light col-xs-12 profilo-utente-<%= profiloutente.IDProfiloUtente %>-delete"
                         data-args="<%= profiloutente.IDProfiloUtente %>"
                         data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
                         data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>"
@@ -41,33 +39,38 @@
                     </button>
                 </li>
                 <li class="dropdown-item">
-                    <button type="button" class="btn btn-light col-xs-12"
-                        data-toggle="modal" data-target="#confirm-delete"
-                        data-callback="DeleteGruppoOperativo"
-                        data-args="<%= profiloutente.IDProfiloUtente %>"
+                    <button type="button" class="btn btn-light col-xs-12 profilo-utente-<%= profiloutente.IDProfiloUtente %>-risorse"
                         data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
                         data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>"
-                        data-gruppioperativoid="<%= profiloutente.IDGruppoOperativo %>">
-                        Collega utenti
+                        data-toggle="modal" data-target="#profilo-utente-risorse-modal">
+                        Utenti collegati
                     </button>
                 </li>
                 <li class="dropdown-item">
-                    <button type="button" class="btn btn-light col-xs-12"
-                        data-toggle="modal" data-target="#confirm-delete"
-                        data-callback="DeleteGruppoOperativo"
-                        data-args="<%= profiloutente.IDProfiloUtente %>"
+                    <button type="button" class="btn btn-light col-xs-12 profilo-utente-<%= profiloutente.IDProfiloUtente %>-autorizzazioni"
                         data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
                         data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>"
-                        data-gruppioperativoid="<%= profiloutente.IDGruppoOperativo %>">
+                        data-toggle="modal" data-target="#processi-modal">
                         Autorizzazioni
                     </button>
                 </li>
-                <li class="dropdown-item">
-                    <button type="button" class="btn btn-light col-xs-12">
-                        Annulla
-                    </button>
-                </li>
             </ul>
+        </div>
+        <div class="btn-group action-tool">
+            <button type="button" class="btn btn-light bi bi-person-lock rounded-circle profilo-utente-<%= profiloutente.IDProfiloUtente %>-autorizzazioni"
+                data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
+                data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>"
+                data-toggle="modal" data-target="#processi-modal"
+                style="width:30px; height:30px; padding:0; font-size:1.25em;">
+            </button>
+        </div>
+        <div class="btn-group action-tool">
+            <button type="button" class="btn btn-light bi bi-person-plus rounded-circle profilo-utente-<%= profiloutente.IDProfiloUtente %>-risorse"
+                data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
+                data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>"
+                data-toggle="modal" data-target="#profilo-utente-risorse-modal"
+                style="width:30px; height:30px; padding:0; font-size:1.25em;">
+            </button>
         </div>
     </div>
 </div>

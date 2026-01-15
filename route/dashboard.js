@@ -17,9 +17,18 @@ dashboard.get('/dashboard-script', (req,res) => {
 });
 dashboard.get('/dashboard', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {
-        res.status(200).render('dashboard', {
-            user: req.session.user
-        });
+        if (req.session.user.ActivePassword == 0) {
+            res.render('password-edit', {
+                user: req.session.user,
+                LanguageContext: req.session.user.LanguageContext,
+                error: null
+            });
+        } else {
+            res.status(200).render('dashboard', {
+                user: req.session.user,
+                LanguageContext: req.session.user.LanguageContext
+            });
+        }
     }
 });
 

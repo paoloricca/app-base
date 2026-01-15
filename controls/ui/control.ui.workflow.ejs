@@ -1,0 +1,129 @@
+﻿<form name="frmWorkflow-<%= IdRecord %>">
+    <div class="col-xs-2 text-right p-0 processo-<%= IdRecord %>">
+        <div class="btn-group">
+            <button type="button" data-idrecord="<%= IdRecord %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle btn-workflow-<%= IdRecord %>"
+                data-toggle="dropdown" style="width:23px; height:23px; padding:0; font-size:1.1em;"
+                data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="<% if (LanguageContext == "IT") { %>Azioni<% } %><% if (LanguageContext == "GB") { %>Actions<% } %><% if (LanguageContext == "ES") { %>Comportamiento<% } %><% if (LanguageContext == "CN") { %>行動<% } %>">
+            </button>
+            <ul class="dropdown-menu dropdown-menu-right" style="width:350px;">
+                <li>
+                    <div class="col-xs-12">
+                        <b>
+                            ID: <%= IdRecord %>
+                        </b>
+                    </div>
+                </li>
+                <li class="dropdown-item">
+                    <hr class="dropdown-divider">
+                </li>
+                <div class="col-xs-12 p-0 container-workflow-actions-<%= IdRecord %>">
+                </div>
+                <li class="dropdown-item">
+                    <button data-idrecord="<%= IdRecord %>" type="button" class="btn btn-light btn-xs col-xs-12 btn-imposta-workflow-<%= IdRecord %>">
+                        <% if (LanguageContext == "IT") { %>
+                            Imposta Workflow
+                        <% } %>
+                        <% if (LanguageContext == "GB") { %>
+                            Set Workflow
+                        <% } %>
+                        <% if (LanguageContext == "ES") { %>
+                            Establecer flujo de trabajo
+                        <% } %>
+                        <% if (LanguageContext == "CN") { %>
+                            設定工作流程
+                        <% } %>
+                    </button>
+                </li>
+                <li class="dropdown-item">
+                    <button data-idrecord="<%= IdRecord %>" type="button" class="btn btn-light btn-xs col-xs-12 btn-annulla-process-<%= IdRecord %>">
+                        <% if (LanguageContext == "IT") { %>
+                            Annulla
+                        <% } %>
+                        <% if (LanguageContext == "GB") { %>
+                            Cancel
+                        <% } %>
+                        <% if (LanguageContext == "ES") { %>
+                            Cancelar
+                        <% } %>
+                        <% if (LanguageContext == "CN") { %>
+                            取消
+                        <% } %>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="modal confirm-action" id="confirm-action-<%= IdRecord %>" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <span class="f-roboto b">
+                            <% if (LanguageContext == "IT") { %>
+                                Conferma operazione
+                            <% } %>
+                            <% if (LanguageContext == "GB") { %>
+                                Confirm operation
+                            <% } %>
+                            <% if (LanguageContext == "ES") { %>
+                                Confirmar operaci&oacute;n
+                            <% } %>
+                            <% if (LanguageContext == "CN") { %>
+                                確認操作
+                            <% } %>                        
+                        </span>
+                    </h4>
+                    <span class="spinner-border text-danger mt-3" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
+                </div>
+                <div class="modal-body text-secondary">
+                    <h5 class="f-roboto warning lh-base m-0">
+                        <% if (LanguageContext == "IT") { %>
+                            Attenzione: l&apos;operazione non pu&ograve; essere annullata.
+                        <% } %>
+                        <% if (LanguageContext == "GB") { %>
+                            Warning: the operation cannot be undone.
+                        <% } %>
+                        <% if (LanguageContext == "ES") { %>
+                            Advertencia: la operaci&oacute;n no se puede deshacer.
+                        <% } %>
+                        <% if (LanguageContext == "CN") { %>
+                            警告：此操作無法撤銷
+                        <% } %>
+
+                    </h5>
+                    <h5 class="f-roboto">
+                        <% if (LanguageContext == "IT") { %>
+                            Confermi di voler procedere?
+                        <% } %>
+                        <% if (LanguageContext == "GB") { %>
+                            Are you sure you want to proceed?
+                        <% } %>
+                        <% if (LanguageContext == "ES") { %>
+                            Est&aacute;s seguro que deseas continuar
+                        <% } %>
+                        <% if (LanguageContext == "CN") { %>
+                            你確定要繼續嗎？
+                        <% } %>
+                    </h5>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">
+                        <% if (LanguageContext == "IT") { %>
+                            Annulla
+                        <% } %>
+                        <% if (LanguageContext == "GB") { %>
+                            Cancel
+                        <% } %>
+                        <% if (LanguageContext == "ES") { %>
+                            Cancelar
+                        <% } %>
+                        <% if (LanguageContext == "CN") { %>
+                            取消
+                        <% } %>
+                    </button>
+                    <a class="btn btn-danger btn-ok-action">OK</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

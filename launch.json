@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+      
       {
         "type": "node",
         "request": "launch",
@@ -14,6 +15,19 @@
         "name": "Launch Program",
         "skipFiles": ["<node_internals>/**"],
         "program": "${workspaceFolder}route/login.js"
+      },
+      {
+        "name": "Launch via NPM",
+        "request": "launch",
+        "runtimeArgs": [
+          "run-script",
+          "debug"
+        ],
+        "runtimeExecutable": "npm",
+        "skipFiles": [
+          "<node_internals>/**"
+        ],
+        "type": "node"
       }
     ]
   }

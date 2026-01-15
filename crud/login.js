@@ -5,12 +5,15 @@ const sql = require('mssql/msnodesqlv8');
 const config = require('../utils/config')
 var connection = require('../config.db');
 
-function login(myLogin) {
+function login(myRequest) {
+
+    //console.log("login myRequest: " + JSON.stringify(myRequest));
 
     const sender = arguments.callee.name;
 
-    var myUserid = myLogin.Userid;
-    var myPassword = myLogin.Password;
+    var myLanguageContext = myRequest.LanguageContext;
+    var myUserid = myRequest.Userid;
+    var myPassword = myRequest.Password;
 
     const customPromise = new Promise((resolve, reject) => {
         try {
@@ -21,41 +24,49 @@ function login(myLogin) {
                     );
                 } else {
                     var request = new sql.Request();
-                    request.query("SELECT A.IdAccount, A.IdAttore, A.IdContratto, A.IDProfiloUtenteDefault, A.ProfiloUtenteDefault, A.IdGruppoOperativoDefault, A.GruppoOperativoDefault, A.Nome, A.Cognome, A.IsPublicAccount AS IsPublic, A.IsVisible FROM [PS].[dbo].[VW_LOGIN] A WHERE A.Username = '" + myUserid + "' AND A.Password = '" + myPassword + "'", function (err, response) {
+
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.input('Userid', sql.NVarChar(50), myUserid);
+                    request.input('Password', sql.NVarChar(50), myPassword);
+                    request.output('Status', sql.NVarChar(500))
+
+                    request.execute("SP_GET_LOGIN", function (err, response) {
                         if (err) {
                             reject(
                                 JSON.stringify(new exception(sender, err.message, err.name, err.stack))
                             );
                         } else {
-                            /* response.params:
-                                recordsets,
-                                output,
-                                rowsAffected
-                            */
                             var myResponse = JSON.stringify(response);
-
-                            if (JSON.parse(myResponse).recordset.length > 0) {
+                            
+                            if (JSON.parse(myResponse).output.Status == "OK") {
 
                                 var resultData = JSON.parse(myResponse).recordset[0];
 
                                 /* Imposta il language applicativo */
                                 var languageContext = config.LanguageContext;
 
+                                if (languageContext != myLanguageContext) {
+                                    languageContext = myLanguageContext;
+                                }
+
                                 if (resultData.LanguageContext != undefined) {
                                     languageContext = resultData.LanguageContext;
                                 }
+
                                 /* Valorizza l'oggetto restituito al route */
                                 const user = {
-                                    IdAccount: resultData.IdAccount,
-                                    IdAttore: resultData.IdAttore,
-                                    IdContratto: resultData.IdContratto,
+                                    IdAccount: resultData.IDAccount,
+                                    IdAttore: resultData.IDAttore,
+                                    IdContratto: resultData.IDContratto,
                                     IDProfiloUtenteDefault: resultData.IDProfiloUtenteDefault,
                                     ProfiloUtenteDefault: resultData.ProfiloUtenteDefault,
-                                    IdGruppoOperativoDefault: resultData.IdGruppoOperativoDefault,
+                                    IdGruppoOperativoDefault: resultData.IDGruppoOperativoDefault,
                                     GruppoOperativoDefault: resultData.GruppoOperativoDefault,
                                     Nome: resultData.Nome,
-                                    Cognome: resultData.Cognome, 
-                                    IsPublic: resultData.IsPublic,
+                                    Cognome: resultData.Cognome,
+                                    Email: resultData.Email,
+                                    ActivePassword: resultData.ActivePassword,
+                                    IsPublic: resultData.IsPublicAccount,
                                     IsVisible: resultData.IsVisible,
                                     LanguageContext: languageContext,
                                     OffsetRows: config.OffsetRows,
@@ -66,7 +77,7 @@ function login(myLogin) {
 
                             } else {
                                 reject(JSON.stringify(
-                                    new exception(sender, "Unauthorized user", sender, "internal error"))
+                                    new exception(sender, JSON.parse(myResponse).output.Status, sender, "internal error"))
                                 );
                             }
                         }
@@ -82,6 +93,7 @@ function login(myLogin) {
     });
     return customPromise
 }
+
 module.exports = {
     login,
 }

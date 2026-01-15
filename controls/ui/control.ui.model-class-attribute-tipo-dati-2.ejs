@@ -1,0 +1,9 @@
+<!-- NUMERICO -->
+<div class="col-xs-6 p-0 mb-2 px-3">
+    <label for="control_<%= row.IDAttributo %>" class="col-form-label"><%= row.Description %></label>
+    <input type="text" <% if (row.Obbligatorio) { %> required<% } %>
+    data-idattributo="<%= row.IDAttributo %>"
+    data-idtipodati="<%= row.IDTipoDati %>"
+    class="form-control number" id="control_<%= row.IDAttributo %>" 
+    maxlength="20">
+</div>

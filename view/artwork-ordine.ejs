@@ -1,0 +1,349 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Web APP DC - Artwork Ordine</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%- include('partials/head'); %>
+    <%- include('partials/confirm-delete'); %>
+    <script type="text/javascript" src="/processi-script"></script>
+    <script type="text/javascript" src="/model-script"></script>
+    <script type="text/javascript" src="/control-fileupload-script"></script>    
+    <script type="text/javascript" src="/control-processi-filter-script"></script>
+    <script type="text/javascript" src="/control-workflow-script"></script>
+    <script type="text/javascript" src="/control-workflow-history-script"></script>
+    <script type="text/javascript" src="/control-model-script"></script>
+    <script type="text/javascript" src="/control-pager-script"></script>
+    <script type="text/javascript" src="/control-processi-action-button-script"></script>
+    <script type="text/javascript" src="/utility-script"></script>    
+    <script type="text/javascript" src="/artwork-ordine-script"></script>
+    <script type="text/javascript" src="/logout-script"></script>
+</head>
+<body>
+    <%- include('partials/header'); %>
+    <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= user.LanguageContext %>" />
+    <input type="hidden" name="user" id="user" value="<%= JSON.stringify(user) %>" />
+    <div class="container-fluid p-0 px-4">
+        <h4 class="p-0">
+            <b class="f-roboto b">
+				<% if (user.LanguageContext == "IT") { %>
+                    Gestione Ordini
+                <% } %>
+                <% if (user.LanguageContext == "GB") { %>
+                    Order Management
+                <% } %>
+                <% if (user.LanguageContext == "ES") { %>
+                    Gesti&oacute;n de pedidos
+				<% } %>
+                <% if (user.LanguageContext == "CN") { %>
+                    訂單管理
+                <% } %>
+            </b>
+            <span class="bi bi-box-seam" style="font-size:2rem;"></span>
+        </h4>
+    </div>
+    <div class="container-fluid h-75" style="display:block; position:absolute; height:78% !important; margin-top:0 !important;">
+        <div class="col-xs-2 p-0 h-100 filtro-container">
+            <div class="panel panel-default h-100 p-0">
+                <div class="panel-heading p-3 f-roboto">
+                    <b>
+						<% if (user.LanguageContext == "IT") { %>
+                            Filtro di ricerca
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Search filter
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Filtro de investigaci&oacute;n
+						<% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            搜尋過濾器
+                        <% } %>
+                    </b>
+                    <button type="button" class="btn btn-light bi bi-arrow-left rounded-circle float-end btn-30 btn-filter-close"
+                        data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<% if (user.LanguageContext == "IT") { %>Nascondi Filtro<% } %><% if (user.LanguageContext == "GB") { %>Hide Filter<% } %><% if (user.LanguageContext == "ES") { %>Ocultar filtro<% } %><% if (user.LanguageContext == "CN") { %>隱藏過濾器<% } %>">
+                    </button>
+                </div>
+                <div class="panel-body h-100 p-2 f-roboto">
+                    <div id="filtro-ordini-container" style="overflow-y:auto; height:90%;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-10 p-0 h-100 px-2 result-container">
+            <div class="panel panel-default h-100 p-0">
+                <div class="panel-heading p-3 f-roboto">
+                    <b>
+						<% if (user.LanguageContext == "IT") { %>
+                            Gestione Ordini
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Order Management
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Gesti&oacute;n de pedidos
+						<% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            訂單管理
+                        <% } %>
+                    </b>
+                    <button type="button" class="btn btn-light bi bi-sliders rounded-circle float-end btn-30 btn-filter-open"
+                        data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<% if (user.LanguageContext == "IT") { %>Visualizza Filtro<% } %><% if (user.LanguageContext == "GB") { %>View Filter<% } %><% if (user.LanguageContext == "ES") { %>Ver filtro<% } %><% if (user.LanguageContext == "CN") { %>查看過濾器<% } %>">
+                    </button>
+                    <span class="action-button-inserimento"></span>&nbsp;
+                </div>
+                <div class="panel-body h-100 p-2 f-roboto">
+                    <div style="overflow-y:auto; height:80%;">
+                        <table class="table table-hover table-xs">
+                            <thead>
+                                <tr>
+                                    <th scope="col">
+                                    </th>
+                                    <th scope="col" class="process-label-id">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            ID Richiesta
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Request ID
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Solicitar identificaci&oacute;n
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            請求ID
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Richiedente
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Applicant
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Solicitante
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            申請人
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Data Richiesta
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Requested date
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Fecha solicitada
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            要求的日期
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Consegna prevista
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Estimated delivery
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Entrega estimada
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            Consegna prevista
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+                                        Brand
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Num. Ordine
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Order number
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            N&uacute;mero de orden
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            訂單編號
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Categoria
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Category
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Categor&iacute;a
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            類別
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Difficoltà
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Difficulty
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Dificultad
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            困難
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Urgenza
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Urgency
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Dificultad
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            困難
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Articolo
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Difficulty
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Art&iacute;culo
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            物品
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Tot. Giorni consegna
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Days to Delivery
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            D&iacute;as hasta la entrega
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            交貨天數
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Stato
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            State
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Estado
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            狀態
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+                                        
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="result-ordini-container">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-3 pt-0" style="height:15%; margin-top:-1%;">
+                        <div class="artwork-ordine-pager pager"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="container-processo" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title f-roboto b">
+                        <span class="ordine-idrecord-color px-1"></span> <span class="ordine-mode"></span><span class="ordine-reference">&nbsp;{ID                     
+                        <% if (user.LanguageContext == "IT") { %>
+                        Ordine
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                        Order
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                        Orden
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                        命令
+                        <% } %>: <span class="ordine-idrecord"></span>}</span>
+                    </h5>
+                    <button type="button" class="btn-close btn-cancel-processo" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div data-user="<%= JSON.stringify(user) %>" class="model">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="container-history" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title f-roboto b">
+                        <span class="history-idrecord-color px-1"></span>
+                        <% if (user.LanguageContext == "IT") { %>
+                            Visualizza storia
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            View history
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Ver historial
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            查看歷史記錄
+                        <% } %>
+                        {ID                     
+                        <% if (user.LanguageContext == "IT") { %>
+                            Ordine
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Order
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Orden
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            命令
+                        <% } %>: <span class="history-idrecord"></span>}
+                    </h5>
+                    <button type="button" class="btn-close btn-cancel-history" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div data-user="<%= JSON.stringify(user) %>" class="history"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('partials/system-message'); %>
+
+</body>
+</html>

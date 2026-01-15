@@ -1,0 +1,14 @@
+<div class="processo-azione-<%= processoazione.IDProcessoAzione %>-container">
+    <div class="col-xs-12 p-0 process-bg" style>
+        <div class="col-xs-9 p-1 text-start">
+            <span class="text-start text-decoration-none p-0 text-secondary f-roboto" data-idprocessoazione="<%= processoazione.IDProcessoAzione %>">
+                <%= processoazione.Description %>
+            </span>
+        </div>
+        <div class="col-xs-3 text-end p-1 process-bg form-switch">
+            <input class="form-check-input btn-toggle-processo-azione-<%= processoazione.IDProcessoAzione %>" type="checkbox"
+            <% if (processoazione.IdProcesso != undefined) { %> checked <% } %>
+            id="rb-processo-azione-<%= processoazione.IDProcessoAzione %>" name="rb-processo-azione-<%= processoazione.IDProcessoAzione %>">
+        </div>
+    </div>
+</div>

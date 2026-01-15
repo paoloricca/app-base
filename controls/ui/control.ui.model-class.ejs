@@ -1,0 +1,24 @@
+﻿<form id="frm-class-<%= row.IDClasse %>" class="was-validated" novalidate>
+	<div data-fieldlist="" class="col-xs-12 border border-1 rounded model-class-<%= row.IDClasse %>-container">
+		<div class="spinner-border text-primary mt-3" role="status"></div>
+		<div class="panel panel-success mb-0 mt-3" style="display:none;">
+			<div class="panel-heading">
+                <% if (LanguageContext == "IT") { %>
+                    Salvataggio effettuato
+                <% } %>
+                <% if (LanguageContext == "GB") { %>
+                    Successfully saved
+                <% } %>
+                <% if (LanguageContext == "ES") { %>
+                    Guardado exitosamente
+                <% } %>
+                <% if (LanguageContext == "CN") { %>
+                    保存成功
+                <% } %>
+			</div>
+		</div>
+		<div class="col-xs-12 p-0 f-roboto pt-2 mb-2 b">
+			<!--%= row.Description %-->
+		</div>
+	</div>
+</div>

@@ -1,0 +1,42 @@
+﻿<!-- BOOLEAN -->
+<div class="col-xs-6 p-0 mb-2 px-3">
+	<div class="col-xs-12 p-0">
+		<label for="control_<%= row.IDAttributo %>" class="col-form-label"><%= row.Description %></label>
+	</div>
+	<div class="form-check form-check-inline">
+		<input data-idtipodati="<%= row.IDTipoDati %>" data-idattributo="<%= row.IDAttributo %>" 
+			class="form-check-input" <% if (row.Obbligatorio) { %> required<% } %> type="radio" name="control_<%= row.IDAttributo %>" id="control_<%= row.IDAttributo %>_0" value="0">
+		<label class="col-form-label" for="control_<%= row.IDAttributo %>_0">
+            <% if (user.LanguageContext == "IT") { %>
+            No
+            <% } %>
+            <% if (user.LanguageContext == "GB") { %>
+            No
+            <% } %>
+            <% if (user.LanguageContext == "ES") { %>
+            No
+            <% } %>
+            <% if (user.LanguageContext == "CN") { %>
+            不
+            <% } %>
+		</label>
+	</div>
+	<div class="form-check form-check-inline">
+		<input data-idtipodati="<%= row.IDTipoDati %>" data-idattributo="<%= row.IDAttributo %>" 
+			class="form-check-input" <% if (row.Obbligatorio) { %> required<% } %> type="radio" name="control_<%= row.IDAttributo %>" id="control_<%= row.IDAttributo %>_1" value="1">
+		<label class="col-form-label" for="control_<%= row.IDAttributo %>_1">
+                    <% if (user.LanguageContext == "IT") { %>
+                    Si
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+                    Yes
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+                    S&iacute;
+                    <% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+                    是的
+                    <% } %>
+		</label>
+	</div>
+</div>

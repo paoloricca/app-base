@@ -1,3 +1,6 @@
+@import url(//fonts.googleapis.com/css?family=Montserrat:300,400,500);
+@import url(//fonts.googleapis.com/css?family=Roboto:300,400,500,600,700,800,900);
+
 li.submenu ul.dropdown-menu[data-bs-popper] {
     border-width: 0;
     padding-top: 0.5em;
@@ -17,4 +20,352 @@ li.submenu a[role="button"].show::after {
 }
 .dropdown-menu li button {
     text-align:left;
+}
+.table th, .table td {
+    vertical-align: top !important;
+    font-family: "Roboto" !important, sans-serif;
+}
+.f-roboto, .btn {
+    font-family: "Roboto" !important, sans-serif;
+    font-weight: 500;
+}
+.f-roboto-b {
+    font-family: "Roboto" !important, sans-serif;
+    font-weight: 600;
+}
+.action-tool {
+    display:none;
+    float:right;
+    margin-right:4px;
+}
+.action-tool-sub {
+    float: right;
+}
+.item-header {
+    border-bottom: 1px solid #e1e1e1;
+}
+.item-bg {
+    border-bottom: 1px solid #e1e1e1;
+}
+.item-bg:hover {
+    border-bottom:1px solid #e1e1e1;
+    background-color:#f9f9f9;
+}
+.process-bg:hover {
+    background-color: #f9f9f9;
+}
+.item-bg:hover .action-tool {
+    display:block;
+}
+.c-base {
+    color: #337ab7;
+}
+.b {
+    font-weight:bold;
+}
+#labelfiletoupload {
+    cursor: pointer;
+    font-family: "Roboto" !important, sans-serif;
+    font-weight: normal;
+}
+#filetoupload {
+    opacity: 0;
+    position: absolute;
+    z-index: -1;
+}
+.col-form-label {
+    font-weight:normal;
+}
+.login {
+    border: 1px solid #d0d0d0;
+    background-color: #fff;
+    padding: 5px;
+    padding-top: 15px;
+    padding-left: 0;
+    padding-right: 0;
+    border-radius: 6px;
+}
+.btn-30 {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 1.25em;
+}
+#select-container {
+    position: absolute;
+    width: 50px;
+    height: 40px;
+    background: #ffffff;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 10px;
+    border: 0.5px solid rgba(202, 219, 226, 0.4);
+    overflow: hidden;
+    transition: height 0.2s ease-in-out, border-radius 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+    #select-container:hover {
+        height: auto;
+        /* Can't use height: auto & transition effect */
+        border-radius: 20px;
+        box-shadow: 0px 7px 10px rgba(79, 104, 113, 0.3);
+    }
+
+    #select-container ul {
+        list-style-type: none;
+        position: relative;
+    }
+
+        #select-container ul li {
+            opacity: 1;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+            #select-container ul li:first-child img {
+                cursor: default;
+            }
+
+            #select-container ul li img {
+                width: 25px;
+                height: 25px;
+                display: block;
+                left: 50%;
+                transform: translate(-103%, -40%);
+                margin-bottom: 8px;
+                border-radius: 50%;
+                border: 2px solid #ffffff;
+                box-shadow: 0px 0px 6px rgba(79, 104, 113, 0.3);
+                cursor: pointer;
+                transition: all 0.1s ease-in-out;
+            }
+
+                #select-container ul li img:hover {
+                    box-shadow: 0px 5px 10px rgba(79, 104, 113, 0.3);
+                    transform: translate(-103%, -40%) scale(1.08);
+                }
+
+/* TOOLTIP STYLES FROM THIS PEN https://codepen.io/tutsplus/pen/WROvdG */
+[tooltip] {
+    position: relative;
+    /* opinion 1 */
+    font-weight: bold;
+}
+
+    /* Applies to all tooltips */
+    [tooltip]::before,
+    [tooltip]::after {
+        text-transform: none;
+        /* opinion 2 */
+        font-size: 12px;
+        /* opinion 3 */
+        line-height: 1;
+        user-select: none;
+        pointer-events: none;
+        position: absolute;
+        display: none;
+        opacity: 0;
+    }
+    [tooltip]::before {
+        content: "";
+        border: 5px solid transparent;
+        /* opinion 4 */
+        z-index: 1001;
+        /* absurdity 1 */
+    }
+    [tooltip]::after {
+        content: attr(tooltip);
+        /* magic! */
+        /* most of the rest of this is opinion */
+        font-family: Helvetica, sans-serif;
+        text-align: center;
+        /*
+    Let the content set the size of the tooltips
+    but this will also keep them from being obnoxious
+    */
+        width: 40px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 3px 0px;
+        border-radius: 0.3ch;
+        box-shadow: 0 1em 2em -0.5em rgba(0, 0, 0, 0.35);
+        background: #465663;
+        color: #fff;
+        z-index: 1000;
+        /* absurdity 2 */
+    }
+    /* Make the tooltips respond to hover */
+    [tooltip]:hover::before,
+    [tooltip]:hover::after {
+        display: block;
+    }
+/* don't show empty tooltips */
+[tooltip=""]::before,
+[tooltip=""]::after {
+    display: none !important;
+}
+
+/* FLOW: UP */
+[tooltip]:not([flow])::before,
+[tooltip][flow^=up]::before {
+    bottom: 50%;
+    border-bottom-width: 0;
+    border-top-color: #465663;
+}
+[tooltip]:not([flow])::after,
+[tooltip][flow^=up]::after {
+    bottom: calc(50% + 5px);
+}
+[tooltip]:not([flow])::before,
+[tooltip]:not([flow])::after,
+[tooltip][flow^=up]::before {
+    left: -15.5px;
+    bottom: 40px;
+    transform: translate(-50%, -0.5em);
+}
+[tooltip][flow^=up]::after {
+    left: -15.5px;
+    bottom: 45px;
+    transform: translate(-50%, -0.5em);
+}
+/* FLOW: DOWN */
+[tooltip][flow^=down]::before {
+    top: 70%;
+    border-top-width: 0;
+    border-bottom-color: #465663;
+}
+[tooltip][flow^=down]::after {
+    top: calc(70% + 5px);
+}
+[tooltip][flow^=down]::before,
+[tooltip][flow^=down]::after {
+    left: -15.5px;
+    transform: translate(-50%, 0.5em);
+}
+/* KEYFRAMES */
+@keyframes tooltips-vert {
+    to {
+        opacity: 0.9;
+        transform: translate(-50%, 0);
+    }
+}
+/* FX All The Things */
+[tooltip]:not([flow]):hover::before,
+[tooltip]:not([flow]):hover::after,
+[tooltip][flow^=up]:hover::before,
+[tooltip][flow^=up]:hover::after,
+[tooltip][flow^=down]:hover::before,
+[tooltip][flow^=down]:hover::after {
+    animation: tooltips-vert 300ms ease-out forwards;
+}
+
+.language {
+    position: absolute;
+    top: 4px;
+    left: 46px;
+    padding: 16px;
+}
+.show-hide-password {
+    position: absolute;
+    font-size: 1.5em;
+    top: 13px;
+    left: 100%;
+    margin-left: -66px;
+}
+.show-hide-password-login {
+    position: absolute;
+    font-size: 1.20em;
+    top: 0;
+    left: 100%;
+    margin-left: -60px;
+}
+.SecurityKey {
+    text-align: center;
+    font-family: "Roboto", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 3px;
+}
+a, btn {
+    font-family: "Roboto" !important, sans-serif;
+}
+.dropdown-item:hover {
+    background-color: transparent;
+}
+.pager {
+    width: 100%;
+}
+[class^="btn btn-light btn-xs col-xs-12 btn-action-workflow"],
+[class^="btn btn-light btn-xs col-xs-12 btn-imposta-workflow"],
+[class^="btn btn-light btn-xs col-xs-12 btn-annulla-process"] {
+    background-color: transparent !important;
+    border: 0;
+}
+[class^="btn btn-light btn-xs col-xs-12 btn-action-workflow"]:hover,
+[class^="btn btn-light btn-xs col-xs-12 btn-imposta-workflow"]:hover,
+[class^="btn btn-light btn-xs col-xs-12 btn-annulla-process-"]:hover {
+    background-color: #f7f7f7 !important;
+    border: 0;
+}
+.bullet-stato-processo {
+    margin-top: 1px;
+    margin-right:2px;
+    display: block;
+    float: left;
+    font-size: 14px;
+    background-color:transparent;
+}
+.event-workflow-history:hover {
+    background-color: #f1f1f1;
+}
+.data-workflow-history {
+    display: block;
+    float: left;
+    font-size: 12px;
+    margin-right: 4px;
+    margin-top: 2px;
+    margin-left: 0;
+    background-color: transparent;
+}
+.stato-workflow-history {
+    background-color: transparent;
+    float: left;
+    font-size: 12px;
+    margin-top: 2px;
+    margin-left: -56px;
+}
+.durata-workflow-history {
+    background-color: transparent;
+    float: right;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.divider-workflow-history {
+    background-color: transparent;
+    position: absolute;
+    border: 1px solid #e1e1e1;
+    width: 1px;
+    float: left;
+    margin-left: 110px;
+    height: 100%;
+    z-index: 99;
+}
+.bullet-workflow-history {
+    position: absolute;
+    display: block;
+    float: left;
+    font-size: 13px;
+    margin-top: 2px;
+    margin-left: 104px;
+    z-index: 100;
+}
+#container-processo .modal-lg {
+    display: block;
+}
+#container-processo .modal-content {
+    width: 1140px !important;
+    left: 50%;
+    margin-left: -570px;
 }

@@ -1,0 +1,63 @@
+﻿<div class="container-filtro-processi">
+	<!-- TESTO -->
+    <div class="col-xs-12 p-2">
+        <label class="col-form-label">
+            <%= ProcessLabelId %>
+        </label>
+        <input type="text" class="form-control" id="filter_IdRecord" maxlength="50">
+    </div>
+	<!-- DATA -->
+    <div class="col-xs-12 p-2">
+        <label class="col-form-label">
+			<% if (LanguageContext == "IT") { %>
+                Data Richiesta
+            <% } %>
+            <% if (LanguageContext == "GB") { %>
+                Requested date
+            <% } %>
+            <% if (LanguageContext == "ES") { %>
+                Fecha solicitada
+			<% } %>
+            <% if (LanguageContext == "CN") { %>
+                要求的日期
+            <% } %>
+        </label>
+        <input type="text" class="form-control" id="filter_DataRegistrazione" maxlength="50">
+    </div>
+	<!-- LISTA -->
+    <div class="col-xs-12 p-2">
+        <label class="col-form-label">
+			<% if (LanguageContext == "IT") { %>
+                Stato
+            <% } %>
+            <% if (LanguageContext == "GB") { %>
+                State
+            <% } %>
+            <% if (LanguageContext == "ES") { %>
+                Estado
+			<% } %>
+            <% if (LanguageContext == "CN") { %>
+                狀態
+            <% } %>
+        </label>
+        <select class="form-control" id="filter_Stato">
+            <option value="">&hellip;</option>
+        </select>
+    </div>
+    <div class="col-xs-12 p-2">
+        <a class="btn btn-light btn-md f-roboto-b col-xs-12">
+			<% if (LanguageContext == "IT") { %>
+                Cerca
+            <% } %>
+            <% if (LanguageContext == "GB") { %>
+                Search
+            <% } %>
+            <% if (LanguageContext == "ES") { %>
+                Buscar
+			<% } %>
+            <% if (LanguageContext == "CN") { %>
+                靠近
+            <% } %>
+        </a>
+    </div>
+</div>

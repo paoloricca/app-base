@@ -1,0 +1,28 @@
+﻿<script type="text/html" id="template-fileupload">
+    <div class="fileupload-container col-xs-12 p-0 pt-4">
+        <form action="fileupload" method="post" enctype="multipart/form-data">
+            <div class="col-xs-12 p-0 px-3">
+                <label data-default="Seleziona un file" class="btn btn-default w-100 text-start" id="labelfiletoupload" for="filetoupload">
+                    <% if (user.LanguageContext == "IT") { %>
+                    Seleziona un file
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+                    Select a file
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+                    Seleccione un archivo
+                    <% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+                    選擇一個文件
+                    <% } %>
+                </label>
+                <input type="file" class="btn btn-default w-100" name="filetoupload" id="filetoupload">
+            </div>
+            <div class="col-xs-12 p-0 pt-3 mb-3">
+                <hr class="border border-1 m-0" />
+                <div class="col-xs-12 p-0 file-container">
+                </div>
+            </div>
+        </form>
+    </div>
+</script>

@@ -1,5 +1,6 @@
 class modelLogin {
-    constructor(Userid, Password) {
+    constructor(LanguageContext, Userid, Password) {
+        this.LanguageContext = LanguageContext;
         this.Userid = Userid;
         this.Password = Password;
     }

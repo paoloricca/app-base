@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Web APP DC - Verify Security Key</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%- include('partials/head'); %>
+    <script type="text/javascript" src="/utility-script"></script>
+    <script type="text/javascript" src="/validation-script"></script>
+    <script type="text/javascript" src="/password-recovery-script"></script>
+</head>
+<body>
+    <form name="frmVerifySecurityKey" method="post" action="/verify-securitykey" class="was-validated" novalidate>
+        <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= LanguageContext %>" />
+        <input type="hidden" name="email" id="email" value="<%= email %>" />
+        <div class="container">
+            <div class="row" style="display:block; padding-top:10%;">
+                <div class="col-lg-3"></div>
+                <div class="col-lg-6">
+                    <div class="login">
+                        <div class="container-fluid cart-head">
+                            <div class="col-xs-1"></div>
+                            <div class="col-xs-10">
+                                <img src="/images/password-recovery.png" class="img-fluid" />
+                            </div>
+                            <div class="col-xs-12 pt-3 px-3 p-5">
+                                <div class="form-group">
+                                    <label for="email">
+                                        <h3>
+                                            <b>
+                                                <% if (LanguageContext == "IT") { %>
+                                                    Digita il codice di verifica
+                                                <% } %>
+                                                <% if (LanguageContext == "GB") { %>
+                                                    Enter verification code
+                                                <% } %>
+                                                <% if (LanguageContext == "ES") { %>
+                                                    Ingrese el c&oacute;digo de verificaci&oacute;n
+                                                <% } %>
+                                                <% if (LanguageContext == "CN") { %>
+                                                    请输入验证码
+                                                <% } %>
+                                            </b>
+                                        </h3>
+                                    </label>
+                                    <% if (error) { %>
+                                        <div class="form-group form-errors p-0">
+                                            <div class="panel panel-danger p-0">
+                                                <div class="panel-heading p-1 px-3">
+                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                </div>
+                                                <div class="panel-body pnl-errors p-2 px-3">
+                                                    <%= error %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <% } %>
+                                    <input class="form-control input-lg SecurityKey" type="text" name="SecurityKey" id="SecurityKey" maxlength="5" required>
+                                    <div class="valid-feedback"></div>
+                                </div>
+                                <div class="form-group">
+                                    <h5 class="password-recovery-notice text-secondary">
+                                        <% if (LanguageContext == "IT") { %>
+                                            Digita il codice di verifica che hai ricevuto al tuo indirizzo e-mail e ricorda che ha una validit&agrave; di 5 minuti.
+                                        <% } %>
+                                        <% if (LanguageContext == "GB") { %>
+                                            Enter verification code you received in your email address and remember that has a 5 minutes validity.
+                                        <% } %>
+                                        <% if (LanguageContext == "ES") { %>
+                                            Ingresa el c&oacute;digo de verificaci&oacute;n que recibiste en tu correo electr&oacute;nico y recuerda que es v&aacute;lido por 5 minutos.
+                                        <% } %>
+                                        <% if (LanguageContext == "CN") { %>
+                                            验证码已发送至您的邮箱，此验证码仅在5分钟内有效
+                                        <% } %>
+                                    </h5>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-xs-12 pt-3 p-4 px-0">
+                                        <button type="submit" class="col-xs-12 btn btn-lg btn-primary">
+                                            <% if (LanguageContext == "IT") { %>
+                                                Avanti
+                                            <% } %>
+                                            <% if (LanguageContext == "GB") { %>
+                                                Forward
+                                            <% } %>
+                                            <% if (LanguageContext == "ES") { %>
+                                                Siguiente paso
+                                            <% } %>
+                                            <% if (LanguageContext == "CN") { %>
+                                                下一步
+                                            <% } %>
+                                        </button>
+                                    </div>
+                                </div>
+                                </form>
+                                <% if (error && error.indexOf("!") >-1) { %>
+                                    <form name="frmResendSecurityKey" method="post" action="/password-recovery">
+                                        <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= LanguageContext %>" />
+                                        <input type="hidden" name="email" id="email" value="<%= email %>" />
+                                        <div class="form-group">
+                                            <div class="col-xs-12 pt-3 p-4 px-0">
+                                                <button type="submit" class="col-xs-12 btn btn-lg btn-light">
+                                                    <% if (LanguageContext == "IT") { %>
+                                                        Reinvia codice di verifica
+                                                    <% } %>
+                                                    <% if (LanguageContext == "GB") { %>
+                                                        Resend verification code
+                                                    <% } %>
+                                                    <% if (LanguageContext == "ES") { %>
+                                                        Reenviar c&oacute;digo de verificaci&oacute;n
+                                                    <% } %>
+                                                    <% if (LanguageContext == "CN") { %>
+                                                        重新发送验证码
+                                                    <% } %>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+</body>
+</html>
