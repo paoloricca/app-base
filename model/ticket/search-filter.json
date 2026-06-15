@@ -1,0 +1,29 @@
+﻿[
+  {
+    "Description_IT": "ID Richiesta",
+    "Description_GB": "Request ID",
+    "Description_ES": "Identificaci&oacute;n",
+    "Description_CN": "ID 要求",
+    "DataType": "1",
+    "ColumnName": "IdRecord",
+    "maxlength": ""
+  },
+  {
+    "Description_IT": "Data Richiesta",
+    "Description_GB": "Requested date",
+    "Description_ES": "Fecha solicitada",
+    "Description_CN": "要求的日期",
+    "DataType": "4",
+    "ColumnName": "DataRegistrazione",
+    "maxlength": ""
+  },
+  {
+    "Description_IT": "Stato",
+    "Description_GB": "State",
+    "Description_ES": "Estado",
+    "Description_CN": "狀態",
+    "DataType": "2",
+    "ColumnName": "Stato",
+    "maxlength": ""
+  }
+]

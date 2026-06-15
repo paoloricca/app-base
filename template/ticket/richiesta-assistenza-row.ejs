@@ -1,0 +1,32 @@
+<tr>
+    <td scope="col">
+        <i class="bi bi-circle-fill" style="color: <%= row.ColoreStato %>" />
+    </td>
+    <td scope="col">
+        <%= row.IdRecord %>
+    </td>
+    <td scope="col">
+        <%= row.Istanziatore %>
+    </td>
+    <td scope="col">
+        <%= row.DataRegistrazione %>
+    </td>
+    <td scope="col">
+        <%= row.TipoRichiesta %>
+    </td>
+    <td scope="col">
+        <%= row.Ambito %>
+    </td>
+    <td scope="col">
+        <%= row.Oggetto%>
+    </td>
+    <td scope="col">
+        <%= row.Descrizione%>
+    </td>
+    <td scope="col">
+        <%= row.Stato %>
+    </td>
+    <td scope="col">
+        <div class="container-workflow-<%= row.IdRecord %>"></div>
+    </td>
+</tr>

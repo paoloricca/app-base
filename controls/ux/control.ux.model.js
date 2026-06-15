@@ -190,7 +190,7 @@
                                         ejs.render(templateString, { row })
                                     );
 
-                                    /* NUMERO */
+                                    /* TESTO */
                                     if (row.IDTipoDati == 1 || row.IDTipoDati == 11) {
                                         plugin.find("#control_" + row.IDAttributo).val(RecordValue);
                                     }

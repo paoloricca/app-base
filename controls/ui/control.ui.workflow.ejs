@@ -1,4 +1,4 @@
-﻿<form name="frmWorkflow-<%= IdRecord %>">
+﻿<form name="frmWorkflow-<%= IdRecord %>" id="frmWorkflow-<%= IdRecord %>" class="was-validated">
     <div class="col-xs-2 text-right p-0 processo-<%= IdRecord %>">
         <div class="btn-group">
             <button type="button" data-idrecord="<%= IdRecord %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle btn-workflow-<%= IdRecord %>"
@@ -12,6 +12,7 @@
                             ID: <%= IdRecord %>
                         </b>
                     </div>
+                    <span class="spinner-border text-danger mt-1" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
                 </li>
                 <li class="dropdown-item">
                     <hr class="dropdown-divider">
@@ -33,6 +34,20 @@
                             設定工作流程
                         <% } %>
                     </button>
+                    <h6 class="p-2 text-secondary no-workflow-<%= IdRecord %>">
+                        <% if (LanguageContext == "IT") { %>
+                            Nessun Workflow da impostare
+                        <% } %>
+                        <% if (LanguageContext == "GB") { %>
+                            No Workflow to set up
+                        <% } %>
+                        <% if (LanguageContext == "ES") { %>
+                            No es necesario configurar ning&uacute;n flujo de trabajo
+                        <% } %>
+                        <% if (LanguageContext == "CN") { %>
+                            無需設定工作流程
+                        <% } %>
+                    </h6>
                 </li>
                 <li class="dropdown-item">
                     <button data-idrecord="<%= IdRecord %>" type="button" class="btn btn-light btn-xs col-xs-12 btn-annulla-process-<%= IdRecord %>">
@@ -89,7 +104,6 @@
                         <% if (LanguageContext == "CN") { %>
                             警告：此操作無法撤銷
                         <% } %>
-
                     </h5>
                     <h5 class="f-roboto">
                         <% if (LanguageContext == "IT") { %>
@@ -126,4 +140,70 @@
             </div>
         </div>
     </div>
+
+
+    <div class="modal confirm-workflow" id="confirm-workflow-<%= IdRecord %>" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">
+                        <span class="f-roboto b">
+                            <% if (LanguageContext == "IT") { %>
+                                Conferma Workflow
+                            <% } %>
+                            <% if (LanguageContext == "GB") { %>
+                                Confirm Workflow
+                            <% } %>
+                            <% if (LanguageContext == "ES") { %>
+                                Confirmar Workflow
+                            <% } %>
+                            <% if (LanguageContext == "CN") { %>
+                                確認工作流程
+                            <% } %>                        
+                        </span>
+                    </h4>
+                    <span class="spinner-border text-danger mt-3" role="status" style="float:right; display:block; position:absolute; left:92%;"></span>
+                </div>
+                <div class="modal-body text-secondary">
+                    <div class="container-workflow-<%= IdRecord %>-transitions">
+                    </div>
+                    <div class="col-xs-12 container-workflow-note-<%= IdRecord %>" style="display:none;">
+                        <h6>
+                            <% if (LanguageContext == "IT") { %>
+                                Note
+                            <% } %>
+                            <% if (LanguageContext == "GB") { %>
+                                Notes
+                            <% } %>
+                            <% if (LanguageContext == "ES") { %>
+                                Notas
+                            <% } %>
+                            <% if (LanguageContext == "CN") { %>
+                                筆記
+                            <% } %>:
+                        </h6>
+                        <textarea id="txtNote" name="txtNote" rows="4" class="form-control" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="btn-annulla-workflow-<%= IdRecord %>" class="btn btn-default" data-bs-dismiss="modal">
+                        <% if (LanguageContext == "IT") { %>
+                            Annulla
+                        <% } %>
+                        <% if (LanguageContext == "GB") { %>
+                            Cancel
+                        <% } %>
+                        <% if (LanguageContext == "ES") { %>
+                            Cancelar
+                        <% } %>
+                        <% if (LanguageContext == "CN") { %>
+                            取消
+                        <% } %>
+                    </button>
+                    <a class="btn btn-primary btn-ok-workflow">OK</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </form>

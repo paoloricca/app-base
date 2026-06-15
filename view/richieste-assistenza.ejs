@@ -1,7 +1,20 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>Web APP DC - Artwork Ordine</title>
+    <title>Web APP DC - 
+		<% if (user.LanguageContext == "IT") { %>
+            Richieste di assistenza
+        <% } %>
+        <% if (user.LanguageContext == "GB") { %>
+            Requests for support
+        <% } %>
+        <% if (user.LanguageContext == "ES") { %>
+            Solicitudes de asistencia
+		<% } %>
+        <% if (user.LanguageContext == "CN") { %>
+            請求協助
+        <% } %>
+    </title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <%- include('partials/head'); %>
@@ -16,7 +29,7 @@
     <script type="text/javascript" src="/control-pager-script"></script>
     <script type="text/javascript" src="/control-processi-action-button-script"></script>
     <script type="text/javascript" src="/utility-script"></script>    
-    <script type="text/javascript" src="/artwork-ordine-script"></script>
+    <script type="text/javascript" src="/richiesta-assistenza-script"></script>
     <script type="text/javascript" src="/logout-script"></script>
 </head>
 <body>
@@ -26,17 +39,17 @@
     <div class="container-fluid p-0 px-4">
         <h4 class="p-0">
             <b class="f-roboto b">
-				<% if (user.LanguageContext == "IT") { %>
-                    Gestione Ordini
+		        <% if (user.LanguageContext == "IT") { %>
+                    Richieste di assistenza
                 <% } %>
                 <% if (user.LanguageContext == "GB") { %>
-                    Order Management
+                    Requests for support
                 <% } %>
                 <% if (user.LanguageContext == "ES") { %>
-                    Gesti&oacute;n de pedidos
-				<% } %>
+                    Solicitudes de asistencia
+		        <% } %>
                 <% if (user.LanguageContext == "CN") { %>
-                    訂單管理
+                    請求協助
                 <% } %>
             </b>
             <span class="bi bi-box-seam" style="font-size:2rem;"></span>
@@ -65,7 +78,7 @@
                     </button>
                 </div>
                 <div class="panel-body h-100 p-2 f-roboto">
-                    <div id="filtro-ordini-container" style="overflow-y:auto; height:90%;">
+                    <div id="filtro-richieste-assistenza-container" style="overflow-y:auto; height:90%;">
                     </div>
                 </div>
             </div>
@@ -74,17 +87,17 @@
             <div class="panel panel-default h-100 p-0">
                 <div class="panel-heading p-3 f-roboto">
                     <b>
-						<% if (user.LanguageContext == "IT") { %>
-                            Gestione Ordini
+		                <% if (user.LanguageContext == "IT") { %>
+                            Richieste di assistenza
                         <% } %>
                         <% if (user.LanguageContext == "GB") { %>
-                            Order Management
+                            Requests for support
                         <% } %>
                         <% if (user.LanguageContext == "ES") { %>
-                            Gesti&oacute;n de pedidos
-						<% } %>
+                            Solicitude de asistencia
+		                <% } %>
                         <% if (user.LanguageContext == "CN") { %>
-                            訂單管理
+                            請求協助
                         <% } %>
                     </b>
                     <button type="button" class="btn btn-light bi bi-sliders rounded-circle float-end btn-30 btn-filter-open"
@@ -110,7 +123,7 @@
                                             Solicitar identificaci&oacute;n
 					                    <% } %>
                                         <% if (user.LanguageContext == "CN") { %>
-                                            請求ID
+                                            ID 要求
                                         <% } %>
                                     </th>
                                     <th scope="col">
@@ -143,103 +156,58 @@
                                     </th>
                                     <th scope="col">
 					                    <% if (user.LanguageContext == "IT") { %>
-                                            Consegna prevista
+                                            Tipo Richiesta
                                         <% } %>
                                         <% if (user.LanguageContext == "GB") { %>
-                                            Estimated delivery
+                                            Request Type
                                         <% } %>
                                         <% if (user.LanguageContext == "ES") { %>
-                                            Entrega estimada
+                                            Tipo de solicitud
 					                    <% } %>
                                         <% if (user.LanguageContext == "CN") { %>
-                                            Consegna prevista
-                                        <% } %>
-                                    </th>
-                                    <th scope="col">
-                                        Brand
-                                    </th>
-                                    <th scope="col">
-					                    <% if (user.LanguageContext == "IT") { %>
-                                            Num. Ordine
-                                        <% } %>
-                                        <% if (user.LanguageContext == "GB") { %>
-                                            Order number
-                                        <% } %>
-                                        <% if (user.LanguageContext == "ES") { %>
-                                            N&uacute;mero de orden
-					                    <% } %>
-                                        <% if (user.LanguageContext == "CN") { %>
-                                            訂單編號
+                                            請求類型
                                         <% } %>
                                     </th>
                                     <th scope="col">
 					                    <% if (user.LanguageContext == "IT") { %>
-                                            Categoria
+                                            Ambito
                                         <% } %>
                                         <% if (user.LanguageContext == "GB") { %>
-                                            Category
+                                            Scope
                                         <% } %>
                                         <% if (user.LanguageContext == "ES") { %>
-                                            Categor&iacute;a
+                                            Sector
 					                    <% } %>
                                         <% if (user.LanguageContext == "CN") { %>
-                                            類別
+                                            部門
                                         <% } %>
                                     </th>
                                     <th scope="col">
 					                    <% if (user.LanguageContext == "IT") { %>
-                                            Difficoltà
+                                            Oggetto
                                         <% } %>
                                         <% if (user.LanguageContext == "GB") { %>
-                                            Difficulty
+                                            Object
                                         <% } %>
                                         <% if (user.LanguageContext == "ES") { %>
-                                            Dificultad
+                                            Objeto
 					                    <% } %>
                                         <% if (user.LanguageContext == "CN") { %>
-                                            困難
+                                            目的
                                         <% } %>
                                     </th>
                                     <th scope="col">
 					                    <% if (user.LanguageContext == "IT") { %>
-                                            Urgenza
+                                            Descrizione
                                         <% } %>
                                         <% if (user.LanguageContext == "GB") { %>
-                                            Urgency
+                                            Description
                                         <% } %>
                                         <% if (user.LanguageContext == "ES") { %>
-                                            Dificultad
+                                            Descripci&oacute;n
 					                    <% } %>
                                         <% if (user.LanguageContext == "CN") { %>
-                                            困難
-                                        <% } %>
-                                    </th>
-                                    <th scope="col">
-					                    <% if (user.LanguageContext == "IT") { %>
-                                            Articolo
-                                        <% } %>
-                                        <% if (user.LanguageContext == "GB") { %>
-                                            Product
-                                        <% } %>
-                                        <% if (user.LanguageContext == "ES") { %>
-                                            Art&iacute;culo
-					                    <% } %>
-                                        <% if (user.LanguageContext == "CN") { %>
-                                            物品
-                                        <% } %>
-                                    </th>
-                                    <th scope="col">
-					                    <% if (user.LanguageContext == "IT") { %>
-                                            Tot. Giorni consegna
-                                        <% } %>
-                                        <% if (user.LanguageContext == "GB") { %>
-                                            Days to Delivery
-                                        <% } %>
-                                        <% if (user.LanguageContext == "ES") { %>
-                                            D&iacute;as hasta la entrega
-					                    <% } %>
-                                        <% if (user.LanguageContext == "CN") { %>
-                                            交貨天數
+                                            描述
                                         <% } %>
                                     </th>
                                     <th scope="col">
@@ -261,7 +229,7 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="result-ordini-container">
+                            <tbody class="result-richieste-assistenza-container">
                             </tbody>
                         </table>
                     </div>
@@ -280,16 +248,16 @@
                     <h5 class="modal-title f-roboto b">
                         <span class="ordine-idrecord-color px-1"></span> <span class="ordine-mode"></span><span class="ordine-reference">&nbsp;{ID                     
                         <% if (user.LanguageContext == "IT") { %>
-                        Ordine
+                        Richiesta
                         <% } %>
                         <% if (user.LanguageContext == "GB") { %>
-                        Order
+                        Request
                         <% } %>
                         <% if (user.LanguageContext == "ES") { %>
-                        Orden
+                        Pedido
                         <% } %>
                         <% if (user.LanguageContext == "CN") { %>
-                        命令
+                        要求
                         <% } %>: <span class="ordine-idrecord"></span>}</span>
                     </h5>
                     <button type="button" class="btn-close btn-cancel-processo" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -322,16 +290,16 @@
                         <% } %>
                         {ID                     
                         <% if (user.LanguageContext == "IT") { %>
-                            Ordine
+                            Richiesta
                         <% } %>
                         <% if (user.LanguageContext == "GB") { %>
-                            Order
+                            Request
                         <% } %>
                         <% if (user.LanguageContext == "ES") { %>
-                            Orden
+                            Pedido
                         <% } %>
                         <% if (user.LanguageContext == "CN") { %>
-                            命令
+                            要求
                         <% } %>: <span class="history-idrecord"></span>}
                     </h5>
                     <button type="button" class="btn-close btn-cancel-history" data-bs-dismiss="modal" aria-label="Close"></button>

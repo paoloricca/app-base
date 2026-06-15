@@ -16,6 +16,7 @@
     <script type="text/javascript" src="/logout-script"></script>
 </head>
 <body>
+    <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= user.LanguageContext %>" />
     <input type="hidden" name="IDOwner" id="IDOwner" value="<%= user.IdAttore %>" />
     <input type="hidden" name="OffsetRows" id="OffsetRows" value="0" />
     <%- include('partials/header'); %>

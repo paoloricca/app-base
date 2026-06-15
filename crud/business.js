@@ -111,6 +111,42 @@ function GetStartNode(IDProcesso, IDAttore, LanguageContext, sql) {
 
     return customPromiseGetEditors
 }
+function GetNodeEndFromTransition(IDEventoDirezione, sql) {
+
+    const sender = arguments.callee.name;
+
+    const customPromiseGetNodeEndFromTransition = new Promise((resolve, reject) => {
+        try {
+
+            var request = new sql.Request();
+
+            request.input('IDEventoDirezione', sql.Int, parseInt(IDEventoDirezione));
+            request.output('Result', sql.NVarChar(500))
+            request.output('Status', sql.NVarChar(2))
+
+            request.execute("SP_GET_NODE_END_FROM_TRANSITION", function (err, response) {
+                if (err) {
+                    reject(
+                        new exception(sender, err.message, err.name, err.stack)
+                    );
+                } else {
+                    if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+                        resolve(JSON.parse(JSON.stringify(response.output)).Result)
+                    } else {
+                        reject(
+                            new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
+                        );
+                    }
+                }
+            });
+        }
+        catch (err) {
+            reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
+        }
+    });
+
+    return customPromiseGetNodeEndFromTransition
+}
 function GetOwner(IDNode, IDRecord, IDAccount, sql) {
 
     const sender = arguments.callee.name;
@@ -335,7 +371,7 @@ function GetEditors(IDProcesso, IDNode, IDAccount, sql) {
     
     return customPromiseGetEditors
 }
-function PutFlowAccess(IDRecord, IDNode, Owner, Editors, sql) {
+function PutFlowAccess(IDRecord, IDNode, Owner, Editors, IdAccount, Note, sql) {
 
     const sender = arguments.callee.name;
 
@@ -348,6 +384,10 @@ function PutFlowAccess(IDRecord, IDNode, Owner, Editors, sql) {
             request.input('IDNode', sql.Int, parseInt(IDNode));
             request.input('Owner', sql.NVarChar(500), Owner);
             request.input('Editors', sql.NVarChar(500), Editors);
+            request.input('IdAccount', sql.Int, parseInt(IdAccount));
+            if (Note != null) {
+                request.input('AvailableNote', sql.NVarChar(500), Note);
+            }            
             request.output('Status', sql.NVarChar(500))
 
             request.execute("SP_PUT_FLOW_ACCESS", function (err, response) {
@@ -374,6 +414,7 @@ function PutFlowAccess(IDRecord, IDNode, Owner, Editors, sql) {
 }
 module.exports = {
     GetStartNode,
+    GetNodeEndFromTransition,
     GetOwner,
     GetEditors,
     PutFlowAccess,

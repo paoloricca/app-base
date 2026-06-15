@@ -78,17 +78,19 @@
                     /* Inizio gestione paginazione */
                     var ControlPagerUtenti = $('#utenti-pager');
                     var optionPager = JSON.parse(ControlPagerUtenti.attr('data-options'));
-
                     optionPager.pageIndex = eval(param.pageIndex);
                     optionPager.pageSize = param.pageSize;
-                    if (!Number.isSafeInteger((eval(TotalRecord) / eval(param.pageSize)))) {
-                        optionPager.totalPage = Math.round((eval(TotalRecord) / eval(param.pageSize)) + 1);
+
+                    if (Number.isSafeInteger(Math.round(eval(TotalRecord) / eval(param.pageSize)))) {
+                        optionPager.totalPage = Math.floor((eval(TotalRecord) / eval(param.pageSize))) + 1;
                     } else {
-                        optionPager.totalPage = Math.round(eval(TotalRecord) / eval(param.pageSize));
+                        optionPager.totalPage = eval(TotalRecord) / eval(param.pageSize);
                     }
+
                     optionPager.totalRecord = TotalRecord;
                     ControlPagerUtenti.attr('data-options', JSON.stringify(optionPager));
                     ControlPagerUtenti.paging.draw(ControlPagerUtenti);
+                    ControlPagerUtenti.find('.spinner-border').hide();
                     /* Fine gestione paginazione */
 
 

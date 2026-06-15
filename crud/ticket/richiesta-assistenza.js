@@ -5,7 +5,7 @@ const config = require('../../utils/config')
 var connection = require('../../config.db');
 const business = require('../../crud/business');
 
-function GetOrdini(myRequest) {
+function GetRichiesteAssistenza(myRequest) {
     const sender = arguments.callee.name;
 
     var myIdAttore = myRequest.IdAttore;
@@ -33,7 +33,7 @@ function GetOrdini(myRequest) {
                     request.input('NextRows', sql.Int, parseInt(myNextRows));
                     request.output('Status', sql.NVarChar(500))
 
-                    request.execute("SP_GET_ARTWORK_ORDINE_LIST", function (err, response) {
+                    request.execute("SP_GET_RICHIESTE_ASSISTENZA_LIST", function (err, response) {
                         if (err) {
                             reject(
                                 new exception(sender, err.message, err.name, err.stack)
@@ -79,7 +79,7 @@ function GetOrdini(myRequest) {
     });
     return customPromise
 }
-function DeleteOrdine(myRequest) {
+function DeleteRichiestaAssistenza(myRequest) {
 
     const sender = arguments.callee.name;
 
@@ -146,7 +146,7 @@ function DeleteOrdine(myRequest) {
     });
     return customPromise
 }
-function PostOrdine(myRequest) {
+function PostRichiestaAssistenza(myRequest) {
 
     const sender = arguments.callee.name;
 
@@ -166,7 +166,6 @@ function PostOrdine(myRequest) {
             /*
                 TODO: invio delle notifiche
             */
-
             sql.connect(connection, function (err, conn) {
                 if (err) {
                     reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
@@ -178,25 +177,25 @@ function PostOrdine(myRequest) {
                     } else {
 
                         const requestCheckArtworkOrdine = new sql.Request();
-                        requestCheckArtworkOrdine.query("SELECT COUNT(*) AS CheckArtworkOrdine FROM dbo.TArtworkOrdine WHERE IDModelloIstanza = " + myIDModelloIstanza, (err, response) => {
+                        requestCheckArtworkOrdine.query("SELECT COUNT(*) AS CheckRichiestaAssistenza FROM dbo.TRichiesteAssistenza WHERE IDModelloIstanza = " + myIDModelloIstanza, (err, response) => {
                             if (err) {
                                 RollBack(conn); reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
                             } else {
 
-                                var CheckArtworkOrdine = response.recordset[0].CheckArtworkOrdine;
-                                
-                                if (CheckArtworkOrdine == 0) {
-                                    /* 1. Registrazione nuova richiesta in tabella dbo.TArtworkOrdine */
-                                    const requestPostArtworkOrdine = new sql.Request();
-                                    requestPostArtworkOrdine.input('IDModelloIstanza', sql.Int, myIDModelloIstanza);
-                                    requestPostArtworkOrdine.input('IdAccount', sql.Int, myIdAccount);
-                                    requestPostArtworkOrdine.query("INSERT INTO TArtworkOrdine (IDModelloIstanza, IDIstanziatore) OUTPUT INSERTED.IDArtwork VALUES (@IDModelloIstanza, @IdAccount)", (err, response) => {
+                                var CheckRichiestaAssistenza = response.recordset[0].CheckRichiestaAssistenza;
+
+                                if (CheckRichiestaAssistenza == 0) {
+                                    /* 1. Registrazione nuova richiesta in tabella dbo.TRichiesteAssistenza */
+                                    const requestPostRichiestaAssistenza = new sql.Request();
+                                    requestPostRichiestaAssistenza.input('IDModelloIstanza', sql.Int, myIDModelloIstanza);
+                                    requestPostRichiestaAssistenza.input('IdAccount', sql.Int, myIdAccount);
+                                    requestPostRichiestaAssistenza.query("INSERT INTO TRichiesteAssistenza (IDModelloIstanza, IDIstanziatore) OUTPUT INSERTED.IDRichiestaAssistenza VALUES (@IDModelloIstanza, @IdAccount)", (err, response) => {
 
                                         if (err) {
                                             RollBack(conn); reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
                                         } else {
 
-                                            var IDRecord = response.recordset[0].IDArtwork;
+                                            var IDRecord = response.recordset[0].IDRichiestaAssistenza;
                                             console.log('IDRecord: ' + IDRecord);
 
                                             /* 2. Recupera il nodo di partenza del workflow */
@@ -268,17 +267,17 @@ function PostOrdine(myRequest) {
                                         }
                                     });
 
-                                    resolve(JSON.stringify("OK"));  
+                                    resolve(JSON.stringify("OK"));
                                 }
                             }
                         });
                     }
                 });
-            });            
+            });
         }
         catch (err) {
             reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
-        } 
+        }
     });
     return customPromise
 }
@@ -287,7 +286,7 @@ function RollBack(conn) {
 }
 
 module.exports = {
-    GetOrdini,
-    DeleteOrdine,
-    PostOrdine,
+    GetRichiesteAssistenza,
+    DeleteRichiestaAssistenza,
+    PostRichiestaAssistenza,
 }

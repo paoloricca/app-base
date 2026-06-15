@@ -6,6 +6,7 @@ const bodyParser = require('body-parser');
 //var requestIdModelloIstanzaRecord = require('../model/request-idmodello-istanza-record');
 //var requestIdModelloIstanza = require('../model/request-idmodello-istanza');
 var requestWorkflowActions = require('../model/request-workflow-actions');
+var requestWorkflowPost = require('../model/request-workflow-post');
 var requestWorkflowHistory = require('../model/request-workflow-history');
 var response = require('../model/response');
 const crud = require('../crud/workflow');
@@ -30,6 +31,30 @@ workflow.get('/utility-script', (req, res) => {
     const filePath = path.resolve(__dirname, '../utils/utility.js');
     res.sendFile(filePath);
 });
+workflow.post('/workflow-apply/:IdRecord', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        var myRequest = new requestWorkflowPost(
+            req.session.user.IdAttore,
+            req.session.user.IdAccount,
+            req.body.IDProcesso,
+            req.params.IdRecord,
+            req.body.IDEventoDirezione,
+            req.body.Note,
+            req.session.user.LanguageContext,            
+            req.body
+        );
+        crud.PostWorkflow(myRequest).then(listOf => {
+            res.status(200).json(
+                new response('OK', JSON.parse(listOf), null)
+            );
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
+        });
+    }
+});
 workflow.post('/workflow-action/:IdRecord', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {
         res.set('Access-Control-Allow-Origin', '*');
@@ -43,6 +68,52 @@ workflow.post('/workflow-action/:IdRecord', function (req, res) {
             req.body
         );
         crud.GetWorkflowActions(myRequest).then(listOf => {
+            res.status(200).json(
+                new response('OK', JSON.parse(listOf), null)
+            );
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
+        });
+    }
+});
+workflow.post('/workflow-transitions/:IdRecord', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        var myRequest = new requestWorkflowActions(
+            req.session.user.IdAttore,
+            req.session.user.IdAccount,
+            req.body.IdProcesso,
+            req.params.IdRecord,
+            req.body.IdProfiloUtente,
+            req.session.user.LanguageContext,            
+            req.body
+        );
+        crud.GetWorkflowTransitions(myRequest).then(listOf => {
+            res.status(200).json(
+                new response('OK', JSON.parse(listOf), null)
+            );
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
+        });
+    }
+});
+workflow.post('/workflow-has-transitions/:IdRecord', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        var myRequest = new requestWorkflowActions(
+            req.session.user.IdAttore,
+            req.session.user.IdAccount,
+            req.body.IdProcesso,
+            req.params.IdRecord,
+            req.body.IdProfiloUtente,
+            req.session.user.LanguageContext,
+            req.body
+        );
+        crud.GetHasWorkflowTransitions(myRequest).then(listOf => {
             res.status(200).json(
                 new response('OK', JSON.parse(listOf), null)
             );
@@ -75,4 +146,6 @@ workflow.post('/workflow-history/:IdRecord', function (req, res) {
         });
     }
 });
+
+
 module.exports = workflow;

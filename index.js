@@ -45,6 +45,7 @@ app.use('/', require('./route/utenti'));
 app.use('/', require('./route/processi'));
 app.use('/', require('./route/processi-azioni'));
 app.use('/', require('./route/artwork/artwork-ordine'));
+app.use('/', require('./route/ticket/richieste-assistenza'));
 
 //app.use('/', require('./route/changePassword'));
 

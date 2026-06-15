@@ -206,14 +206,17 @@ $(function () {
             var optionsPagerUtenteRisorse = JSON.parse(ControlPagerProfiloUtenteRisorse.attr('data-options'));
             optionsPagerUtenteRisorse.pageIndex = eval(param.pageIndex);
             optionsPagerUtenteRisorse.pageSize = param.pageSize;
-            if (!Number.isSafeInteger((eval(TotalRecord) / eval(param.pageSize)))) {
-                optionsPagerUtenteRisorse.totalPage = Math.round((eval(TotalRecord) / eval(param.pageSize)) + 1);
+
+            if (Number.isSafeInteger(Math.round(eval(TotalRecord) / eval(param.pageSize)))) {
+                optionsPagerUtenteRisorse.totalPage = Math.floor((eval(TotalRecord) / eval(param.pageSize))) + 1;
             } else {
-                optionsPagerUtenteRisorse.totalPage = Math.round(eval(TotalRecord) / eval(param.pageSize));
+                optionsPagerUtenteRisorse.totalPage = eval(TotalRecord) / eval(param.pageSize);
             }
+
             optionsPagerUtenteRisorse.totalRecord = TotalRecord;
             ControlPagerProfiloUtenteRisorse.attr('data-options', JSON.stringify(optionsPagerUtenteRisorse));
             ControlPagerProfiloUtenteRisorse.paging.draw(ControlPagerProfiloUtenteRisorse);
+            ControlPagerProfiloUtenteRisorse.find('.spinner-border').hide();
             /* Fine gestione paginazione */
         }).fail(function (xhr, status, errorThrown) {
         });
@@ -427,10 +430,20 @@ $(function () {
 
 
         var ControlPagerUtenti = $('#utenti-pager');
-        var optionPager = JSON.parse(ControlPagerUtenti.attr('data-options'));
-        optionPager.pageIndex = 1;
-        optionPager.pageSize = 6;
-        ControlPagerUtenti.attr('data-options', JSON.stringify(optionPager));
+
+        ControlPagerUtenti.paging({
+            pageIndex: 1,
+            pageSize: 6,
+            LanguageContext: $('#LanguageContext').val()
+        });
+
+        //var optionPager = JSON.parse(ControlPagerUtenti.attr('data-options'));
+        //optionPager.pageIndex = 1;
+        //optionPager.pageSize = 6;
+        //optionPager.LanguageContext = $('#LanguageContext').val();
+        //ControlPagerUtenti.attr('data-options', JSON.stringify(optionPager));
+
+
 
         /* re-store plugin attribute option */
         ControlUtenti.attr('data-options', JSON.stringify(options));
@@ -593,8 +606,10 @@ $(function () {
     /* Imposta le proprietà di default del plug-in */
     ControlPagerProfiloUtenteRisorse.paging({
         pageIndex: 1,
-        pageSize: 6
+        pageSize: 6,
+        LanguageContext: $('#LanguageContext').val()
     });
+
     /* Registra l'evento {Pagina precedente} */
     ControlPagerProfiloUtenteRisorse.bind(
         "prev", function () {
