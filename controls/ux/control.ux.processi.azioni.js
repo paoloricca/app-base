@@ -7,6 +7,7 @@
             IDProcessoAzione: null,
             IDProcessoParent: null,
             IdProfiloUtente: null,
+            IdEventoTransizione: null,
             Toggled: null,
             ontoggle: null,
         }, options);
@@ -17,62 +18,134 @@
             var options = JSON.parse(plugin.attr('data-options'));
 
         };
-        $.fn.processiazioni.load = function (IDProcesso, IdProfiloUtente) {
+        $.fn.processiazioni.clear = function (plugin) {
+            plugin.find('.processi-azioni-list').empty();
+        }
+        /* Carica le autorizzazioni associate al profilo-utente 
+        in uno specifico stato del workflow */
+        $.fn.processiazioni.loadFromWorkflowState = function () {
+            try {
+                var options = JSON.parse(plugin.attr('data-options'));
 
-            var options = JSON.parse(plugin.attr('data-options'));
+                $.ajax({
+                    url: "/processi-azioni-from-workflow-state/" + options.IdEventoTransizione,
+                    type: "POST",
+                    data: {
+                        IDProcesso: options.IDProcesso,
+                        IdProfiloUtente: options.IdProfiloUtente
+                    },
+                }).done(function (response) {
+                    if (response.status == "ERR") {
 
-            $.ajax({
-                url: "/processiazioni/" + IDProcesso,
-                type: "POST",
-                data: {
-                    IdProfiloUtente: IdProfiloUtente
-                },
-            }).done(function (response) {
-                if (response.status == "ERR") {
-                    ShowError(
-                        response.error.message,
-                        response.error.sender
-                    );
-                } else if (response.status == "OK") {
+                        ShowError(response.error.message,response.error.sender);
 
-                    plugin.find('.processi-azioni-list').empty();
+                    } else if (response.status == "OK") {
 
-                    $.when(
-                        $.get("/controls/ui/control.ui.processo.azione.ejs?" + Date.now(),
-                            function (templateString) {
-                            })
-                    ).then(function (templateString, textStatus, jqXHR) {
-                        $.each(response.data, function (key, processoazione) {
+                        plugin.find('.processi-azioni-list').empty();
 
-                            var partialToRender = ejs.render(templateString, { processoazione });
-                            plugin.find('.processi-azioni-list').append(partialToRender);
+                        $.when(
+                            $.get("/controls/ui/control.ui.processo.azione.ejs?" + Date.now(),
+                                function (templateString) {
+                                })
+                        ).then(function (templateString, textStatus, jqXHR) {
+                            $.each(response.data, function (key, processoazione) {
 
-                            /* raise plugin event */
-                            plugin.find('.btn-toggle-processo-azione-' + processoazione.IDProcessoAzione).click(function (e) {
-
-                                /* get plugin attribute option */
-                                var options = JSON.parse(plugin.attr('data-options'));
-
-                                /* set pluging attribute */
-                                options.IDProcesso = processoazione.IDProcesso
-                                options.IDProcessoAzione = processoazione.IDProcessoAzione
-                                options.Toggled = $(this).prop('checked');
-                                    ;
-                                /* re-store plugin attribute option */
-                                plugin.attr('data-options', JSON.stringify(options));
+                                var partialToRender = ejs.render(templateString, { processoazione });
+                                plugin.find('.processi-azioni-list').append(partialToRender);
 
                                 /* raise plugin event */
-                                $(this).trigger("ontoggle");
+                                plugin.find('.btn-toggle-processo-azione-' + processoazione.IDProcessoAzione).click(function (e) {
 
+                                    /* get plugin attribute option */
+                                    var options = JSON.parse(plugin.attr('data-options'));
+
+                                    /* set pluging attribute */
+                                    options.IDProcesso = processoazione.IDProcesso
+                                    options.IDProcessoAzione = processoazione.IDProcessoAzione
+                                    options.Toggled = $(this).prop('checked');
+                                    ;
+                                    /* re-store plugin attribute option */
+                                    plugin.attr('data-options', JSON.stringify(options));
+
+                                    /* raise plugin event */
+                                    $(this).trigger("ontoggle");
+
+                                });
                             });
+
                         });
+                    }
+                }).fail(function (xhr, status, errorThrown) {
+                }).always(function (xhr, status) {
 
-                    });
-                }
-            }).fail(function (xhr, status, errorThrown) {
-            }).always(function (xhr, status) {
+                });
 
-            });
+            }
+            catch (err) {
+                ShowError(err.message, "processiazioni.loadFromWorkflowState");
+            }
+        }
+        /* Carica le autorizzazioni associate al profilo-utente */
+        $.fn.processiazioni.load = function (IDProcesso, IdProfiloUtente) {
+            try {
+                var options = JSON.parse(plugin.attr('data-options'));
+
+                $.ajax({
+                    url: "/processiazioni/" + IDProcesso,
+                    type: "POST",
+                    data: {
+                        IdProfiloUtente: IdProfiloUtente
+                    },
+                }).done(function (response) {
+                    if (response.status == "ERR") {
+                        ShowError(
+                            response.error.message,
+                            response.error.sender
+                        );
+                    } else if (response.status == "OK") {
+
+                        plugin.find('.processi-azioni-list').empty();
+
+                        $.when(
+                            $.get("/controls/ui/control.ui.processo.azione.ejs?" + Date.now(),
+                                function (templateString) {
+                                })
+                        ).then(function (templateString, textStatus, jqXHR) {
+                            $.each(response.data, function (key, processoazione) {
+
+                                var partialToRender = ejs.render(templateString, { processoazione });
+                                plugin.find('.processi-azioni-list').append(partialToRender);
+
+                                /* raise plugin event */
+                                plugin.find('.btn-toggle-processo-azione-' + processoazione.IDProcessoAzione).click(function (e) {
+
+                                    /* get plugin attribute option */
+                                    var options = JSON.parse(plugin.attr('data-options'));
+
+                                    /* set pluging attribute */
+                                    options.IDProcesso = processoazione.IDProcesso
+                                    options.IDProcessoAzione = processoazione.IDProcessoAzione
+                                    options.Toggled = $(this).prop('checked');
+                                    ;
+                                    /* re-store plugin attribute option */
+                                    plugin.attr('data-options', JSON.stringify(options));
+
+                                    /* raise plugin event */
+                                    $(this).trigger("ontoggle");
+
+                                });
+                            });
+
+                        });
+                    }
+                }).fail(function (xhr, status, errorThrown) {
+                }).always(function (xhr, status) {
+
+                });
+            }
+            catch (err) {
+                ShowError(err.message, "processiazioni.load");
+            }
         }
         return this.each(function () {
 

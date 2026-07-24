@@ -1,4 +1,4 @@
-
+﻿
 $('#confirm-delete').on('show.bs.modal', function (e) {
 	$(this).find('.btn-ok-delete').click({
 		param1: $(e.relatedTarget).data('callback'),
@@ -11,7 +11,9 @@ $('#confirm-delete').on('show.bs.modal', function (e) {
 $('#confirm-delete').on('hide.bs.modal', function (e) {
 	$(this).find('.btn-ok-delete').off("click");
 });
-
+RedirectToLogin = function () {
+    document.location.href = "/login";
+}
 ShowError = function (message) {
 	$('.pnl-errors').html('');
 	$('.pnl-errors').text(message);
@@ -21,8 +23,30 @@ ShowError = function (message) {
 	//}, 6000);
 }
 ShowError = function (message, sender) {
-	$('.pnl-sender').html('').text(sender);
-	$('.pnl-errors').html('').text(message);
+    $('.pnl-sender').html('').text(sender);
+    $('.pnl-errors').html('').text(message);
+    $('#system-message').modal('show');
+}
+ShowErrorConn = function (LanguageContext) {
+
+    var message = '';
+
+    if (LanguageContext == 'IT') {
+        message = 'Connessione non disponibile!';
+    }
+    else if (LanguageContext == 'GB') {
+        message = 'Connection not available!';
+    }
+    else if (LanguageContext == 'ES') {
+        message = 'Conexi&oacute;n no disponible!';
+    }
+    else if (LanguageContext == '連線不可用!') {
+        message = '';
+    } else {
+        //message = 'Connessione non disponibile!';
+    }
+	$('.pnl-errors').html('');
+    $('.pnl-errors').text(message);
 	$('#system-message').modal('show');
 }
 QueryStringToJSON = function (str) {

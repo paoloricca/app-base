@@ -28,10 +28,19 @@ RichiesteAssistenza.get('/utility-script', (req, res) => {
     res.sendFile(filePath);
 });
 RichiesteAssistenza.get('/richieste-assistenza', function (req, res) {
+    var internetAvailable = require("internet-available");
+    res.set('Access-Control-Allow-Origin', '*');
     if (sessionUtil.verifyUser(req, res)) {
-        res.set('Access-Control-Allow-Origin', '*');
-        res.status(200).render('richieste-assistenza', {
-            user: req.session.user,
+        internetAvailable().then(function (conn) {
+            res.status(200).render('richieste-assistenza', {
+                user: req.session.user,
+                checkConn: true,
+            });
+        }).catch(function () {
+            res.status(200).render('richieste-assistenza', {
+                user: req.session.user,
+                checkConn: false,
+            });
         });
     }
 });
@@ -45,6 +54,8 @@ RichiesteAssistenza.post('/richieste-assistenza/richieste', function (req, res) 
             req.session.user.LanguageContext,
             req.body.pageIndex,
             req.body.pageSize,
+            req.body.filter,
+            req.body.IdWorkedOn,
             req.body
         );
         crud.GetRichiesteAssistenza(myRequest).then(listOf => {
@@ -99,7 +110,7 @@ RichiesteAssistenza.delete('/richiesta-assistenza/:IDRecord', function (req, res
             req.body
         );
 
-        crud.DeleteOrdine(myRequest).then(listOf => {
+        crud.DeleteRichiestaAssistenza(myRequest).then(listOf => {
             res.status(200).json(
                 new response('OK', JSON.stringify(listOf), null)
             );

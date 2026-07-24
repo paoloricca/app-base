@@ -60,6 +60,63 @@ function PostProcessiAzioni(myRequest) {
     });
     return customPromise
 }
+function PostProcessiAzioniFromWorkflowState(myRequest) {
+
+    const sender = arguments.callee.name;
+
+    var myIdAttore = myRequest.IdAttore;
+    var myIdAccount = myRequest.IdAccount;
+    var myIdEventoTransizione = myRequest.IdEventoTransizione
+    var myIdProcesso = myRequest.IdProcesso;
+    var myIdProfiloUtente = myRequest.IdProfiloUtente
+    var myLanguageContext = myRequest.LanguageContext;
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                } else {
+                    var request = new sql.Request();
+
+                    request.input('IdProcesso', sql.Int, parseInt(myIdProcesso));
+                    request.input('IdProfiloUtente', sql.Int, parseInt(myIdProfiloUtente));
+                    request.input('IdEventoTransizione', sql.Int, parseInt(myIdEventoTransizione));
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.output('Status', sql.NVarChar(2))
+
+                    request.execute("SP_GET_PROCESSI_AZIONI_FROM_WORKFLOW_STATE", function (err, response) {
+                        if (err) {
+                            reject(
+                                JSON.stringify(new exception(sender, err.message, err.name, err.stack))
+                            );
+                        } else {
+                            var myResponse = JSON.stringify(response);
+
+                            if (JSON.parse(myResponse).recordset.length > 0) {
+
+                                var resultData = JSON.parse(myResponse).recordset;
+
+                                resolve(JSON.stringify(resultData));
+
+                            } else {
+                                resolve(JSON.stringify(""));
+                            }
+                        }
+                    });
+                }
+            })
+        }
+        catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+    return customPromise
+}
 function PostProcessiAzioniPrimary(myRequest) {
 
     const sender = arguments.callee.name;
@@ -106,6 +163,66 @@ function PostProcessiAzioniPrimary(myRequest) {
 
                             } else {
                                 resolve(JSON.stringify(""));
+                            }
+                        }
+                    });
+                }
+            })
+        }
+        catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+    return customPromise
+}
+function PostEventiTransizioniAzioni(myRequest) {
+
+    const sender = arguments.callee.name;
+
+    var myIdAttore = myRequest.IdAttore;
+    var myIdAccount = myRequest.IdAccount;
+    var myIdGruppoOperativo = myRequest.IdGruppoOperativo;
+    var myIdProfiloUtente = myRequest.IdProfiloUtente;
+    var myIdProcesso = myRequest.IdProcesso;
+    var myIdProcessoAzione = myRequest.IdProcessoAzione;
+    var myIdEventoTransizione = myRequest.IdEventoTransizione;
+    var myToggled = myRequest.Toggled
+    var myLanguageContext = myRequest.LanguageContext;
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                } else {
+                    var request = new sql.Request();
+
+                    request.input('IdAttore', sql.Int, parseInt(myIdAttore));
+                    request.input('IdGruppoOperativo', sql.Int, parseInt(myIdGruppoOperativo));
+                    request.input('IdProfiloUtente', sql.Int, parseInt(myIdProfiloUtente));
+                    request.input('IdProcesso', sql.Int, parseInt(myIdProcesso));
+                    request.input('IdProcessoAzione', sql.Int, parseInt(myIdProcessoAzione));
+                    request.input('IdEventoTransizione', sql.Int, parseInt(myIdEventoTransizione));
+                    request.input('Toggled', sql.NVarChar(50), myToggled);
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.output('Status', sql.NVarChar(500))
+
+                    request.execute("SP_POST_EVENTI_TRANSIZIONI_AZIONI", function (err, response) {
+                        if (err) {
+                            reject(
+                                new exception(sender, err.message, err.name, err.stack)
+                            );
+                        } else {
+                            if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+                                resolve(JSON.stringify('OK'));
+                            } else {
+                                reject(
+                                    new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
+                                );
                             }
                         }
                     });
@@ -233,5 +350,7 @@ module.exports = {
     PostProcessiAzioni,
     PostProfiliUtenteAbilitazioni,
     DeleteProfiliUtenteAbilitazioni,
-    PostProcessiAzioniPrimary
+    PostProcessiAzioniPrimary,
+    PostProcessiAzioniFromWorkflowState,
+    PostEventiTransizioniAzioni
 }

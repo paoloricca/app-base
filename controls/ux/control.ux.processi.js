@@ -6,6 +6,7 @@
             IDProcessoParent: null,
             Descrizione: null,
             onselect: null,
+            onworkflow: null,
         }, options);
 
         var plugin = $(this);
@@ -66,6 +67,10 @@
 
                                 /* raise event */
                                 $(this).trigger("onselect");
+
+                                if (processo.HasWorkflow == 1) {
+                                    $(this).trigger("onworkflow");
+                                }
 
                                 if ($(this).parent().parent().find('div[class*=-container]').length > 0) {
                                     $(this).parent().parent().find('div[class*=-container]').remove();

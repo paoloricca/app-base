@@ -4,9 +4,9 @@
     "Description_GB": "Request ID",
     "Description_ES": "Identificaci&oacute;n",
     "Description_CN": "ID 要求",
-    "DataType": "1",
-    "ColumnName": "IdRecord",
-    "maxlength": ""
+    "DataType": "2",
+    "ColumnName": "IDRichiestaAssistenza",
+    "maxlength": 8
   },
   {
     "Description_IT": "Data Richiesta",
@@ -14,16 +14,49 @@
     "Description_ES": "Fecha solicitada",
     "Description_CN": "要求的日期",
     "DataType": "4",
-    "ColumnName": "DataRegistrazione",
-    "maxlength": ""
+    "ColumnName": "DataIstanza",
+    "maxlength": null
   },
   {
-    "Description_IT": "Stato",
-    "Description_GB": "State",
-    "Description_ES": "Estado",
-    "Description_CN": "狀態",
-    "DataType": "2",
-    "ColumnName": "Stato",
-    "maxlength": ""
+    "Description_IT": "Ho applicato lo stato",
+    "Description_GB": "I applied the status",
+    "Description_ES": "Apliqu&eacute; el estado",
+    "Description_CN": "我應用了該狀態",
+    "DataType": "-1",
+    "ColumnName": "vOwnerWorked_OwnerWorked",
+    "maxlength": null,
+    "IdProcesso": "76"
+  },
+  {
+    "Description_IT": "Stato attuale",
+    "Description_GB": "Current status",
+    "Description_ES": "Estado actual",
+    "Description_CN": "目前狀態",
+    "DataType": "0",
+    "ColumnName": "vStato_IdEventoTransizione",
+    "maxlength": null,
+    "IdProcesso": "76"
+  },
+  {
+    "Description_IT": "Tipo Richiesta",
+    "Description_GB": "Request Type",
+    "Description_ES": "Tipo de solicitud",
+    "Description_CN": "請求類型",
+    "DataType": "6",
+    "ColumnName": "MCAV_770",
+    "maxlength": null,
+    "IdProcesso": "76",
+    "IdAttributo": "770"
+  },
+  {
+    "Description_IT": "Ambito",
+    "Description_GB": "Scope",
+    "Description_ES": "Sector",
+    "Description_CN": "部門",
+    "DataType": "6",
+    "ColumnName": "MCAV_771",
+    "maxlength": null,
+    "IdProcesso": "76",
+    "IdAttributo": "771"
   }
 ]

@@ -36,8 +36,10 @@
     <%- include('partials/header'); %>
     <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= user.LanguageContext %>" />
     <input type="hidden" name="user" id="user" value="<%= JSON.stringify(user) %>" />
+    <input type="hidden" name="checkConn" id="checkConn" value="<%= checkConn %>" />
     <div class="container-fluid p-0 px-4">
         <h4 class="p-0">
+            <span class="bi bi-headset" style="font-size:2rem;"></span>
             <b class="f-roboto b">
 		        <% if (user.LanguageContext == "IT") { %>
                     Richieste di assistenza
@@ -52,38 +54,74 @@
                     請求協助
                 <% } %>
             </b>
-            <span class="bi bi-box-seam" style="font-size:2rem;"></span>
         </h4>
     </div>
     <div class="container-fluid h-75" style="display:block; position:absolute; height:78% !important; margin-top:0 !important;">
-        <div class="col-xs-2 p-0 h-100 filtro-container">
+        <div class="col-lg-3 col-md-3 col-sm-3 p-0 h-100 filtro-container">
             <div class="panel panel-default h-100 p-0">
-                <div class="panel-heading p-3 f-roboto">
-                    <b>
-						<% if (user.LanguageContext == "IT") { %>
-                            Filtro di ricerca
-                        <% } %>
-                        <% if (user.LanguageContext == "GB") { %>
-                            Search filter
-                        <% } %>
-                        <% if (user.LanguageContext == "ES") { %>
-                            Filtro de investigaci&oacute;n
-						<% } %>
-                        <% if (user.LanguageContext == "CN") { %>
-                            搜尋過濾器
-                        <% } %>
-                    </b>
+                <div class="panel-heading p-2 f-roboto">
                     <button type="button" class="btn btn-light bi bi-arrow-left rounded-circle float-end btn-30 btn-filter-close"
                         data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<% if (user.LanguageContext == "IT") { %>Nascondi Filtro<% } %><% if (user.LanguageContext == "GB") { %>Hide Filter<% } %><% if (user.LanguageContext == "ES") { %>Ocultar filtro<% } %><% if (user.LanguageContext == "CN") { %>隱藏過濾器<% } %>">
                     </button>
+                    <ul class="nav nav-tabs" id="stepTab" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="1step-tab" data-bs-toggle="tab" data-bs-target="#1step">
+                                Dashboard
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="2step-tab" data-bs-toggle="tab" data-bs-target="#2step">
+						        <% if (user.LanguageContext == "IT") { %>
+                                    Filtro di ricerca
+                                <% } %>
+                                <% if (user.LanguageContext == "GB") { %>
+                                    Search filter
+                                <% } %>
+                                <% if (user.LanguageContext == "ES") { %>
+                                    Filtro de investigaci&oacute;n
+						        <% } %>
+                                <% if (user.LanguageContext == "CN") { %>
+                                    搜尋過濾器
+                                <% } %>
+                            </button>
+                        </li>
+                        <li>
+                    </ul>
                 </div>
-                <div class="panel-body h-100 p-2 f-roboto">
-                    <div id="filtro-richieste-assistenza-container" style="overflow-y:auto; height:90%;">
+                <div class="panel-body p-2">
+
+                    <div class="tab-content mt-3" id="stepTabContent">
+                        <div class="tab-pane show active" id="1step">
+                            <div id="myChart-container" style="height: 250px">
+                                <canvas id="myChart" width="250" height="250"></canvas>
+                            </div>
+                        </div>
+                        <div class="tab-pane" id="2step">
+                            <div id="filtro-richieste-assistenza-container" style="overflow-y:auto; height:90%;">
+                            </div>
+                            <div class="p-3 pt-4">
+						        <button type="button" class="btn btn-md btn-secondary text-white w-100 btn-filter-apply">
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Cerca
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Search
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Buscar
+			                        <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        靠近
+                                    <% } %>
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </div>
-        <div class="col-xs-10 p-0 h-100 px-2 result-container">
+        <div class="col-lg-9 col-md-9 col-sm-9 p-0 h-100 px-2 result-container">
             <div class="panel panel-default h-100 p-0">
                 <div class="panel-heading p-3 f-roboto">
                     <b>
@@ -196,7 +234,7 @@
                                             目的
                                         <% } %>
                                     </th>
-                                    <th scope="col">
+                                    <th scope="col" class="hidden-sm hidden-md">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             Descrizione
                                         <% } %>
@@ -212,16 +250,16 @@
                                     </th>
                                     <th scope="col">
 					                    <% if (user.LanguageContext == "IT") { %>
-                                            Stato
+                                            Stato attuale
                                         <% } %>
                                         <% if (user.LanguageContext == "GB") { %>
-                                            State
+                                            Current status
                                         <% } %>
                                         <% if (user.LanguageContext == "ES") { %>
-                                            Estado
+                                            Estado actual
 					                    <% } %>
                                         <% if (user.LanguageContext == "CN") { %>
-                                            狀態
+                                            目前狀態
                                         <% } %>
                                     </th>
                                     <th scope="col">

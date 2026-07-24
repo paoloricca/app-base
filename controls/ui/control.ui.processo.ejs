@@ -1,9 +1,12 @@
 <div class="processo-<%= processo.IDProc %>-container">
     <div class="col-xs-12 p-0 process-bg" style>
-        <div class="col-xs-12 p-0 text-start btn btn-processo-<%= processo.IDProc %>">
+        <div class="col-xs-12 p-1 text-start btn btn-processo-<%= processo.IDProc %>">
             <a class="text-start btn p-0 text-secondary f-roboto" data-idprocesso="<%= processo.IDProc %>">
                 <%= processo.Description %>
             </a>
+            <% if (processo.HasWorkflow) { %>
+                <i class="bi bi-bezier2" style="float: right; margin-right: 4px;"></i>
+            <% } %>
         </div>
     </div>
 </div>

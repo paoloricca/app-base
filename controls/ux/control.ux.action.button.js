@@ -48,8 +48,7 @@
                         response.error.sender
                     );
                 } else if (response.status == "OK") {
-
-                    if (response.data != "" && response.data[0].IDProcesso != null) {
+                    if (response.data != "" && response.data[0].IdProcesso != null) {
                         /* set action visibility */
                         optionsActionButton.IsVisible = true;
                         optionsActionButton.Description = response.data[0].Description;

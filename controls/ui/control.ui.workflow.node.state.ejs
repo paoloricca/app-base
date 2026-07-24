@@ -1,0 +1,4 @@
+<a id="state-<%= state.IdEventoTransizione %>" data-id="<%= state.IdEventoTransizione %>" data-desc="<%= state.Descrizione %>" class="col-xs-12 btn m-0 p-1 px-2 text-start node-state <% if (optionsWorkflow.SelectedState != null && optionsWorkflow.SelectedState == state.IdEventoTransizione) { %>border radius-16<% } %>">
+	<!--input <% if (optionsWorkflow.SelectedState != null && optionsWorkflow.SelectedState == state.IdEventoTransizione) { %> checked="checked" <% } %> type="radio" id="state-<%= state.IdEventoTransizione %>" name="workflow-transitions" value="<%= state.IdEventoTransizione %>" -->
+	<h6 class="p-0 m-1"><i class="bi bi-circle-fill" style="color:<%= state.HexColor %>"></i>&nbsp;&nbsp;<span class="<% if (optionsWorkflow.SelectedState != null && optionsWorkflow.SelectedState == state.IdEventoTransizione) { %>active <% } %>text-secondary text-xs"><%= state.Descrizione %></label></h6>
+</a>

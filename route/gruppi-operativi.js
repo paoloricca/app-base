@@ -2,6 +2,7 @@ const express = require('express');
 const gruppiOperativi = express.Router();
 const bodyParser = require('body-parser');
 var request = require('../model/request-gruppi-operativi');
+var requestGruppiOperativiList = require('../model/request-gruppi-operativi-list');
 var response = require('../model/response');
 const crud = require('../crud/gruppi-operativi');
 const fs = require('fs');
@@ -210,6 +211,27 @@ gruppiOperativi.get('/gruppi-operativi/:idgruppooperativo', function (req, res) 
                     IdGruppoOperativoParent: req.params.idgruppooperativo
                 });
             });
+        });
+    }
+});
+gruppiOperativi.get('/gruppi-operativi-list/:idgruppooperativo', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        var myRequest = new requestGruppiOperativiList(
+            req.session.user.IdAttore,
+            req.session.user.IdAccount,
+            req.params.idgruppooperativo,
+            req.session.user.LanguageContext,
+            req.body
+        );
+        crud.GetGruppiOperativiList(myRequest).then(listOf => {
+            res.status(200).json(
+                new response('OK', JSON.parse(listOf), null)
+            );
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
         });
     }
 });

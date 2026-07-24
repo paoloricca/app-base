@@ -326,7 +326,6 @@ $(function () {
         }).always(function (xhr, status) {
         });
     }
-
     $('.gruppo-operativo-btn-ok').click(function () {
         
         var isvalidform = true;
@@ -654,6 +653,7 @@ $(function () {
         });
     /* Renderizza il plug-in <processi> */
     ControlProcessi.processi.load();
+
 
 
     /* inizializza il controllo processi azioni */

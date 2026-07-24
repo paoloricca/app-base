@@ -1,0 +1,755 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Web APP DC - Workflow</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%- include('partials/head'); %>
+    <%- include('partials/confirm-delete'); %>
+    <script type="text/javascript" src="/control-utenti-script"></script>
+    <script type="text/javascript" src="/processi-script"></script>
+    <script type="text/javascript" src="/control-culture-textbox-script"></script>
+    <script type="text/javascript" src="/control-confirm-delete-script"></script>
+    <script type="text/javascript" src="/control-processi-script"></script>
+    <script type="text/javascript" src="/control-processi-azioni-script"></script>
+    <script type="text/javascript" src="/control-pager-script"></script>
+    <script type="text/javascript" src="/control-workflow-node-states-script"></script>
+    <script type="text/javascript" src="/control-profili-utente-script"></script>
+    <script type="text/javascript" src="/control-gruppi-operativi-script"></script>
+    <script type="text/javascript" src="/utility-script"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape/dist/cytoscape.min.js"></script>
+    <script type="text/javascript" src="/workflow-script"></script>
+    <script type="text/javascript" src="/logout-script"></script>
+</head>
+<body>
+    <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= user.LanguageContext %>" />
+    <input type="hidden" name="IDOwner" id="IDOwner" value="<%= user.IdAttore %>" />
+    <input type="hidden" name="OffsetRows" id="OffsetRows" value="0" />
+    <%- include('partials/header'); %>
+    <div class="container-fluid p-0 px-4">
+
+        <h4 class="p-0">
+            <span class="bi bi-bezier2" style="font-size:2rem;"></span>&nbsp;
+            <span class="f-roboto b">Workflow</span>
+            <span class="badge" style="background-color:orange;"></span>
+        </h4>
+
+
+
+<!--div id="toolbar" class="d-flex flex-column align-items-center pt-2">
+
+    <button class="btn btn-dark" title="Nuovo stato">
+        <i class="bi bi-circle fs-4"></i>
+    </button>
+
+    <button class="btn btn-dark" title="Nuova transizione">
+        <i class="bi bi-arrow-right fs-4"></i>
+    </button>
+
+    <button class="btn btn-dark" title="Elimina">
+        <i class="bi bi-trash fs-4"></i>
+    </button>
+
+    <hr class="text-secondary w-75">
+
+    <button class="btn btn-dark">
+        <i class="bi bi-download fs-4"></i>
+    </button>
+
+    <button class="btn btn-dark">
+        <i class="bi bi-upload fs-4"></i>
+    </button>
+
+</div-->
+
+
+        <div class="col-xs-6 p-0 h-100">
+            <div class="panel panel-default h-100 p-0">
+                <div class="panel-heading p-3 f-roboto">
+                    <b>Processi</b>
+                </div>
+                <div class="panel-body h-100 p-2 f-roboto">
+                    <div id="processi-container" style="overflow-y:auto; height:90%;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="container-workflow" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title f-roboto b">
+                            Workflow
+                        </h4>
+                        <button type="button" class="btn-close btn-cancel-container-workflow" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <span class="spinner-border text-info mt-3 spinner-workflow" role="status" style="display:none; position:absolute; left:50%;"></span>
+                        <div id="tooltip"></div>
+                        <div id="cy" style="width:100%; height: 700px; border:1px solid #e3e3e3; z-index:1000; border-radius: 2px;"></div>
+                        <button type="button" class="btn btn-primary rounded-circle glyphicon glyphicon-plus btn-workflow-states-new"
+                            style="width:34px; height:34px; padding:0; margin:10px; left:20px; top:20px; position: absolute; z-index:1000;">
+                        </button>
+                        <button class="btn btn-default bi bi-printer workflow-stampa" style="margin:10px; left:60px; top:20px; position: absolute; z-index:1000;"></button>
+                        <button class="btn btn-default bi bi-download workflow-download" style="margin:10px; left:105px; top:20px; position: absolute; z-index:1000;"></button>
+                        <div id="context-menu-node">
+                            <input type="hidden" class="node" />
+                            <input type="hidden" id="IdEventoTransizione" />
+                            <input type="hidden" id="DescTransizione" />
+                            <h6 class="col-xs-12 p-0 px-2 f-roboto-b text-primary context-menu-node-header"></h6>
+                            <button type="button" class="btn-close btn-xs btn-cancel-context-menu-node"></button>
+                            <h6 class="col-xs-12 p-0 m-0"><div class="divider"></div></h6>
+                            <span class="col-xs-12 p-0 px-2 workflow-set-owner">
+                                <i class="bi bi-person-gear"></i>&nbsp;&nbsp;
+		                        <% if (user.LanguageContext == "IT") { %>
+                                    Imposta owner
+                                <% } %>
+                                <% if (user.LanguageContext == "GB") { %>
+                                    Set owner
+                                <% } %>
+                                <% if (user.LanguageContext == "ES") { %>
+                                    Establecer propietario
+		                        <% } %>
+                                <% if (user.LanguageContext == "CN") { %>
+                                    設定所有者
+                                <% } %>
+                            </span>
+                            <span class="col-xs-12 p-0 px-2 workflow-set-auth">
+                                <i class="bi bi-person-lock"></i>&nbsp;&nbsp;
+		                        <% if (user.LanguageContext == "IT") { %>
+                                    Imposta autorizzazioni
+                                <% } %>
+                                <% if (user.LanguageContext == "GB") { %>
+                                    Set permissions
+                                <% } %>
+                                <% if (user.LanguageContext == "ES") { %>
+                                    Establecer permisos
+		                        <% } %>
+                                <% if (user.LanguageContext == "CN") { %>
+                                    設定權限
+                                <% } %>
+                            </span>
+                            <span class="col-xs-12 p-0 px-2 workflow-set-rel">
+                                <i class="bi bi-link-45deg"></i>&nbsp;&nbsp;
+		                        <% if (user.LanguageContext == "IT") { %>
+                                    Collega stato
+                                <% } %>
+                                <% if (user.LanguageContext == "GB") { %>
+                                    Link node
+                                <% } %>
+                                <% if (user.LanguageContext == "ES") { %>
+                                    Establecer permisos
+		                        <% } %>
+                                <% if (user.LanguageContext == "CN") { %>
+                                    設定權限
+                                <% } %>
+                            </span>
+                            <span class="col-xs-12 p-0 px-2 workflow-set-node">
+                                <i class="bi bi-pencil"></i>&nbsp;&nbsp;
+		                        <% if (user.LanguageContext == "IT") { %>
+                                    Modifica
+                                <% } %>
+                                <% if (user.LanguageContext == "GB") { %>
+                                    Edit
+                                <% } %>
+                                <% if (user.LanguageContext == "ES") { %>
+                                    Editar
+		                        <% } %>
+                                <% if (user.LanguageContext == "CN") { %>
+                                    編輯
+                                <% } %>
+                            </span>
+                            <span class="col-xs-12 p-0 px-2 workflow-del-node">
+                                <i class="bi bi-trash"></i>&nbsp;&nbsp;
+		                        <% if (user.LanguageContext == "IT") { %>
+                                    Elimina
+                                <% } %>
+                                <% if (user.LanguageContext == "GB") { %>
+                                    Delete
+                                <% } %>
+                                <% if (user.LanguageContext == "ES") { %>
+                                    Borrar
+		                        <% } %>
+                                <% if (user.LanguageContext == "CN") { %>
+                                    刪除
+                                <% } %>
+                            </span>
+                        </div>
+
+                        <div id="context-menu-link">
+                            <input type="hidden" class="transition" />
+                            <input type="hidden" id="IDEventoDirezione" />
+                            <input type="hidden" id="DescDirezione" />
+                            <h6 class="col-xs-12 p-0 px-2 f-roboto-b text-primary context-menu-link-header"></h6>
+                            <button type="button" class="btn-close p-2 btn-xs btn-cancel-context-menu-link"></button>
+                            <h6 class="col-xs-12 p-0 m-0"><div class="divider"></div></h6>
+                            <span class="col-xs-12 p-0 px-2 workflow-set-link">
+                                <i class="bi bi-link-45deg"></i>&nbsp;&nbsp;
+		                        <% if (user.LanguageContext == "IT") { %>
+                                    Imposta collegamento
+                                <% } %>
+                                <% if (user.LanguageContext == "GB") { %>
+                                    Edit link
+                                <% } %>
+                                <% if (user.LanguageContext == "ES") { %>
+                                    Establecer enlace
+		                        <% } %>
+                                <% if (user.LanguageContext == "CN") { %>
+                                    設定連結
+                                <% } %>
+                            </span>
+                            <span class="col-xs-12 p-0 px-2 workflow-del-link">
+                                <i class="bi bi-trash"></i>&nbsp;&nbsp;
+		                        <% if (user.LanguageContext == "IT") { %>
+                                    Elimina
+                                <% } %>
+                                <% if (user.LanguageContext == "GB") { %>
+                                    Delete
+                                <% } %>
+                                <% if (user.LanguageContext == "ES") { %>
+                                    Borrar
+		                        <% } %>
+                                <% if (user.LanguageContext == "CN") { %>
+                                    刪除
+                                <% } %>
+                            </span>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" data-bs-dismiss="modal" class="btn btn-default btn-cancel-container-workflow">Annulla</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="container-workflow-set-owner" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary">
+                            <i class="bi bi-person-gear"></i>&nbsp;
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Imposta owner
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Set owner
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Establecer propietario
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                設定所有者
+                            <% } %> <span class="text-dark">(<span class="container-workflow-set-owner-header f-roboto b"></span>)</span>
+                        </h5>
+                        <span class="spinner-border text-info mt-3 spinner-node-workflow-owner" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
+                        <button type="button" class="btn-close btn-cancel-container-workflow-set-owner" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <!-- TODO: traduzione -->
+                    <div class="modal-body">
+                        <div class="container-fluid p-0">
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsCreator" name="rb-IsCreator">
+                                &nbsp; Utente che ha creato l'oggetto
+                            </div>
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsAdminOfCreator" name="rb-IsAdminOfCreator">
+                                &nbsp; Responsabile dell'utente che ha creato l'oggetto
+                            </div>
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input type="hidden" id="IsAdminOwnerSelectedNode_Id" />
+                                <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsAdminOwnerSelectedNode" name="rb-IsAdminOwnerSelectedNode">
+                                &nbsp; Responsabile del proprietario dello stato <span id="IsAdminOwnerSelectedNode_Desc"></span>
+                                <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-admin-ownwer-selected-node"></i>
+                            </div>
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input type="hidden" id="IsOwnerSelectedNode_Id" />
+                                <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsOwnerSelectedNode" name="rb-IsOwnerSelectedNode">
+                                &nbsp; Proprietario dello stato <span id="IsOwnerSelectedNode_Desc"></span>
+                                <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-ownwer-selected-node"></i>
+                            </div>
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input type="hidden" id="IsCreatorSelectedNode_Id" />
+                                <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsCreatorSelectedNode" name="rb-IsCreatorSelectedNode">
+                                &nbsp; Utente che ha registrato lo stato <span id="IsCreatorSelectedNode_Desc"></span>
+                                <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-creator-selected-node"></i>
+                            </div>
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input type="hidden" id="IsSelectedProfile_Id" />
+                                <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsSelectedProfile" name="rb-IsSelectedProfile">
+                                &nbsp; Utenti del profilo <span id="IsSelectedProfile_Desc"></span>
+                                <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-selected-profile"></i>
+                            </div>
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsUsersFromAdminProfileCreator" name="rb-IsUsersFromAdminProfileCreator">
+                                &nbsp; Utenti del profilo associato all'utente che ha creato l'oggetto
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary btn-confirm-container-workflow-set-owner">
+                            OK
+                        </button>
+                        <button type="button" data-bs-dismiss="modal" class="btn btn-default btn-cancel-container-workflow-set-owner">
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Annulla
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Cancel
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Cancelar
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                取消
+                            <% } %>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="container-workflow-set-link" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary">
+                        <i class="bi bi-link-45deg"></i>&nbsp;
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Imposta collegamento
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Edit link
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Establecer enlace
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                設定連結
+                            <% } %> <span class="text-dark">(<span class="container-workflow-set-link-header f-roboto b"></span>)</span>
+                        </h5>
+                        <span class="spinner-border text-info mt-3 spinner-node-workflow-link" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
+                        <button type="button" class="btn-close btn-cancel-container-workflow-set-link" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+
+                        <div class="col-xs-12 p-0">
+
+                            <form name="frmWorkflowSetLink" class="was-validated" novalidate>
+
+                                <div class="container-control-culture-textbox-codice"></div>
+                                <div class="container-control-culture-textbox-descrizione"></div>
+                                
+                                <div class="col-xs-12 p-0 form-switch">
+                                    <input class="form-check-input float-left btn-toggle-link m-2" type="checkbox" id="rb-is-available-note" name="rb-is-available-note">
+                                    <span class="h6 float-left text-decoration-none text-secondary f-roboto" data-idprocessoazione="">
+                                        Abilita inserimento testo
+                                    </span>
+                                </div>
+                                <div class="col-xs-12 p-0 form-switch">
+                                    <input class="form-check-input float-left btn-toggle-link m-2" type="checkbox" id="rb-required-confirmation" name="rb-required-confirmation">
+                                    <span class="h6 float-left text-decoration-none text-secondary f-roboto" data-idprocessoazione="">
+                                        Abilita richiesta conferma
+                                    </span>
+                                </div>
+                            </form>
+
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary btn-confirm-container-workflow-set-link">
+                            OK
+                        </button>
+                        <button type="button" data-bs-dismiss="modal" class="btn btn-default btn-cancel-container-workflow-set-link">
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Annulla
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Cancel
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Cancelar
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                取消
+                            <% } %>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="container-workflow-set-node" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary">
+                        <i class="bi bi-link-45deg"></i>&nbsp;
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Modifica
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Edit
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Editar
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                編輯
+                            <% } %> <span class="text-dark">(<span class="container-workflow-set-node-header f-roboto b"></span>)</span>
+                        </h5>
+                        <span class="spinner-border text-info mt-3 spinner-workflow-set-node" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
+                        <button type="button" class="btn-close btn-cancel-container-workflow-set-node" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="col-xs-12 p-0">
+                            <form name="frmWorkflowSetNode" class="was-validated" novalidate>
+                                <div class="container-control-workflow-set-node-codice"></div>
+                                <div class="container-control-workflow-set-node-descrizione"></div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary btn-confirm-container-workflow-set-node">
+                            OK
+                        </button>
+                        <button type="button" data-bs-dismiss="modal" class="btn btn-default btn-cancel-container-workflow-set-node">
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Annulla
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Cancel
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Cancelar
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                取消
+                            <% } %>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="container-workflow-set-profilo-utente" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalProcessi">
+            <div class="modal-dialog modal-dialog-centered modal-lg h-50">
+                <div class="modal-content h-75" style="margin-top:-7% !important; height:75% !important;">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary">
+                            <i class="bi bi-gear"></i>&nbsp;
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Seleziona profilo utente
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Select user profile
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Seleccionar perfil de usuario
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                選擇用戶資料
+                            <% } %>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-container-workflow-set-profilo-utente" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-1 pt-1" style="overflow-y:hidden;">
+                        <div class="col-xs-6 p-0 h-100">
+                            <div class="panel panel-default h-100 p-0">
+                                <div class="panel-heading p-3 f-roboto">
+                                    <b>
+		                                <% if (user.LanguageContext == "IT") { %>
+                                            Gruppi di lavoro
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Working groups
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Grupos de trabajo
+		                                <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            工作小組
+                                        <% } %>
+                                    </b>
+                                </div>
+                                <div class="panel-body h-100 p-2 f-roboto">
+                                    <div id="gruppi-operativi-container" style="overflow-y:auto; height:90%;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-6 p-0 h-100 px-1">
+                            <div class="panel panel-default h-100 p-0">
+                                <div class="panel-heading p-3 f-roboto">
+                                    <b>
+		                                <% if (user.LanguageContext == "IT") { %>
+                                            Profili utente
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            User profiles
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Perfiles de usuario
+		                                <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            使用者資料
+                                        <% } %>
+                                        <span class="profili-utente-text"></span>
+                                    </b>
+                                </div>
+                                <div class="panel-body h-100 p-2 f-roboto">
+                                    <div id="profili-utente-container" style="overflow-y:auto; height:90%;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default btn-close-processi" data-bs-dismiss="modal">
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Annulla
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Cancel
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Cancelar
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                取消
+                            <% } %>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="container-workflow-node-link" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered h-50" role="document">
+                <div class="modal-content h-50">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary">
+                            <i class="bi bi-link-45deg"></i>
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Collega stato
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Set link
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Colega el estado
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                連線狀態
+                            <% } %>
+                        </h5>
+                        <span class="text-dark">&nbsp;(<span class="container-workflow-node-link-header f-roboto b"></span>)</span>
+                        <button type="button" class="btn-close btn-cancel-container-workflow-node-link" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6 class="f-roboto text-secondary p-0 m-0"><i class="bi bi-question-circle"></i>&nbsp; 
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Collega allo stato selezionato
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Link to the selected state
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Enlace al estado seleccionado
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                指向所選狀態的連結
+                            <% } %>
+                        </h6>
+                        <div class="divider mt-3 mb-3"></div>
+                        <div class="control-workflow-node-link h-75" style="width:96%; overflow-y:scroll; position:absolute;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="container-workflow-node-states" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary">
+                            <i class="bi bi-gear"></i>&nbsp;
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Seleziona stato
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Select state
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Seleccione el estado
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                選擇州
+                            <% } %>
+                        </h5>
+                        <button type="button" class="btn-close btn-cancel-container-workflow-node-states" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="control-workflow-node-states"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal" id="container-workflow-set-auth" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalProcessi">
+            <div class="modal-dialog modal-dialog-centered modal-lg h-50">
+                <div class="modal-content h-75" style="margin-top:-7% !important; height:75% !important;">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary">
+                            <i class="bi bi-gear"></i>&nbsp;
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Imposta autorizzazioni
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Set permissions
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Establecer permisos
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                設定權限
+                            <% } %> <span class="text-dark">(<span class="container-workflow-set-auth-header f-roboto b"></span>)</span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-container-workflow-set-auth" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-1 pt-1" style="overflow-y:hidden;">
+                        <div class="col-xs-4 p-0 h-100">
+                            <div class="panel panel-default h-100 p-0">
+                                <div class="panel-heading p-1 px-2 f-roboto">
+                                    <b>
+		                                <% if (user.LanguageContext == "IT") { %>
+                                            Gruppi di lavoro
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Working groups
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Grupos de trabajo
+		                                <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            工作小組
+                                        <% } %>
+                                    </b>
+                                </div>
+                                <div class="panel-body h-100 p-2 f-roboto">
+                                    <div id="auth-gruppi-operativi-container" style="overflow-y:auto; height:90%;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 p-0 h-100 px-1">
+                            <div class="panel panel-default h-100 p-0">
+                                <div class="panel-heading p-1 px-2 f-roboto">
+                                    <b>
+		                                <% if (user.LanguageContext == "IT") { %>
+                                            Profili utente
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            User profiles
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Perfiles de usuario
+		                                <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            使用者資料
+                                        <% } %>
+                                        <span class="auth-profili-utente-text"></span>
+                                    </b>
+                                </div>
+                                <div class="panel-body h-100 p-2 f-roboto">
+                                    <div id="auth-profili-utente-container" style="overflow-y:auto; height:90%;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-4 p-0 h-100 px-1">
+                            <div class="panel panel-default h-100 p-0">
+                                <div class="panel-heading p-1 px-2 f-roboto">
+                                    <b>
+		                                <% if (user.LanguageContext == "IT") { %>
+                                            Autorizzazioni
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Permissions
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Permisos
+		                                <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            授權
+                                        <% } %>
+                                        <span class="auth-autorizzazioni-text"></span>
+                                    </b>
+                                </div>
+                                <div class="panel-body h-100 p-2 f-roboto">
+                                    <div id="auth-autorizzazioni-container" style="overflow-y:auto; height:90%;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default btn-close-container-workflow-set-auth" data-bs-dismiss="modal">
+		                    <% if (user.LanguageContext == "IT") { %>
+                                Annulla
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Cancel
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Cancelar
+		                    <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                取消
+                            <% } %>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="container-confirm-delete-workflow-link"></div>
+        <div id="container-confirm-delete-workflow-state"></div>
+
+        <LabelCodice style="display: none;">
+		    <% if (user.LanguageContext == "IT") { %>
+                Codice
+            <% } %>
+            <% if (user.LanguageContext == "GB") { %>
+                Code
+            <% } %>
+            <% if (user.LanguageContext == "ES") { %>
+                C&oacute;digo
+		    <% } %>
+            <% if (user.LanguageContext == "CN") { %>
+                程式碼
+            <% } %>
+        </LabelCodice>
+
+        <LabelDescrizione style="display: none;">
+		    <% if (user.LanguageContext == "IT") { %>
+                Descrizione
+            <% } %>
+            <% if (user.LanguageContext == "GB") { %>
+                Description
+            <% } %>
+            <% if (user.LanguageContext == "ES") { %>
+                Descripci&oacute;n
+		    <% } %>
+            <% if (user.LanguageContext == "CN") { %>
+                描述
+            <% } %>
+        </LabelDescrizione>
+
+
+    <%- include('partials/system-message'); %>
+
+</body>
+</html>

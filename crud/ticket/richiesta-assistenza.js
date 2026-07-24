@@ -10,12 +10,11 @@ function GetRichiesteAssistenza(myRequest) {
 
     var myIdAttore = myRequest.IdAttore;
     var myIdAccount = myRequest.IdAccount;
+    var myIdWorkedOn = myRequest.IdWorkedOn;
     var myLanguageContext = myRequest.LanguageContext;
-
     var myOffsetRows = myRequest.OffsetRows;
     var myNextRows = myRequest.NextRows;
-
-    //console.log("crude GetOrdini: " + JSON.stringify(myRequest));
+    var myFilter = myRequest.Filter;
 
     const customPromise = new Promise((resolve, reject) => {
         try {
@@ -26,11 +25,14 @@ function GetRichiesteAssistenza(myRequest) {
                     );
                 } else {
                     var request = new sql.Request();
-
+                    if (myIdWorkedOn != '') {
+                        request.input('IdWorkedOn', sql.Int, myIdWorkedOn);
+                    }
                     request.input('IDIstanziatore', sql.Int, myIdAccount);
                     request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
                     request.input('OffsetRows', sql.Int, parseInt(myOffsetRows));
                     request.input('NextRows', sql.Int, parseInt(myNextRows));
+                    request.input('Filter', sql.NVarChar(sql.MAX), myFilter);
                     request.output('Status', sql.NVarChar(500))
 
                     request.execute("SP_GET_RICHIESTE_ASSISTENZA_LIST", function (err, response) {
@@ -48,6 +50,7 @@ function GetRichiesteAssistenza(myRequest) {
 
                                     var resultData = JSON.stringify(response.recordsets[0]);
                                     var TotalRecord = JSON.parse(JSON.stringify(response.recordsets[1]))[0].TotalRecord;
+                                    var resultDashboard = JSON.stringify(response.recordsets[2]);
 
                                     //console.log("resultData: " + resultData);
                                     //console.log("TotalRecord: " + TotalRecord);
@@ -55,7 +58,8 @@ function GetRichiesteAssistenza(myRequest) {
                                     resolve(
                                         {
                                             TotalRecord: TotalRecord,
-                                            resultdata: resultData
+                                            resultdata: resultData,
+                                            resultDashboard: resultDashboard
                                         }
                                     );
                                 } else {
@@ -161,11 +165,10 @@ function PostRichiestaAssistenza(myRequest) {
     var StrGetOwner = "";
     var StrGetEditors = "";
 
+    //console.log(myRequest);
+
     const customPromise = new Promise((resolve, reject) => {
         try {
-            /*
-                TODO: invio delle notifiche
-            */
             sql.connect(connection, function (err, conn) {
                 if (err) {
                     reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));

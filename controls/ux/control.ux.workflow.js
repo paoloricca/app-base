@@ -112,34 +112,48 @@
         };
         $.fn.workflow.laodHasWorkflow = function (plugin) {
             try {
-                var optionsWorkflow = JSON.parse(plugin.attr('data-options'));
+                $.ajax({
+                    url: '/checksession',
+                    type: "GET",
+                    data: {},
+                }).done(function (res) {
+                    if (JSON.parse(JSON.stringify(res)).status == "OK") {
 
-                return $.ajax({
-                    url: "/workflow-has-transitions/" + optionsWorkflow.IdRecord,
-                    type: "POST",
-                    data: {
-                        IdProcesso: optionsWorkflow.IdProcesso,
-                        IdProfiloUtente: optionsWorkflow.IdProfiloUtente,
-                    },
-                }).done(function (response) {
-                    if (response.status == "ERR") {
-                        ShowError(
-                            response.error.message,
-                            response.error.sender
-                        );
-                    } else if (response.data == "OK") {
-                        plugin.find('.btn-imposta-workflow-' + optionsWorkflow.IdRecord).show();
-                        plugin.find('.no-workflow-' + optionsWorkflow.IdRecord).hide();
-                    } else if (response.data == "KO") {
-                        plugin.find('.btn-imposta-workflow-' + optionsWorkflow.IdRecord).hide();
-                        plugin.find('.no-workflow-' + optionsWorkflow.IdRecord).show();
+                        var optionsWorkflow = JSON.parse(plugin.attr('data-options'));
+
+                        return $.ajax({
+                            url: "/workflow-has-transitions/" + optionsWorkflow.IdRecord,
+                            type: "POST",
+                            data: {
+                                IdProcesso: optionsWorkflow.IdProcesso,
+                                IdProfiloUtente: optionsWorkflow.IdProfiloUtente,
+                            },
+                        }).done(function (response) {
+                            if (response.status == "ERR") {
+                                ShowError(
+                                    response.error.message,
+                                    response.error.sender
+                                );
+                            } else if (response.data == "OK") {
+                                plugin.find('.btn-imposta-workflow-' + optionsWorkflow.IdRecord).show();
+                                plugin.find('.no-workflow-' + optionsWorkflow.IdRecord).hide();
+                            } else if (response.data == "KO") {
+                                plugin.find('.btn-imposta-workflow-' + optionsWorkflow.IdRecord).hide();
+                                plugin.find('.no-workflow-' + optionsWorkflow.IdRecord).show();
+                            }
+                        }).fail(function (xhr, status, errorThrown) {
+                        }).always(function (xhr, status) {
+
+                        });
+
+                    } else {
+                        RedirectToLogin();
                     }
-                }).fail(function (xhr, status, errorThrown) {
-                }).always(function (xhr, status) {
-
                 });
+
             } catch (err) {
-                ShowError(err);
+                ShowError(err.message, "workflow.laodHasWorkflow")
+                return false
             }
         }
         $.fn.workflow.laodWorkflowTransition = function (plugin) {
@@ -203,7 +217,8 @@
 
                 });
             } catch (err) {
-                ShowError(err);
+                ShowError(err.message, "workflow.laodWorkflowTransition")
+                return false
             }
         }
 

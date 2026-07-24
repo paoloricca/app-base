@@ -1,0 +1,55 @@
+﻿    <h5 class="f-roboto-b text-primary label-title"></h5>
+    <div class="input-group mb-4">
+        <span id="btn-gear" class="input-group-addon btn btn-default btn-xs">
+            <i class="bi bi-gear p-0"></i>
+        </span>
+        <input id="txt-culture-edit" name="txt-culture-edit" type="textbox" class="form-control input-xs" required placeholder="Codice">
+    </div>
+    <div class="modal container-culture-textbox-edit" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered h-50" role="document">
+            <div class="modal-content h-50">
+                <div class="modal-header">
+                    <h5 class="modal-title text-primary">
+                        <i class="bi bi-gear"></i>
+		                <% if (LanguageContext == "IT") { %>
+                            Imposta cultura
+                        <% } %>
+                        <% if (LanguageContext == "GB") { %>
+                            Set culture
+                        <% } %>
+                        <% if (LanguageContext == "ES") { %>
+                            Establecer la cultura
+		                <% } %>
+                        <% if (LanguageContext == "CN") { %>
+                            確立文化
+                        <% } %>
+                    </h5>
+                    <span class="text-dark">&nbsp;(<span class="container-culture-textbox-edit-title f-roboto b"></span>)</span>
+                    <span class="badge text-bg-primary ms-auto container-culture-textbox-edit-label text-white f-roboto b"></span>
+                    <button type="button" class="btn-close px-3 m-0 btn-cancel-container-culture-textbox-edit" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body h-100 tab-language">
+
+                </div>
+                <div class="modal-footer">
+                    <a class="btn btn-primary btn-confirm-container-culture-textbox-edit">
+                        OK
+                    </a>
+                    <a data-bs-dismiss="modal" class="btn btn-default btn-cancel-container-culture-textbox-edit">
+		                <% if (LanguageContext == "IT") { %>
+                            Annulla
+                        <% } %>
+                        <% if (LanguageContext == "GB") { %>
+                            Cancel
+                        <% } %>
+                        <% if (LanguageContext == "ES") { %>
+                            Cancelar
+		                <% } %>
+                        <% if (LanguageContext == "CN") { %>
+                            取消
+                        <% } %>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
