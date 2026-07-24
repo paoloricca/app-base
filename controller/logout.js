@@ -1,7 +1,7 @@
 $(function () {
     $('#logout').click(function () {
         $.ajax({
-            url: "http://localhost:5000/logout",
+            url: "/logout",
             type: "POST",
         }).done(function (response) {
             if (response.status == "ERR") {
@@ -11,7 +11,7 @@ $(function () {
                 //$.each(JSON.parse(response.data), function (key, item) {
                 //    $('#container').append(item.Title + '<br>');
                 //});
-                document.location.href = "http://localhost:5000/login";
+                document.location.href = "/login";
             }
         }).fail(function (xhr, status, errorThrown) {
             //console.log( "Error: " + errorThrown );

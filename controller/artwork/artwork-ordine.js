@@ -233,12 +233,27 @@ $(function () {
         });
     }
     saveProcessTransition = function (IDModelloIstanza) {
-        return $.ajax({
-            type: "POST",
-            url: "/artwork-ordine/" + IDModelloIstanza,
-            data: {},
-            async: false
-        }).responseText
+        try {
+            return $.ajax({
+                url: '/checksession',
+                type: "GET",
+                data: {},
+            }).done(function (res) {
+                if (JSON.parse(JSON.stringify(res)).status == "OK") {
+                    return $.ajax({
+                        type: "POST",
+                        url: "/artwork-ordine/" + IDModelloIstanza,
+                        data: {},
+                        async: false
+                    }).responseText
+                } else {
+                    RedirectToLogin();
+                }
+            });
+        } catch (err) {
+            ShowError(err.message, "saveProcessTransition")
+            return false
+        }
     }
     deleteArtworkOrdine = function (optionsWorkflow) {
         return $.ajax({
@@ -277,7 +292,7 @@ $(function () {
                 saveProcessTransition(optionsArtwordOrdine.IDModelloIstanza)
             ).then(function (response, textStatus, jqXHR) {
 
-                if (JSON.parse(response).status == "OK") {
+                if (response.status == "OK") {
                     $('#container-processo').modal('hide');
 
                     /* Ricarica la lista aggiornata delle richieste */
