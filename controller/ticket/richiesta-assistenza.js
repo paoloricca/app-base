@@ -19,7 +19,11 @@ $(function () {
     });
     applyFilter = function () {
         try {
+
+            let fnName = getFnName();
+
             $('.spinner-border').show();
+
             $.ajax({
                 url: '/checksession',
                 type: "GET",
@@ -93,13 +97,20 @@ $(function () {
                 }
             });
         } catch (err) {
+
             $('.spinner-border').hide();
-            ShowError(err.message, "applyFilter");
+
+            ShowError(err.message, fnName);
+
         }
     }
     loadFilterTemplate = function (DataType) {
         try {
+
+            let fnName = getFnName();
+
             var templateName;
+
             switch (DataType) {
                 /* Text */
                 case "1":
@@ -131,24 +142,33 @@ $(function () {
                 async: false
             }).responseText
         } catch (err) {
-            ShowError(err.message, "loadFilterTemplate")
+
+            ShowError(err.message, fnName);
+
             return false
         }
     };
     loadAttributeValues = function (IdAttributo) {
         try {
+
+            let fnName = getFnName();
+
             return $.ajax({
                 type: "GET",
                 url: "/model-class-attribute-values/" + IdAttributo,
                 async: false
             }).responseText
         } catch (err) {
-            ShowError(err.message, "loadAttributeValues")
+
+            ShowError(err.message, fnName);
+
             return false
         }
     };
     loadWorkflowTransitions = function (IdProcesso) {
         try {
+            let fnName = getFnName();
+
             return $.ajax({
                 type: "GET",
                 url: "/workflow-transitions/" + IdProcesso,
@@ -156,12 +176,17 @@ $(function () {
             }).responseText
         }
         catch (err) {
-            ShowError(err.message, "loadWorkflowTransitions")
+
+            ShowError(err.message, fnName);
+
             return false
         }
     }
     loadFilter = function (user) {
         try {
+
+            let fnName = getFnName();
+
             return $.when(
                 $.get("../model/ticket/search-filter.json?" + Date.now(),
                     function (filterJSON) {
@@ -234,12 +259,17 @@ $(function () {
                 });
             });
         } catch (err) {
-            ShowError(err.message, "loadFilter")
+
+            ShowError(err.message, fnName);
+
             return false
         }
     }
     loadDashboard = function (dashboard) {
         try {
+
+            let fnName = getFnName();
+
             var arrayCount = [];
             var arrayLabel = [];
             var arrayColor = [];
@@ -324,11 +354,16 @@ $(function () {
             });
         }
         catch (err) {
-            ShowError(err.message, "loadDashboard")
+
+            ShowError(err.message, fnName);
+
         }
     }
     loadArtworkOrdini = function (pageSize, pageIndex, filter) {
         try {
+
+            let fnName = getFnName();
+
             $('.spinner-border').show();
             $.ajax({
                 url: '/checksession',
@@ -625,23 +660,34 @@ $(function () {
                         /* Fine gestione paginazione */
 
                     }).fail(function (xhr, status, errorThrown) {
+
+                        var pagerArtworkOrdine = $('.artwork-ordine-pager');
                         pagerArtworkOrdine.find('.spinner-border').hide();
-                        ShowError(errorThrown, "loadArtworkOrdini")
+
+                        ShowError(xhr.responseText, fnName);
                     });
                 } else {
                     RedirectToLogin();
                 }
             }).fail(function (xhr, status, errorThrown) {
+
+                var pagerArtworkOrdine = $('.artwork-ordine-pager');
                 pagerArtworkOrdine.find('.spinner-border').hide();
-                ShowError(errorThrown, "loadArtworkOrdini")
+
+                ShowError(xhr.responseText, fnName);
             });
         } catch (err) {
+
+            var pagerArtworkOrdine = $('.artwork-ordine-pager');
             pagerArtworkOrdine.find('.spinner-border').hide();
-            ShowError(err.message, "loadArtworkOrdini");
+
+            ShowError(err.message, fnName);
         }
     }
     saveProcessTransition = function (IDModelloIstanza) {
         try {
+            let fnName = getFnName();
+
             return $.ajax({
                 url: '/checksession',
                 type: "GET",
@@ -659,12 +705,16 @@ $(function () {
                 }
             });
         } catch (err) {
-            ShowError(err.message, "saveProcessTransition")
+
+            ShowError(err.message, fnName)
+
             return false
         }
     }
     deleteArtworkOrdine = function (optionsWorkflow) {
         try {
+            let fnName = getFnName();
+
             return $.ajax({
                 url: '/checksession',
                 type: "GET",
@@ -685,12 +735,17 @@ $(function () {
                 }
             });
         } catch (err) {
-            ShowError(err.message, "deleteArtworkOrdine")
+
+            ShowError(err.message, fnName);
+
             return false
         }
     }
     applyWorkflow = function (optionsWorkflow, Note) {
         try {
+
+            let fnName = getFnName();
+
             return $.ajax({
                 url: '/checksession',
                 type: "GET",
@@ -712,7 +767,9 @@ $(function () {
                 }
             });
         } catch (err) {
-            ShowError(err.message, "applyWorkflow")
+
+            ShowError(err.message, fnName)
+
             return false
         }
     }
@@ -723,14 +780,14 @@ $(function () {
     ArtwordOrdine.bind(
         "onsave", function () {
 
+            let fnName = getFnName();
+
             // Recupero IDModelloIstanza from {Model}
             var optionsArtwordOrdine = JSON.parse($(this).attr('data-options'));
 
             $.when(
                 saveProcessTransition(optionsArtwordOrdine.IDModelloIstanza)
             ).then(function (response, textStatus, jqXHR) {
-
-                console.log(response);
 
                 if (response.status == "OK") {
                     $('#container-processo').modal('hide');
@@ -740,22 +797,10 @@ $(function () {
                         JSON.parse(ControlPagerArtworkOrdine.attr('data-options')).pageSize, 1
                     );
                 } else {
-                    ShowError(JSON.parse(response).error);
+                    ShowError(JSON.parse(response).error, fnName);
                 }
             });
-        });
-
-    ///* inizializza il controllo filtro */
-    //var ControlFiltroOrdini = $('#filtro-richieste-assistenza-container');
-
-    ///* Imposta le proprietà di default del plug-in <FiltroProcessi> */
-    //ControlFiltroOrdini.filtroprocessi({
-    //    IdProfiloUtente: null,
-    //    IdProcesso: null,
-    //    ProcessLabelId: $('.process-label-id').html(),
-    //    LanguageContext: $('#LanguageContext').val()
-    //});
-
+    });
 
     /* inizializza il controllo action-button-nuovo */
     var user = JSON.parse($('#user').val());
@@ -769,6 +814,9 @@ $(function () {
         LanguageContext: $('#LanguageContext').val()
     }).bind("onclick", function (e, sender) {
         try {
+
+            let fnName = getFnName();
+
             $.ajax({
                 url: '/checksession',
                 type: "GET",
@@ -807,7 +855,9 @@ $(function () {
             });
 
         } catch (err) {
-            ShowError(err.message, "ControlActionButtonInserimento.onclick")
+
+            ShowError(err.message, fnName);
+
             return false
         }
 
