@@ -14,17 +14,27 @@ $('#confirm-delete').on('hide.bs.modal', function (e) {
 RedirectToLogin = function () {
     document.location.href = "/login";
 }
+getFnName = function () {
+
+    const stack = new Error().stack.split("\n");
+
+    const line = stack[2];
+
+    if (!line)
+        return null;
+
+    const match = line.match(/at\s+([^\s(]+)/);
+
+    return match ? match[1] : null;
+}
 ShowError = function (message) {
 	$('.pnl-errors').html('');
-	$('.pnl-errors').text(message);
+	$('.pnl-errors').html(message);
 	$('#system-message').modal('show');
-	//setTimeout(function () {
- //       $('#system-message').modal('hide');
-	//}, 6000);
 }
 ShowError = function (message, sender) {
     $('.pnl-sender').html('').text(sender);
-    $('.pnl-errors').html('').text(message);
+    $('.pnl-errors').html('').html(message);
     $('#system-message').modal('show');
 }
 ShowErrorConn = function (LanguageContext) {
