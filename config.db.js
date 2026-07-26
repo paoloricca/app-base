@@ -1,9 +1,9 @@
 var connection = {
-    server: "",
+    server: "192.168.0.77",
     //server: "localhost",
-    database: "",
-    user: "",
-    password: "",
+    database: "PS",
+    user: "dcsql",
+    password: "kZ7pW.3U9P",
     options: {
         //trustedConnection: true, // Set to true if using Windows Authentication
         trustServerCertificate: false, // Set to true if using self-signed certificates

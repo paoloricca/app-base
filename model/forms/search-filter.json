@@ -1,0 +1,29 @@
+[
+  {
+    "Description_IT": "ID",
+    "Description_GB": "ID",
+    "Description_ES": "ID",
+    "Description_CN": "ID",
+    "DataType": "2",
+    "ColumnName": "IDModello",
+    "maxlength": 8
+  },
+  {
+    "Description_IT": "Data Registrazione",
+    "Description_GB": "Registration date",
+    "Description_ES": "Fecha solicitada",
+    "Description_CN": "要求的日期",
+    "DataType": "4",
+    "ColumnName": "DataIstanza",
+    "maxlength": null
+  },
+  {
+    "Description_IT": "Descrizione",
+    "Description_GB": "Description",
+    "Description_ES": "Estado actual",
+    "Description_CN": "目前狀態",
+    "DataType": "1",
+    "ColumnName": "Description",
+    "maxlength": 50
+  }
+]

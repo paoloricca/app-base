@@ -1,0 +1,79 @@
+<tr>
+    <td scope="col">
+        <i class="bi bi-circle-fill" style="" />
+    </td>
+    <td scope="col">
+        <%= row.IDModello %>
+    </td>
+    <td scope="col">
+        <%= row.Description %>
+    </td>
+    <td scope="col">
+        <%= row.DataRegistrazione %>
+    </td>
+    <td scope="col" class="text-end">
+        <div class="container-form-edit-<%= row.IdModello %>">
+
+            <div class="col-xs-12 text-right p-0 modello-<%= row.IDModello %>">
+
+                <div class="btn-group">
+                    <button type="button" data-idrecord="<%= row.IDModello %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle btn-workflow-<%= row.IDModello %>"
+                        data-toggle="dropdown" style="width:23px; height:23px; padding:0; font-size:1.1em;"
+                        data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="<% if (LanguageContext == "IT") { %>Azioni<% } %><% if (LanguageContext == "GB") { %>Actions<% } %><% if (LanguageContext == "ES") { %>Comportamiento<% } %><% if (LanguageContext == "CN") { %>行動<% } %>">
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right" style="width:350px;">
+                        <li>
+                            <div class="col-xs-12">
+                                <b>
+                                    ID: <%= row.IDModello %>
+                                </b>
+                            </div>
+                            <span class="spinner-border text-danger mt-1" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
+                        </li>
+                        <li class="dropdown-item">
+                            <hr class="dropdown-divider">
+                        </li>
+                        <div class="col-xs-12 p-0 container-workflow-actions-<%= row.IDModello %>">
+                        </div>
+                        <li class="dropdown-item">
+                            <button data-idrecord="<%= row.IDModello %>" type="button" class="btn btn-light btn-xs col-xs-12 btn-imposta-workflow-<%= row.IDModello %>">
+                                AAAA
+                            </button>
+                            <h6 class="col-xs-12 p-2 m-0 text-secondary no-workflow-<%= row.IDModello %>">
+                                <% if (LanguageContext == "IT") { %>
+                                    Nessun workflow da impostare
+                                <% } %>
+                                <% if (LanguageContext == "GB") { %>
+                                    No workflow to set up
+                                <% } %>
+                                <% if (LanguageContext == "ES") { %>
+                                    No es necesario configurar ning&uacute;n flujo de trabajo
+                                <% } %>
+                                <% if (LanguageContext == "CN") { %>
+                                    無需設定工作流程
+                                <% } %>
+                            </h6>
+                        </li>
+                        <li class="dropdown-item">
+                            <button data-idrecord="<%= row.IDModello %>" type="button" class="btn btn-light btn-xs col-xs-12 btn-annulla-process-<%= row.IDModello %>">
+                                <% if (LanguageContext == "IT") { %>
+                                    Annulla
+                                <% } %>
+                                <% if (LanguageContext == "GB") { %>
+                                    Cancel
+                                <% } %>
+                                <% if (LanguageContext == "ES") { %>
+                                    Cancelar
+                                <% } %>
+                                <% if (LanguageContext == "CN") { %>
+                                    取消
+                                <% } %>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </td>
+</tr>

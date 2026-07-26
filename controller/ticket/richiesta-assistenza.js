@@ -447,7 +447,7 @@ $(function () {
                                                         /* inizializza il controllo Model */
                                                         var ArtwordOrdine = $('.model');
 
-                                                        /* Imposta le proprietà di default del plug-in <Model> */
+                                                        /* Imposta le proprietï¿½ di default del plug-in <Model> */
                                                         ArtwordOrdine.model({
                                                             IDModello: 32,
                                                             IDVersione: 70,
@@ -498,7 +498,7 @@ $(function () {
                                                         ArtwordOrdine.bind("onload", function () {
                                                         });
 
-                                                        /* Imposta le proprietà di default del plug-in <Model> */
+                                                        /* Imposta le proprietï¿½ di default del plug-in <Model> */
                                                         ArtwordOrdine.model({
                                                             IDModello: 32,
                                                             IDVersione: 70,
@@ -586,7 +586,7 @@ $(function () {
                                                         /* inizializza il controllo Model */
                                                         var ArtworkHistory = $('.history');
 
-                                                        /* Imposta le proprietà di default del plug-in <WorkflowHistory> */
+                                                        /* Imposta le proprietï¿½ di default del plug-in <WorkflowHistory> */
                                                         ArtworkHistory.workflowhistory({
                                                             IdRecord: row.IdRecord,
                                                             IdProcesso: 76,
@@ -802,9 +802,9 @@ $(function () {
             });
     });
 
-    /* inizializza il controllo action-button-nuovo */
     var user = JSON.parse($('#user').val());
 
+        /* inizializza il controllo action-button-nuovo */
     var ControlActionButtonInserimento = $('.action-button-inserimento');
     ControlActionButtonInserimento.actionbutton({
         ActionType: 'primary',
@@ -829,7 +829,7 @@ $(function () {
                     ArtwordOrdine.bind("onload", function () {
                     });
 
-                    /* Imposta le proprietà di default del plug-in <Model> */
+                    /* Imposta le proprietï¿½ di default del plug-in <Model> */
                     ArtwordOrdine.model({
                         IDModello: 32,
                         IDVersione: 70,
@@ -866,7 +866,7 @@ $(function () {
     /* inizializza il controllo pager */
     var ControlPagerArtworkOrdine = $('.artwork-ordine-pager');
 
-    /* Imposta le proprietà di default del plug-in <Pager> */
+    /* Imposta le proprietï¿½ di default del plug-in <Pager> */
     ControlPagerArtworkOrdine.paging({
         pageIndex: 1,
         pageSize: 12,
