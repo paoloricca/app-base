@@ -20,6 +20,8 @@
     <%- include('partials/head'); %>
     <%- include('partials/confirm-delete'); %>
     <script type="text/javascript" src="/processi-script"></script>
+    <script type="text/javascript" src="/control-culture-textbox-script"></script>
+    <script type="text/javascript" src="/control-confirm-delete-script"></script>
     <script type="text/javascript" src="/model-script"></script>
     <script type="text/javascript" src="/control-fileupload-script"></script>    
     <script type="text/javascript" src="/control-processi-filter-script"></script>
@@ -31,6 +33,12 @@
     <script type="text/javascript" src="/utility-script"></script>    
     <script type="text/javascript" src="/forms-script"></script>
     <script type="text/javascript" src="/logout-script"></script>
+    <style>
+        .modal {
+            overflow: auto !important;
+        }
+    </style>
+
 </head>
 <body>
     <%- include('partials/header'); %>
@@ -56,8 +64,8 @@
             </b>
         </h4>
     </div>
-    <div class="container-fluid h-75" style="display:block; position:absolute; height:78% !important; margin-top:0 !important;">
-        <div class="col-lg-3 col-md-3 col-sm-3 p-0 h-100 filtro-container">
+    <div class="container-fluid h-75" style="display:block; position:absolute; height:80% !important; margin-top:0 !important;">
+        <div class="col-lg-3 col-md-3 col-sm-3 mb-2 p-0 h-100 filtro-container">
             <div class="panel panel-default h-100 p-0">
                 <div class="panel-heading p-2 f-roboto">
                     <button type="button" class="btn btn-light bi bi-arrow-left rounded-circle float-end btn-30 btn-filter-close"
@@ -111,7 +119,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-9 col-md-9 col-sm-9 p-0 h-100 px-2 result-container">
+        <div class="col-lg-9 col-md-9 col-sm-9 p-0 h-100 result-container">
             <div class="panel panel-default h-100 p-0">
                 <div class="panel-heading p-3 f-roboto">
                     <b>
@@ -134,7 +142,7 @@
                     <span class="action-button-inserimento"></span>&nbsp;
                 </div>
                 <div class="panel-body h-100 p-2 f-roboto">
-                    <div style="overflow-y:auto; height:80%;">
+                    <div class="h-75" style="overflow-y:auto;">
                         <table class="table table-hover table-xs">
                             <thead>
                                 <tr>
@@ -168,7 +176,7 @@
                                             描述
                                         <% } %>
                                     </th>
-                                    <th scope="col">
+                                    <th scope="col" class="hidden-xs">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             Data Registrazione
                                         <% } %>
@@ -190,8 +198,8 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="p-2 px-2 pt-0" style="height:15%; margin-top:-30px;">
-                        <div class="forms-pager pager"></div>
+                    <div class="h-25 align-bottom">
+                        <div class="forms-pager pager align-bottom p-2"></div>
                     </div>
                 </div>
             </div>
@@ -227,46 +235,136 @@
         </div>
     </div>
 
-    <div class="modal" id="container-history" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-            <div class="modal-content">
+    <div class="modal" id="container-model-versions" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog h-75 modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content h-75">
                 <div class="modal-header">
                     <h5 class="modal-title f-roboto b">
-                        <span class="history-idrecord-color px-1"></span>
-                        <% if (user.LanguageContext == "IT") { %>
-                            Visualizza storia
+                        <i class="bi bi-stickies"></i>&nbsp;
+						<% if (user.LanguageContext == "IT") { %>
+                            Versioni
                         <% } %>
                         <% if (user.LanguageContext == "GB") { %>
-                            View history
+                            Versions
                         <% } %>
                         <% if (user.LanguageContext == "ES") { %>
-                            Ver historial
+                            Versiones
                         <% } %>
                         <% if (user.LanguageContext == "CN") { %>
-                            查看歷史記錄
+                            版本
                         <% } %>
-                        {ID                     
-                        <% if (user.LanguageContext == "IT") { %>
-                            Richiesta
-                        <% } %>
-                        <% if (user.LanguageContext == "GB") { %>
-                            Request
-                        <% } %>
-                        <% if (user.LanguageContext == "ES") { %>
-                            Pedido
-                        <% } %>
-                        <% if (user.LanguageContext == "CN") { %>
-                            要求
-                        <% } %>: <span class="history-idrecord"></span>}
+                        / <span class="model-header"></span>
                     </h5>
                     <button type="button" class="btn-close btn-cancel-history" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div data-user="<%= JSON.stringify(user) %>" class="history"></div>
+                    <div class="h-50" style="overflow-y:auto;">
+                        <table class="table table-hover table-xs">
+                            <thead>
+                                <tr>
+                                    <th scope="col">
+                                    </th>
+                                    <th scope="col" class="process-label-id">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Versione
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Version
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            ID
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            ID
+                                        <% } %>
+                                    </th>
+                                    <th scope="col" class="hidden-xs">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Data Registrazione
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Creation date
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Fecha de registro
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            註冊日期
+                                        <% } %>
+                                    </th>
+                                    <th scope="col" class="hidden-xs">
+					                    <% if (user.LanguageContext == "IT") { %>
+                                            Ultima modifica
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Creation date
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Última modificaci&oacute;n
+					                    <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            最後修改
+                                        <% } %>
+                                    </th>
+                                    <th scope="col">
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="result-forms-version-container">
+                            </tbody>
+                        </table>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="modal" id="container-form-edit" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title f-roboto b">
+                        <span class="ordine-idrecord-color px-1"></span> <i class="bi bi-sticky"></i>&nbsp;
+                        <b>
+                        <% if (user.LanguageContext == "IT") { %>
+                        Modifica
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                        Edit
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                        Editar
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                        編輯
+                        <% } %></b> / <span class="form-header"></span></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-cancel-container-form-edit" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-form-edit" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <LabelDescrizione style="display: none;">
+		<% if (user.LanguageContext == "IT") { %>
+            Descrizione
+        <% } %>
+        <% if (user.LanguageContext == "GB") { %>
+            Description
+        <% } %>
+        <% if (user.LanguageContext == "ES") { %>
+            Descripci&oacute;n
+		<% } %>
+        <% if (user.LanguageContext == "CN") { %>
+            描述
+        <% } %>
+    </LabelDescrizione>
 
     <%- include('partials/system-message'); %>
 

@@ -1,5 +1,5 @@
 ﻿<form id="frm-class-<%= row.IDClasse %>" class="was-validated" novalidate>
-	<div data-fieldlist="" class="col-xs-12 border border-1 rounded model-class-<%= row.IDClasse %>-container">
+	<div data-fieldlist="" class="col-xs-12 border border-1 p-2 mt-2 rounded model-class-<%= row.IDClasse %>-container">
 		<div class="spinner-border text-primary mt-3" role="status"></div>
 		<div class="panel panel-success mb-0 mt-3" style="display:none;">
 			<div class="panel-heading">
@@ -17,8 +17,66 @@
                 <% } %>
 			</div>
 		</div>
-		<div class="col-xs-12 p-0 f-roboto pt-2 mb-2 b">
-			<!--%= row.Description %-->
+		<div class="col-xs-12 text-start p-0 f-roboto b p-2 mb-2 mt-2 ps-3 process-bg">
+            <a class="btn fs-3 bi bi-folder-minus btn-minus-plus-<%= row.IDClasse %> p-0 ps-1 pe-1 me-1">
+	        </a>
+            <a style="display: none;" class="btn btn-light bi bi-three-dots-vertical btn-actions btn-circle-xs m-0 float-end btn-edit-class-<%= row.IDClasse %>"
+		        data-toggle="dropdown"
+		        data-bs-toggle="tooltip" data-bs-placement="right">
+	        </a>
+	        <ul class="dropdown-menu dropdown-menu-right" style="width:250px;">
+		        <li>
+			        <div class="col-xs-12 pt-2">
+				        <b>
+					        <%= row.Description %>
+				        </b>
+			        </div>
+		        </li>
+		        <li class="dropdown-item">
+			        <hr class="dropdown-divider">
+                    </li>
+		        <li class="dropdown-item">
+			        <span class="col-xs-12 p-2 px-2 btn-menu-item btn-edit-class btn-class-<%= row.IDClasse %>-edit" 
+				        data-idclasse="<%= row.IDClasse %>">
+				        <i class="bi bi-pencil"></i>&nbsp;&nbsp;
+				        <% if (user.LanguageContext == "IT") { %>
+						        Modifica
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Edit
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Editar
+                            <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                編輯
+                            <% } %>
+			        </span>
+		        </li>
+		        <li class="dropdown-item">
+			        <span class="col-xs-12 p-2 px-2 btn-menu-item btn-class-<%= row.IDClasse %>-del"
+				        data-idclasse="<%= row.IDClasse %>">
+				        <i class="bi bi-trash"></i>&nbsp;&nbsp;
+				        <% if (user.LanguageContext == "IT") { %>
+                                Elimina
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Delete
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Borrar
+                            <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                刪除
+                            <% } %>
+			        </span>
+		        </li>
+	        </ul>
+
+            <%= row.Description %>
+
 		</div>
+        <div class="model-class-<%= row.IDClasse %>-attributes"></div>
 	</div>
-</div>
+
+</form>

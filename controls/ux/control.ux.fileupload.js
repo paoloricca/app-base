@@ -1,9 +1,12 @@
-(function ($) {
+﻿(function ($) {
     $.fn.fileupload = function (options) {
 
         var options = $.extend({
             user: null,
             filelist: null,
+            filenumber: null,
+            filetypes: null,
+            fileweight: null,
             onupload: null,
             ondelete: null,
             filetodelete: null
@@ -83,64 +86,155 @@
 
                 /* raise plugin event */
                 plugin.find('#filetoupload').change(function (e) {
+
                     if (this.files[0] != undefined) {
-                        filename = this.files[0].name;
-                        plugin.find("#labelfiletoupload").html(filename);
 
                         /* get plugin attribute option */
                         var options = JSON.parse(plugin.attr('data-options'));
 
+                        switch (user.LanguageContext) {
+                            case "IT":
+                                strError = "File non valido";
+                                strErrorFileNum = "File consentiti: " + options.filenumber;
+                                strErrorFileSize = "Dimensione file consentita: " + options.fileweight + ' MB';
+                                break;
+                            case "GB":
+                                strError = "Invalid file";
+                                strErrorFileNum = "Allowed files: " + options.filenumber;
+                                strErrorFileSize = "Allowed file size: " + options.fileweight + ' MB';
+                                break;
+                            case "ES":
+                                strError = "Archivo no v&aacute;lido";
+                                strErrorFileNum = "Archivos permitidos: " + options.filenumber;
+                                strErrorFileSize = "Dimensiones m&aacute;ximo de archivo permitido: " + options.fileweight + ' MB';
+                                break;
+                            case "CN":
+                                strError = "無效文件";
+                                strErrorFileNum = "允許的文件: " + options.filenumber;
+                                strErrorFileSize = "允許的檔案大小: " + options.fileweight + ' MB';
+                                break;
+                        }
+
+                        filename = this.files[0].name;
+
+                        arFileType = options.filetypes.split(',');
+
                         var data = new FormData();
-                        jQuery.each(plugin.find('#filetoupload')[0].files, function (i, file) {
-                            data.append('file-' + i, file);
-                        });
-                        $.ajax({
-                            url: "/fileupload",
-                            type: "POST",
-                            data: data,
-                            processData: false,
-                            contentType: false,
-                            timeout: 600000,
-                            success: function (response) {
-                                var file = JSON.parse(response.data);
-                                console.log(file);
-                                if (response.status == "ERR") {
-                                    ShowError(
-                                        response.error,
-                                    );
-                                } else {
-                                    plugin.find('.file-container').append(
-                                        '<div id="' + file.newFilename + '" class="col-xs-12 p-0 mb-0"><i data-id="' + file.newFilename + '" data-file="' + file.newFilename + '" class="btn px-3 bi bi-trash delete-file-' + file.newFilename + '"></i><a target="_blank" href="/files/' + file.newFilename + '.' + file.fileExtension + '">' + file.originalFilename + '</a></div>'
-                                    );
-                                    plugin.find('.delete-file-' + file.newFilename).click(function () {
-                                        plugin.fileupload.DeleteFile($(this))
-                                    });
-                                    /* get plugin attribute option */
-                                    var options = JSON.parse(plugin.attr('data-options'));
-                                    /* set pluging attribute */
-                                    if (options.filelist != null) {
-                                        options.filelist += '@' + response.data;
-                                    } else {
-                                        options.filelist = '@' + response.data;
-                                    }
-                                    //console.log("options.filelist: " + options.filelist);
-                                    /* re-store plugin attribute option */
-                                    plugin.attr('data-options', JSON.stringify(options));
 
-                                    plugin.find("#labelfiletoupload").html(
-                                        plugin.find("#labelfiletoupload").data("default")
-                                    );
+                        /* Verifica numero file consentiti */
+                        if (options.filelist != '') { 
 
-                                    /* raise event */
-                                    plugin.trigger("onupload");
-                                }
+                            if (options.filenumber <= options.filelist.split('@').length - 1) {
 
+                                data = null;
 
-                            },
-                            error: function (e) {
-                                console.log(e.responseText);
+                                ShowError(strErrorFileNum);
+
+                                return false;
                             }
+
+                        }
+
+                        jQuery.each(plugin.find('#filetoupload')[0].files, function (i, file) {
+
+                            /* Verifica dimensione file */
+
+                            if (file.size == 0 || eval(options.fileweight) < eval(parseInt((file.size / 1000000)))) {
+
+                                data = null;
+
+                                ShowError(strErrorFileSize);
+
+                                return false;
+
+                            }
+
+                            /* Verifica tipo file */ 
+
+                            fileType = file.type;
+
+                            var isFileType = false;
+
+                            for (x = 1; x <= arFileType.length; x++) {
+
+                                if (arFileType[x] == 'pdf' && fileType == 'application/pdf') {
+                                    isFileType = true;
+                                    break;
+
+                                } else if (arFileType[x] == 'text') {
+
+                                    if (fileType == 'application/msword' || fileType == 'text/plain') {
+                                        isFileType = true;
+                                        break;
+                                    }
+                                }
+                                else if (arFileType[x] == 'image' && fileType.indexOf('image') > -1) {
+                                    isFileType = true;
+                                    break;
+                                }
+                            }
+                            if (isFileType) {
+
+                                plugin.find("#labelfiletoupload").html(filename);
+                                data.append('file-' + i, file);
+
+                            } else {
+
+                                data = null;
+
+                                ShowError(strError);
+                            }
+                            
                         });
+                        if (data != null) {
+                            $.ajax({
+                                url: "/fileupload",
+                                type: "POST",
+                                data: data,
+                                processData: false,
+                                contentType: false,
+                                timeout: 600000,
+                                success: function (response) {
+                                    var file = JSON.parse(response.data);
+
+                                    if (response.status == "ERR") {
+                                        ShowError(
+                                            response.error,
+                                        );
+                                    } else {
+                                        plugin.find('.file-container').append(
+                                            '<div id="' + file.newFilename + '" class="col-xs-12 p-0 mb-0"><i data-id="' + file.newFilename + '" data-file="' + file.newFilename + '" class="btn px-3 bi bi-trash delete-file-' + file.newFilename + '"></i><a target="_blank" href="/files/' + file.newFilename + '.' + file.fileExtension + '">' + file.originalFilename + '</a></div>'
+                                        );
+                                        plugin.find('.delete-file-' + file.newFilename).click(function () {
+                                            plugin.fileupload.DeleteFile($(this))
+                                        });
+                                        /* get plugin attribute option */
+                                        var options = JSON.parse(plugin.attr('data-options'));
+                                        /* set pluging attribute */
+                                        if (options.filelist != null) {
+                                            options.filelist += '@' + response.data;
+                                        } else {
+                                            options.filelist = '@' + response.data;
+                                        }
+                                        //console.log("options.filelist: " + options.filelist);
+                                        /* re-store plugin attribute option */
+                                        plugin.attr('data-options', JSON.stringify(options));
+
+                                        plugin.find("#labelfiletoupload").html(
+                                            plugin.find("#labelfiletoupload").data("default")
+                                        );
+
+                                        /* raise event */
+                                        plugin.trigger("onupload");
+                                    }
+
+
+                                },
+                                error: function (e) {
+                                    ShowError(e.responseText);
+                                }
+                            });
+                        }
                     }
                 });
             };

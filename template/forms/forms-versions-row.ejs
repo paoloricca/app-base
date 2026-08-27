@@ -1,22 +1,22 @@
-<tr>
+﻿<tr>
     <td scope="col">
         <i class="bi bi-circle-fill" style="" />
     </td>
     <td scope="col">
-        <%= row.IDModello %>
+        <%= row.Numero %>
     </td>
     <td scope="col">
-        <%= row.Description %>
-    </td>
-    <td scope="col" class="hidden-xs">
         <%= row.DataRegistrazione %>
     </td>
+    <td scope="col" class="hidden-xs">
+        <%= row.DataUltimaModifica %>
+    </td>
     <td scope="col" class="text-end">
-        <div class="container-form-edit-<%= row.IDModello %>">
+        <div class="container-model-edit-<%= row.IDVersione %>">
 
-            <div class="col-xs-12 text-right p-0 modello-<%= row.IDModello %>">
+            <div class="col-xs-12 text-right p-0 versione-<%= row.IDVersione %>">
                 <div class="btn-group context-menu-model">
-                    <button type="button" data-idrecord="<%= row.IDModello %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle btn-workflow-<%= row.IDModello %>"
+                    <button type="button" data-idrecord="<%= row.IDVersione %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle btn-workflow-<%= row.IDVersione %>"
                         data-toggle="dropdown" style="width:23px; height:23px; padding:0; font-size:1.1em;"
                         data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="<% if (LanguageContext == "IT") { %>Azioni<% } %><% if (LanguageContext == "GB") { %>Actions<% } %><% if (LanguageContext == "ES") { %>Comportamiento<% } %><% if (LanguageContext == "CN") { %>行動<% } %>">
                     </button>
@@ -24,7 +24,7 @@
                         <li>
                             <div class="col-xs-12">
                                 <b>
-                                    ID: <%= row.IDModello %>
+                                    ID: <%= row.IDVersione %>
                                 </b>
                             </div>
                             <span class="spinner-border text-danger mt-1" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
@@ -34,12 +34,12 @@
                         </li>
                         <li class="dropdown-item">
 							<span class="col-xs-12 p-2 px-2 btn-model-versions">
-								<i class="bi bi-stickies"></i>&nbsp;&nbsp;
+								<i class="bi bi-zoom-in"></i>&nbsp;&nbsp;
 							    <% if (LanguageContext == "IT") { %>
-                                    Versioni
+                                    Anteprima
                                 <% } %>
                                 <% if (LanguageContext == "GB") { %>
-                                    Versions
+                                    Preview
                                 <% } %>
                                 <% if (LanguageContext == "ES") { %>
                                     Versiones
@@ -50,7 +50,7 @@
                             </span>
                         </li>
 						<li class="dropdown-item">
-							<span class="col-xs-12 p-2 px-2 btn-model-edit">
+							<span class="col-xs-12 p-2 px-2 btn-model-edit-<%= row.IDVersione %>" data-idmodello="<%= row.IDModello %>" data-idversione="<%= row.IDVersione %>">
 							    <i class="bi bi-pencil"></i>&nbsp;&nbsp;
 							    <% if (LanguageContext == "IT") { %>
                                         Modifica

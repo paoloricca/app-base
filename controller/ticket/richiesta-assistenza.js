@@ -360,9 +360,10 @@ $(function () {
         }
     }
     loadArtworkOrdini = function (pageSize, pageIndex, filter) {
-        try {
 
-            let fnName = getFnName();
+        let fnName = getFnName();
+
+        try {
 
             $('.spinner-border').show();
             $.ajax({
@@ -395,7 +396,7 @@ $(function () {
 
                         if (response.status == "ERR") {
                             $('.spinner-border').hide();
-                            ShowError(response.error.message, response.error.sender);
+                            ShowError(response.error.message, fnName);
 
                         } else if (response.status == "OK") {
 
@@ -685,8 +686,11 @@ $(function () {
         }
     }
     saveProcessTransition = function (IDModelloIstanza) {
+
+        let fnName = getFnName();
+
         try {
-            let fnName = getFnName();
+            
 
             return $.ajax({
                 url: '/checksession',
@@ -829,7 +833,7 @@ $(function () {
                     ArtwordOrdine.bind("onload", function () {
                     });
 
-                    /* Imposta le propriet� di default del plug-in <Model> */
+                    /* Imposta le proprietà di default del plug-in <Model> */
                     ArtwordOrdine.model({
                         IDModello: 32,
                         IDVersione: 70,

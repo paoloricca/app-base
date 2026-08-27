@@ -3,7 +3,18 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title f-roboto b c-base">
-                    Messaggio di sistema
+				    <% if (user.LanguageContext == "IT") { %>
+                        Messaggio di sistema
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+					    System message
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+					    Mensaje del sistema
+					<% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+					    系統訊息
+                    <% } %>
                 </h4>
             </div>
             <div class="modal-body text-secondary">

@@ -58,6 +58,67 @@ function GetModelClass(myRequest) {
     });
     return customPromise
 }
+function GetTipoDati(myRequest) {
+
+    const sender = arguments.callee.name;
+
+    var myIdAttore = myRequest.IdAttore;
+    var myIdAccount = myRequest.IdAccount;
+    var myLanguageContext = myRequest.LanguageContext;
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                } else {
+                    var request = new sql.Request();
+
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.output('Status', sql.NVarChar(500))
+
+                    request.execute("SP_GET_TIPO_DATI", function (err, response) {
+                        if (err) {
+                            reject(
+                                new exception(sender, err.message, err.name, err.stack)
+                            );
+                        } else {
+                            if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+
+                                var myResponse = JSON.stringify(response);
+
+                                if (JSON.parse(myResponse).recordsets.length > 0) {
+
+                                    var resultData = JSON.stringify(response.recordsets[0]);
+
+                                    resolve(
+                                        {
+                                            resultdata: resultData,
+                                        }
+                                    );
+                                } else {
+                                    resolve(JSON.stringify(""));
+                                }
+                            } else {
+                                reject(
+                                    new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
+                                );
+                            }
+                        }
+                    });
+                }
+            })
+        }
+        catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+    return customPromise
+}
 function GetModelClassAttribute(myRequest) {
 
     const sender = arguments.callee.name;
@@ -207,6 +268,218 @@ function PostIdModelloIstanza(myRequest) {
                                 resolve(
                                     JSON.parse(JSON.stringify(response.output)).IDModelloIstanza
                                 );
+                            } else {
+                                reject(
+                                    new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
+                                );
+                            }
+                        }
+                    });
+                }
+            })
+        }
+        catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+    return customPromise
+}
+function PostClass(myRequest) {
+
+    const sender = arguments.callee.name;
+
+    var myIdAttore = myRequest.IdAttore;
+    var myIdAccount = myRequest.IdAccount;
+    var myLanguageContext = myRequest.LanguageContext;
+    var myRequestBody = JSON.stringify(myRequest.RequestBody);
+
+    console.log(myRequestBody);
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                } else {
+                    var request = new sql.Request();
+
+                    request.input('IDCliente', sql.Int, parseInt(myIdAttore));
+                    request.input('IDIstanziatore', sql.Int, myIdAccount);
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.input('RequestBody', sql.NVarChar(sql.MAX), myRequestBody);
+                    request.output('Status', sql.NVarChar(500));
+
+                    request.execute("SP_POST_CLASS", function (err, response) {
+                        if (err) {
+                            reject(
+                                new exception(sender, err.message, err.name, err.stack)
+                            );
+                        } else {
+                            if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+                                resolve("OK");
+                            } else {
+                                reject(
+                                    new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
+                                );
+                            }
+                        }
+                    });
+                }
+            })
+        }
+        catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+    return customPromise
+}
+function DeleteClass(myRequest) {
+
+    const sender = arguments.callee.name;
+
+    var myIdAttore = myRequest.IdAttore;
+    var myIdAccount = myRequest.IdAccount;
+    var myLanguageContext = myRequest.LanguageContext;
+    var myIDClasse = myRequest.RequestBody;
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                } else {
+                    var request = new sql.Request();
+                    request.input('IdAttore', sql.Int, myIdAttore);
+                    request.input('IdAccount', sql.Int, myIdAccount);
+                    request.input('IdClasse', sql.Int, myIDClasse);
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.output('Status', sql.NVarChar(500))
+
+                    request.execute("SP_DELETE_CLASS", function (err, response) {
+                        if (err) {
+                            reject(
+                                new exception(sender, err.message, err.name, err.stack)
+                            );
+                        } else {
+
+                            if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+
+                                resolve(JSON.stringify("OK"));
+
+                            } else {
+                                reject(
+                                    new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
+                                );
+                            }
+                        }
+                    });
+                }
+            })
+        }
+        catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+    return customPromise
+}
+function DeleteAttribute(myRequest) {
+
+    const sender = arguments.callee.name;
+
+    var myIdAttore = myRequest.IdAttore;
+    var myIdAccount = myRequest.IdAccount;
+    var myLanguageContext = myRequest.LanguageContext;
+    var myIDAttributo = myRequest.RequestBody;
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                } else {
+                    var request = new sql.Request();
+                    request.input('IdAttore', sql.Int, myIdAttore);
+                    request.input('IdAccount', sql.Int, myIdAccount);
+                    request.input('IdAttributo', sql.Int, myIDAttributo);
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.output('Status', sql.NVarChar(500))
+
+                    request.execute("SP_DELETE_ATTRIBUTE", function (err, response) {
+                        if (err) {
+                            reject(
+                                new exception(sender, err.message, err.name, err.stack)
+                            );
+                        } else {
+
+                            if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+
+                                resolve(JSON.stringify("OK"));
+
+                            } else {
+                                reject(
+                                    new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
+                                );
+                            }
+                        }
+                    });
+                }
+            })
+        }
+        catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+    return customPromise
+}
+function PostAttribute(myRequest) {
+
+    const sender = arguments.callee.name;
+
+    var myIdAttore = myRequest.IdAttore;
+    var myIdAccount = myRequest.IdAccount;
+    var myLanguageContext = myRequest.LanguageContext;
+    var myRequestBody = JSON.stringify(myRequest.RequestBody);
+
+    /*console.log(myRequestBody);*/
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                } else {
+                    var request = new sql.Request();
+
+                    request.input('IDCliente', sql.Int, parseInt(myIdAttore));
+                    request.input('IDIstanziatore', sql.Int, myIdAccount);
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.input('RequestBody', sql.NVarChar(sql.MAX), myRequestBody);
+                    request.output('Status', sql.NVarChar(500));
+
+                    request.execute("SP_POST_ATTRIBUTE", function (err, response) {
+                        if (err) {
+                            reject(
+                                new exception(sender, err.message, err.name, err.stack)
+                            );
+                        } else {
+                            if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+                                resolve("OK");
                             } else {
                                 reject(
                                     new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
@@ -500,7 +773,12 @@ module.exports = {
     PostIdModelloIstanza,
     PostIdModelloIstanzaRecord,
     PostIdModelloIstanzaRecordMedia,
+    PostClass,
+    DeleteClass,
+    DeleteAttribute,
+    PostAttribute,
     DeleteIdModelloIstanzaRecordMedia,
     GetIdModelloIstanzaRecord,
     GetIdModelloIstanzaRecordValue,
+    GetTipoDati
 }

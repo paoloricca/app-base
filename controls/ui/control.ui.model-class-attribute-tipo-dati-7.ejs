@@ -1,10 +1,102 @@
 <!-- FILE -->
 <div class="col-xs-6 p-0 mb-2 px-3">
-    <div class="col-xs-12 p-0">
-        <label for="control_<%= row.IDAttributo %>" class="col-form-label">
-            <%= row.Description %>
-        </label>
-    </div>
+	<% if (mode == "design") { %>
+        <a class="btn btn-light bi bi-three-dots-vertical btn-actions btn-circle m-1 ms-0"
+		    data-toggle="dropdown"
+		    data-bs-toggle="tooltip" data-bs-placement="left">
+	    </a>
+	    <ul class="dropdown-menu dropdown-menu-left" style="width:250px;">
+		    <li>
+			    <div class="col-xs-12">
+				    <b>
+					    <%= row.Description %>
+				    </b>
+			    </div>
+			    <span class="spinner-border text-danger mt-1" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
+		    </li>
+		    <li class="dropdown-item">
+			    <hr class="dropdown-divider">
+                </li>
+		    <li class="dropdown-item">
+			    <span class="col-xs-12 p-2 px-2 btn-menu-item btn-attribute-<%= row.IDAttributo %>-edit" 
+				    data-idattributo="<%= row.IDAttributo %>" 
+					data-idtipodati="<%= row.IDTipoDati %>">
+				    <i class="bi bi-pencil"></i>&nbsp;&nbsp;
+				    <% if (user.LanguageContext == "IT") { %>
+						    Modifica
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Edit
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Editar
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            編輯
+                        <% } %>
+			    </span>
+		    </li>
+		    <li class="dropdown-item">
+			    <span class="col-xs-12 p-2 px-2 btn-menu-item btn-attribute-<%= row.IDAttributo %>-del"
+				    data-idattributo="<%= row.IDAttributo %>" 
+					data-idtipodati="<%= row.IDTipoDati %>">
+				    <i class="bi bi-trash"></i>&nbsp;&nbsp;
+				    <% if (user.LanguageContext == "IT") { %>
+                        Elimina
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+                        Delete
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+                        Borrar
+                    <% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+                        刪除
+                    <% } %>
+			    </span>
+		    </li>
+	    </ul>
+	<% } %>
+		<% let strFileType = "" %>
+		<% row.FileTypes.substring(1).split(",").forEach(function(FileType) { %>
+			<% if (FileType == "pdf") { 
+			   strFileType += ", PDF"
+			}	%>
+			<% if (FileType == "image") { %>
+				<% if (user.LanguageContext == "IT") { %>
+                    <% strFileType += ", Immagini" %>
+                <% } %>
+                <% if (user.LanguageContext == "GB") { %>
+					<% strFileType += ", Images" %>
+                <% } %>
+                <% if (user.LanguageContext == "ES") { %>
+					<% strFileType += ", Im&aacute;genes" %>
+                <% } %>
+                <% if (user.LanguageContext == "CN") { %>
+					<% strFileType += ", 影像" %>
+                <% } %>
+			<% } %>
+				
+			<% if (FileType == "text") { %> 
+				<% if (user.LanguageContext == "IT") { %>
+                    <% strFileType += ", Testo" %>
+                <% } %>
+                <% if (user.LanguageContext == "GB") { %>
+					<% strFileType += ", Text" %>
+                <% } %>
+                <% if (user.LanguageContext == "ES") { %>
+					<% strFileType += ", Texto" %>
+                <% } %>
+                <% if (user.LanguageContext == "CN") { %>
+					<% strFileType += ", 文字" %>
+                <% } %>
+			<% } %>
+				
+		<% }) %>
+		
+    <label for="control_<%= row.IDAttributo %>" class="col-form-label">
+        <%= row.Description %> (<%= strFileType.substring(2) %>)
+		</label>
     <div class="col-xs-12 border rounded p-0">
         <div class="col-xs-11 p-0"> 
             <div class="col-xs-12 p-0 control_<%= row.IDAttributo %>">

@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const FileUpload = express.Router();
 const bodyParser = require('body-parser');
 const formidable = require('formidable');
@@ -59,6 +59,8 @@ FileUpload.post('/fileupload', function (req, res) {
                     switch (req.session.user.LanguageContext) {
                         case "IT": strError = "File non valido"; break;
                         case "GB": strError = "Invalid file"; break;
+                        case "ES": strError = "Archivo no v&aacute;lido"; break;
+                        case "CN": strError = "無效文件"; break;
                     }
                     res.status(200).json(new response('ERR', null, strError));
                     res.end();

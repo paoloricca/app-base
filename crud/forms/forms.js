@@ -5,6 +5,69 @@ const config = require('../../utils/config')
 var connection = require('../../config.db');
 const business = require('../../crud/business');
 
+function GetFormsVersion(myRequest) {
+
+    const sender = arguments.callee.name;
+
+    var myIdAttore = myRequest.IdAttore;
+    var myIdAccount = myRequest.IdAccount;
+    var myIdModello = myRequest.IDModello
+    var myLanguageContext = myRequest.LanguageContext;
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                } else {
+                    var request = new sql.Request();
+
+                    request.input('IDModello', sql.Int, myIdModello);
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.output('Status', sql.NVarChar(500))
+
+                    request.execute("SP_GET_FORMS_VERSION", function (err, response) {
+                        if (err) {
+                            reject(
+                                new exception(sender, err.message, err.name, err.stack)
+                            );
+                        } else {
+                            if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+
+                                var myResponse = JSON.stringify(response);
+
+                                if (JSON.parse(myResponse).recordsets.length > 0) {
+
+                                    var resultData = JSON.stringify(response.recordsets[0]);
+
+                                    resolve(
+                                        {
+                                            resultdata: resultData,
+                                        }
+                                    );
+                                } else {
+                                    resolve(JSON.stringify(""));
+                                }
+                            } else {
+                                reject(
+                                    new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
+                                );
+                            }
+                        }
+                    });
+                }
+            })
+        }
+        catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+    return customPromise
+}
 function GetForms(myRequest) {
     const sender = arguments.callee.name;
 
@@ -285,6 +348,7 @@ function RollBack(conn) {
 
 module.exports = {
     GetForms,
+    GetFormsVersion,
     DeleteForms,
     PostForms,
 }

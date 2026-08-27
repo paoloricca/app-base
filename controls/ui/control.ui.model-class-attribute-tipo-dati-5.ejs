@@ -1,11 +1,67 @@
 ﻿<!-- BOOLEAN -->
 <div class="col-xs-6 p-0 mb-2 px-3">
+	<% if (mode == "design") { %>
+	<a class="btn btn-light bi bi-three-dots-vertical btn-actions btn-circle m-1 ms-0"
+		data-toggle="dropdown"
+		data-bs-toggle="tooltip" data-bs-placement="left">
+	</a>
+	<ul class="dropdown-menu dropdown-menu-left" style="width:250px;">
+		<li>
+			<div class="col-xs-12">
+				<b>
+					<%= row.Description %>
+				</b>
+			</div>
+			<span class="spinner-border text-danger mt-1" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
+		</li>
+		<li class="dropdown-item">
+			<hr class="dropdown-divider">
+            </li>
+		<li class="dropdown-item">
+			<span class="col-xs-12 p-2 px-2 btn-menu-item btn-attribute-<%= row.IDAttributo %>-edit" 
+				data-idattributo="<%= row.IDAttributo %>" 
+				data-idtipodati="<%= row.IDTipoDati %>">
+				<i class="bi bi-pencil"></i>&nbsp;&nbsp;
+				<% if (user.LanguageContext == "IT") { %>
+						Modifica
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+                        Edit
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+                        Editar
+                    <% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+                        編輯
+                    <% } %>
+			</span>
+		</li>
+		<li class="dropdown-item">
+			<span class="col-xs-12 p-2 px-2 btn-menu-item btn-attribute-<%= row.IDAttributo %>-del"
+				data-idattributo="<%= row.IDAttributo %>" 
+				data-idtipodati="<%= row.IDTipoDati %>">
+				<i class="bi bi-trash"></i>&nbsp;&nbsp;
+				<% if (user.LanguageContext == "IT") { %>
+                        Elimina
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+                        Delete
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+                        Borrar
+                    <% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+                        刪除
+                    <% } %>
+			</span>
+		</li>
+	</ul>
+	<% } %>
+	<label for="control_<%= row.IDAttributo %>" class="col-form-label"><%= row.Description %></label>
 	<div class="col-xs-12 p-0">
-		<label for="control_<%= row.IDAttributo %>" class="col-form-label"><%= row.Description %></label>
-	</div>
-	<div class="form-check form-check-inline">
-		<input data-idtipodati="<%= row.IDTipoDati %>" data-idattributo="<%= row.IDAttributo %>" 
-			class="form-check-input" <% if (row.Obbligatorio) { %> required<% } %> type="radio" name="control_<%= row.IDAttributo %>" id="control_<%= row.IDAttributo %>_0" value="0">
+	<div class="form-check p-0 form-check-inline">
+		<input data-idtipodati="<%= row.IDTipoDati %>" data-idattributo="<%= row.IDAttributo %>"
+			class="form-check-input me-2" <% if (row.Obbligatorio) { %> required<% } %> type="radio" name="control_<%= row.IDAttributo %>" id="control_<%= row.IDAttributo %>_0" value="0">
 		<label class="col-form-label" for="control_<%= row.IDAttributo %>_0">
             <% if (user.LanguageContext == "IT") { %>
             No
@@ -21,22 +77,23 @@
             <% } %>
 		</label>
 	</div>
-	<div class="form-check form-check-inline">
-		<input data-idtipodati="<%= row.IDTipoDati %>" data-idattributo="<%= row.IDAttributo %>" 
-			class="form-check-input" <% if (row.Obbligatorio) { %> required<% } %> type="radio" name="control_<%= row.IDAttributo %>" id="control_<%= row.IDAttributo %>_1" value="1">
+	<div class="form-check p-0 form-check-inline">
+		<input data-idtipodati="<%= row.IDTipoDati %>" data-idattributo="<%= row.IDAttributo %>"
+			class="form-check-input me-2" <% if (row.Obbligatorio) { %> required<% } %> type="radio" name="control_<%= row.IDAttributo %>" id="control_<%= row.IDAttributo %>_1" value="1">
 		<label class="col-form-label" for="control_<%= row.IDAttributo %>_1">
-                    <% if (user.LanguageContext == "IT") { %>
-                    Si
-                    <% } %>
-                    <% if (user.LanguageContext == "GB") { %>
-                    Yes
-                    <% } %>
-                    <% if (user.LanguageContext == "ES") { %>
-                    S&iacute;
-                    <% } %>
-                    <% if (user.LanguageContext == "CN") { %>
-                    是的
-                    <% } %>
+            <% if (user.LanguageContext == "IT") { %>
+            Si
+            <% } %>
+            <% if (user.LanguageContext == "GB") { %>
+            Yes
+            <% } %>
+            <% if (user.LanguageContext == "ES") { %>
+            S&iacute;
+            <% } %>
+            <% if (user.LanguageContext == "CN") { %>
+            是的
+            <% } %>
 		</label>
+	</div>
 	</div>
 </div>

@@ -1,0 +1,360 @@
+﻿<div id="confirm-delete-attribute"></div>
+<div class="modal" id="container-attribute-edit" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg h-75 modal-dialog-centered" role="document">
+        <div class="modal-content h-75">
+            <div class="modal-header">
+                <i class="bi bi-gear me-2"></i>
+                <h5 class="modal-title f-roboto b">
+                    <% if (user.LanguageContext == "IT") { %>
+                        Modifica campo
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+                        Edit field
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+                        Editar el campo
+                    <% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+                        編輯該字段
+                    <% } %>/ <span class="attribute-header"></span>
+                </h5>
+                <button type="button" class="btn-close btn-cancel-attribute-edit" data-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body h-100">
+
+                <input type="hidden" id="IDClasse" name="IDClasse" />
+                <input type="hidden" id="IDAttributo" name="IDAttributo" />
+                <div class="container-form-edit">
+                </div>
+                <div class="col-xs-1 p-0">
+                    <h5 class="f-roboto-b text-primary">
+                        <% if (user.LanguageContext == "IT") { %>
+                            Visibile
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Visible
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            visible
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            可見的
+                        <% } %>
+                    </h5>
+                    <div class="col-xs-12 p-0 form-switch">
+                        <input id="Visibile" name="Visibile" class="form-check-input btn-toggle-" type="checkbox">
+                    </div>
+                </div>
+                <div class="col-xs-1 p-0">
+                    <h5 class="f-roboto-b text-primary">
+                        <% if (user.LanguageContext == "IT") { %>
+                            Obbligatorio
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Required
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Obligatorio
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            強制性的
+                        <% } %>
+                    </h5>
+                    <div class="col-xs-12 p-0 form-switch">
+                        <input id="Obbligatorio" name="Obbligatorio" class="form-check-input btn-toggle-" type="checkbox">
+                    </div>
+                </div>
+                <div class="col-xs-12 p-0 mb-2">
+                    <h5 class="f-roboto-b text-primary">
+                        <% if (user.LanguageContext == "IT") { %>
+                            Tipo
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Type
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Tipo
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            類型
+                        <% } %>
+                    </h5>
+                    <select id="IDTipoDati" required="" class="form-control tipo-dati">
+                    </select>
+                    <div class="col-xs-12 p-0">
+                        <div class="container-control-culture-textbox-descrizione" />
+                    </div>
+                    <div class="col-xs-12 p-0 lunghezza-massima" style="display: none;">
+                        <h5 class="f-roboto-b text-primary">
+                            <% if (user.LanguageContext == "IT") { %>
+                                Lunghezza massima
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Maximum length
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Longitud m&aacute;xima
+                            <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                最大長度
+                            <% } %>
+                        </h5>
+                        <div class="col-xs-12 p-0 form-switch">
+                            <input id="Lunghezza" name="Lunghezza" class="form-control number" type="textbox" maxlength="4" required>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 p-0 valore-minimo" style="display: none;">
+                        <h5 class="f-roboto-b text-primary">
+                            <% if (user.LanguageContext == "IT") { %>
+                                Valore minimo
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Minimum value
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Valor m&iacute;nimo
+                            <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                最小值
+                            <% } %>
+                        </h5>
+                        <div class="col-xs-12 p-0 form-switch">
+                            <input id="ValoreMinimo" name="ValoreMinimo" class="form-control number" type="textbox" maxlength="5">
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 p-0 numero-righe" style="display: none;">
+                        <h5 class="f-roboto-b text-primary">
+                            <% if (user.LanguageContext == "IT") { %>
+                                Numero righe
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Number of rows
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                N&aacute;mero de filas
+                            <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                行數
+                            <% } %>
+                        </h5>
+                        <div class="col-xs-12 p-0 form-switch">
+                            <input id="NumeroRighe" name="NumeroRighe" class="form-control number" type="textbox" maxlength="1" required>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-6 p-0 px-2 numero-file" style="display: none;">
+                        <h5 class="f-roboto-b text-primary">
+                            <% if (user.LanguageContext == "IT") { %>
+                                Numero file accettati
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Number of accepted files
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                N&uacute;mero de archivos aceptados
+                            <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                已接受的文件數量
+                            <% } %>
+                        </h5>
+                        <div class="col-xs-12 p-0 form-switch">
+                            <input id="FileNumber" name="FileNumber" class="form-control number" type="textbox" maxlength="2" required>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-6 p-0 dimensione-file" style="display: none;">
+                        <h5 class="f-roboto-b text-primary">
+                            <% if (user.LanguageContext == "IT") { %>
+                                Dimensione consentita
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                Permitted size
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Peso de archivo permitido
+                            <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                允許尺寸
+                            <% } %> (MB)
+                        </h5>
+                        <div class="col-xs-12 p-0 form-switch">
+                            <input id="FileWeight" name="FileWeight" class="form-control number" type="textbox" maxlength="2" required>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12 p-1 mt-2 form-switch tipo-file" style="display: none;">
+                        <input type="hidden" id="FileTypes" name="FileTypes" />
+                        <h5 class="f-roboto-b text-primary">
+                            <% if (user.LanguageContext == "IT") { %>
+                                Tipo file
+                            <% } %>
+                            <% if (user.LanguageContext == "GB") { %>
+                                File type
+                            <% } %>
+                            <% if (user.LanguageContext == "ES") { %>
+                                Tipo de archivo
+                            <% } %>
+                            <% if (user.LanguageContext == "CN") { %>
+                                文件類型
+                            <% } %>
+                        </h5>
+                        <div class="col-xs-12 p-0 mb-2">
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input id="file-type-text" name="file-type-text" class="form-check-input file-type" data-type="text" type="checkbox">
+                                <spam class="p-1">
+                                    &nbsp;
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Documento di testo
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Text document
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Documento de texto
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        文字文檔
+                                    <% } %>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 p-0 mb-2">
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input id="file-type-pdf" name="file-type-pdf" class="form-check-input file-type" data-type="pdf" type="checkbox">
+                                <spam class="p-1">
+                                    &nbsp;
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Documento PDF
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        PDF document
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Documento PDF
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        PDF 文件
+                                    <% } %>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 p-0 mb-2">
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input id="file-type-image" name="file-type-image" class="form-check-input file-type" data-type="image" type="checkbox">
+                                <spam class="p-1">
+                                    &nbsp;
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Immagine
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Image
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Imagen
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        影像
+                                    <% } %>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+		            <a class="btn btn-default btn-xs btn-configura-lista mt-2" style="display: none;">
+			            <% if (user.LanguageContext == "IT") { %>
+                            Configura lista
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Configure list
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Configurar la lista
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            配置清單
+                        <% } %>
+		            </a>
+                </div>
+                <div class="divider col-xs-12 mt-4 mb-4"></div>
+                <div class="col-xs-12 p-0">
+		            <a class="btn btn-success btn-md float-end btn-salva-attributo">
+			            <% if (user.LanguageContext == "IT") { %>
+                            Salva
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Save
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Ahorrar
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            節省
+                        <% } %>
+		            </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="container-attribute-edit-values" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg h-75 modal-dialog-centered" role="document">
+        <div class="modal-content h-75">
+            <div class="modal-header">
+                <i class="bi bi-gear me-2"></i>
+                <h5 class="modal-title f-roboto b">
+			        <% if (user.LanguageContext == "IT") { %>
+                        Configura lista
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+                        Configure list
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+                        Configurar la lista
+                    <% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+                        配置清單
+                    <% } %>/ <span class="attribute-header"></span>
+                </h5>
+                <button type="button" class="btn-close btn-cancel-attribute-edit-values" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="container-attribute-edit-values-list"></div>
+                <div class="col-xs-12 p-1 mt-1 container-value-edit-culture"></div>
+                <input type="hidden" id="IDValue" />
+                <div class="divider col-xs-12 mt-4 mb-4"></div>
+		        <a class="btn btn-success btn-md float-end btn-salva-lista" style="display: none;">
+			        <% if (user.LanguageContext == "IT") { %>
+                        Salva
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+                        Save
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+                        Ahorrar
+                    <% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+                        節省
+                    <% } %>
+		        </a>
+		        <a class="btn btn-danger btn-md float-end btn-delete-lista me-2" disabled style="display: none;">
+			        <% if (user.LanguageContext == "IT") { %>
+                        Elimina
+                    <% } %>
+                    <% if (user.LanguageContext == "GB") { %>
+                        Delete
+                    <% } %>
+                    <% if (user.LanguageContext == "ES") { %>
+                        Ahorrar
+                    <% } %>
+                    <% if (user.LanguageContext == "CN") { %>
+                        節省
+                    <% } %>
+		        </a>
+            </div>
+        </div>
+    </div>
+</div>

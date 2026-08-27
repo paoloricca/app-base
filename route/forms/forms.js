@@ -1,7 +1,8 @@
 const express = require('express');
 const forms = express.Router();
 const bodyParser = require('body-parser');
-var requestForms = require('../../model/forms/forms.js');
+var requestForms = require('../../model/forms/request-forms.js');
+var requestFormsVersion = require('../../model/forms/request-forms-version.js');
 // var postRichiestaAssistenza = require('../../model/ticket/post-richiesta-assistenza');
 // var deleteRichiestaAssistenza = require('../../model/ticket/delete-richiesta-assistenza');
 var response = require('../../model/response');
@@ -26,6 +27,26 @@ forms.get('/control-processi-filter-script', (req, res) => {
 forms.get('/utility-script', (req, res) => {
     const filePath = path.resolve(__dirname, '../../utils/utility.js');
     res.sendFile(filePath);
+});
+forms.post('/forms-version', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        var myRequest = new requestFormsVersion(
+            req.session.user.IdAttore,
+            req.session.user.IdAccount,
+            req.body.IDModello,
+            req.session.user.LanguageContext,
+        );
+        crud.GetFormsVersion(myRequest).then(listOf => {
+            res.status(200).json(
+                new response('OK', JSON.stringify(listOf), null)
+            );
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
+        });
+    }
 });
 forms.get('/forms', function (req, res) {
     var internetAvailable = require("internet-available");

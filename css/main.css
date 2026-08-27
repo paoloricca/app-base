@@ -22,6 +22,40 @@
         justify-content: center;
     }
 
+.btn-circle-xs {
+    width: 24px;
+    height: 24px;
+    text-align: center;
+    padding: 4px 0;
+    font-size: 10px;
+    line-height: 1.428571429;
+    border-radius: 12px;
+}
+.btn-circle {
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  padding: 6px 0;
+  font-size: 12px;
+  line-height: 1.428571429;
+  border-radius: 15px;
+}
+.btn-circle.btn-lg {
+  width: 50px;
+  height: 50px;
+  padding: 10px 16px;
+  font-size: 18px;
+  line-height: 1.33;
+  border-radius: 25px;
+}
+.btn-circle.btn-xl {
+  width: 70px;
+  height: 70px;
+  padding: 10px 16px;
+  font-size: 24px;
+  line-height: 1.33;
+  border-radius: 35px;
+}
 #workspace {
     margin-left: 70px;
     height: 100vh;
@@ -44,7 +78,7 @@
 }
 .divider {
     width: 100% !important;
-    border-top: 1px solid #f1f1f1;
+    border-top: 1px solid #e1e1e1;
 }
 .gruppo-operativo, .profilo-utente, .auth-processo-azione {
     border: 1px solid #ffffff;
@@ -129,15 +163,16 @@ a.active, span.active {
     z-index: 5000;
     width: 250px;
 }
-#context-menu-node span, #context-menu-link span {
-    font-family: "Roboto" !important;
-    font-size: 12px;
-    padding: 4px;
-    margin: 0;
-    padding-bottom: 0;
-    cursor: pointer;
-}
-#context-menu-node span:hover, #context-menu-link span:hover {
+    #context-menu-node span, #context-menu-link span, .context-menu-model span, .btn-menu-item {
+        font-family: "Roboto" !important;
+        font-size: 12px;
+        padding: 4px;
+        margin: 0;
+        padding-bottom: 0;
+        cursor: pointer;
+    }
+#context-menu-node span:hover, #context-menu-link span:hover, .context-menu-model span:hover,
+    .btn-menu-item:hover {
     background: #E1e1e1;
     font-weight: 600;
     color: #222;
@@ -215,11 +250,11 @@ div, span, h1, h2, h3, h4, h5, h6, .col-xs-12, label {
     border-radius: 16px;
 }
 .process-bg {
-    height: 30px !important;
+/*    height: 30px !important;*/
     border: 1px solid #ffffff;
 }
 .process-bg:hover {
-    height:30px !important;
+/*    height:30px !important;*/
     border: 1px solid #e1e1e1;
     background-color: #f1f1f1;
     border-radius: 16px;

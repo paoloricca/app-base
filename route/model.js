@@ -5,6 +5,7 @@ var requestIdModelloIstanzaRecordValue = require('../model/request-idmodello-ist
 var requestIdModelloIstanzaRecordMedia = require('../model/request-idmodello-istanza-record-media');
 var requestIdModelloIstanzaRecord = require('../model/request-idmodello-istanza-record');
 var requestIdModelloIstanza = require('../model/request-idmodello-istanza');
+var requestBase = require('../model/request-base');
 var requestModel = require('../model/request-model');
 var response = require('../model/response');
 const crud = require('../crud/model');
@@ -40,6 +41,25 @@ model.get('/model-class/:idversione', function (req, res) {
         crud.GetModelClass(myRequest).then(listOf => {
             res.status(200).json(
                 new response('OK', JSON.parse(listOf), null)
+            );
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
+        });
+    }
+});
+model.get('/tipo-dati', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        var myRequest = new requestBase(
+            req.session.user.IdAttore,
+            req.session.user.IdAccount,
+            req.session.user.LanguageContext,
+        );
+        crud.GetTipoDati(myRequest).then(listOf => {
+            res.status(200).json(
+                new response('OK', JSON.stringify(listOf), null)
             );
         }).catch(err => {
             res.status(200).json(new response('ERR', null, err));
@@ -87,6 +107,84 @@ model.get('/model-class-attribute-values/:idattributo', function (req, res) {
             res.status(200).json(
                 new response('OK', JSON.parse(listOf), null)
             );
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
+        });
+    }
+});
+model.post('/post-class', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+
+        var myRequest = new requestBase(
+            req.body.IDCliente,
+            req.session.user.IdAccount,
+            req.session.user.LanguageContext,
+            req.body
+        );
+        crud.PostClass(myRequest).then(listOf => {
+            res.status(200).json(listOf);
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
+        });
+    }
+});
+model.delete('/del-class/:IDClasse', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        var myRequest = new requestBase(
+            req.session.user.IdAttore,
+            req.session.user.IdAccount,
+            req.session.user.LanguageContext,
+            req.params.IDClasse
+        );
+        crud.DeleteClass(myRequest).then(listOf => {
+            res.status(200).json(
+                new response('OK', JSON.stringify(listOf), null)
+            );
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
+        });
+    }
+});
+model.delete('/del-attribute/:IDAttributo', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        var myRequest = new requestBase(
+            req.session.user.IdAttore,
+            req.session.user.IdAccount,
+            req.session.user.LanguageContext,
+            req.params.IDAttributo
+        );
+        crud.DeleteAttribute(myRequest).then(listOf => {
+            res.status(200).json(
+                new response('OK', JSON.stringify(listOf), null)
+            );
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
+
+        });
+    }
+});
+model.post('/post-attribute', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+
+        var myRequest = new requestBase(
+            req.body.IDCliente,
+            req.session.user.IdAccount,
+            req.session.user.LanguageContext,
+            req.body
+        );
+        crud.PostAttribute(myRequest).then(listOf => {
+            res.status(200).json(listOf);
         }).catch(err => {
             res.status(200).json(new response('ERR', null, err));
         }).finally(() => {
@@ -179,7 +277,6 @@ model.delete('/delete-idmodello-istanza-record-media', function (req, res) {
         });
     }
 });
-
 model.post('/get-idmodello-istanza-record', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {
         res.set('Access-Control-Allow-Origin', '*');

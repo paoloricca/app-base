@@ -140,14 +140,14 @@
 
         this.setLabel(this.options.Label);
 
-        this.setDefault();
-
         this.values.IT = values.IT || "";
         this.values.GB = values.GB || "";
         this.values.ES = values.ES || "";
         this.values.CN = values.CN || "";
 
         this.refresh();
+
+        this.setDefault();
 
         this.$input.trigger("loaded", [
             this.getValues()
@@ -173,13 +173,17 @@
 
         this.$tabs.find('#txt-culture-edit-' + this.options.Id).val(
             this.values[this.options.LanguageContext]
-        ) 
+        );
+
+        this.$tabs.find('#txt-culture-edit-' + this.options.Id).focus();
     }
     MultiLanguageTextBox.prototype.setTitle = function (title) {
 
-        //console.log(title);
-
-        this.$tabs.find('.container-culture-textbox-edit-title').html(title);
+        if (title != null) {
+            this.$tabs.find('.container-culture-textbox-edit-title').html(title);
+        } else {
+            this.$tabs.find('.container-culture-textbox-edit-title').parent().empty();
+        }
 
     }
     MultiLanguageTextBox.prototype.setLabel = function (label) {
