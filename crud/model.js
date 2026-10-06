@@ -295,8 +295,6 @@ function PostClass(myRequest) {
     var myLanguageContext = myRequest.LanguageContext;
     var myRequestBody = JSON.stringify(myRequest.RequestBody);
 
-    console.log(myRequestBody);
-
     const customPromise = new Promise((resolve, reject) => {
         try {
             sql.connect(connection, function (err) {
