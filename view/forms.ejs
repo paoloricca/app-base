@@ -314,7 +314,9 @@
                             </tbody>
                         </table>
                     </div>
-
+                    <div class="col-xs-12 text-center">
+                        <a class="btn btn-primary btn-circle bi bi-plus-lg btn-new-version" data-idversione=""></a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -323,6 +325,7 @@
     <div class="modal" id="container-form-edit" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
         <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
             <div class="modal-content">
+
                 <div class="modal-header">
                     <h5 class="modal-title f-roboto b">
                         <span class="ordine-idrecord-color px-1"></span> <i class="bi bi-sticky"></i>&nbsp;
@@ -338,18 +341,182 @@
                         <% } %>
                         <% if (user.LanguageContext == "CN") { %>
                         編輯
-                        <% } %></b> / <span class="form-header"></span></span>
+                        <% } %></b> / <span class="form-header"></span>
                     </h5>
                     <button type="button" class="btn-close btn-cancel-container-form-edit" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="container-form-edit" />
+                    <div class="container-form-edit"></div>
                 </div>
+
             </div>
         </div>
     </div>
 
+    <div class="modal" id="container-form-new-version" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-lg h-75 modal-dialog-centered" role="document">
+            <div class="modal-content">
 
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <span class="form-new-version-header f-roboto b" />
+                    </h3>
+                    <button type="button" class="btn-close btn-cancel-container-form-new-version" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="col-lg-5 col-md-5 col-sm-12 col-xs-12">
+                        <img src="images/start-new-form-version.png" class="img-fluid" />
+                    </div>
+                    <div class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
+                        <h4>
+                            <span class="form-new-version-header-sub text-primary f-roboto-b"></span>
+                        </h4>
+                        <h5 class="f-roboto lh-sm text-secondary">
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+                        </h5>
+                        <div class="col-xs-12 p-0">
+                            <h5 class="f-roboto-b text-primary">
+                                <% if (user.LanguageContext == "IT") { %>
+                                    Duplica da versione precedente
+                                <% } %>
+                                <% if (user.LanguageContext == "GB") { %>
+                                    Duplicate from previous version
+                                <% } %>
+                                <% if (user.LanguageContext == "ES") { %>
+                                    Duplicado de la versi&oacute;n anterior
+                                <% } %>
+                                <% if (user.LanguageContext == "CN") { %>
+                                    複製自先前版本
+                                <% } %>
+                                
+                            </h5>
+                            <div class="col-xs-12 p-0 form-switch">
+                                <input id="chkCopyFromPreviousVersion" name="chkCopyFromPreviousVersion" class="form-check-input" type="checkbox">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer col-xs-12">
+                    <button type="button" class="btn btn-success btn-success-form-new-version">OK</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="container-form-new" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-lg h-75 modal-dialog-centered" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <span class="form-new-header f-roboto b" />
+                    </h3>
+                    <button type="button" class="btn-close btn-cancel-container-form-new" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                        <img src="images/start-new-form-<%= user.LanguageContext %>.png" class="img-fluid" />
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12">
+                        <form id="frm-model-new" class="was-validated" novalidate>
+                            <input type="hidden" id="txt-model-idmodello" name="txt-model-idmodello">
+                            <div class="col-xs-12 p-0">
+                                <div class="container-control-model-culture-textbox" />
+                            </div>
+                            <div class="col-xs-12 p-0">
+                                <label for="txt-model-codice" class="col-form-label">
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Codice
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Code
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        C&oacute;digo
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        程式碼
+                                    <% } %>
+                                </label>
+                                <input type="text" class="form-control" id="txt-model-codice">
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer col-xs-12">
+                    <button type="button" class="btn btn-success btn-success-form-new">OK</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <TitoloForm style="display: none;">
+		<% if (user.LanguageContext == "IT") { %>
+            Imposta il titolo
+        <% } %>
+        <% if (user.LanguageContext == "GB") { %>
+            Set the title
+        <% } %>
+        <% if (user.LanguageContext == "ES") { %>
+            Establecer el t&iacute;tulo
+		<% } %>
+        <% if (user.LanguageContext == "CN") { %>
+            設定標題
+        <% } %>
+    </TitoloForm>
+
+    <LabelFormNew>
+        <% if (user.LanguageContext == "IT") { %>
+            Inizia creando una nuova form
+        <% } %>
+        <% if (user.LanguageContext == "GB") { %>
+            Start by creating a new form
+        <% } %>
+        <% if (user.LanguageContext == "ES") { %>
+            Empieza creando un nuevo formulario
+        <% } %>
+        <% if (user.LanguageContext == "CN") { %>
+            首先建立一個新表單。
+        <% } %>
+    </LabelFormNew>
+
+    <LabelFormNewVersion>
+        <% if (user.LanguageContext == "IT") { %>
+            Crea una nuova versione del form
+        <% } %>
+        <% if (user.LanguageContext == "GB") { %>
+            Create a new form version
+        <% } %>
+        <% if (user.LanguageContext == "ES") { %>
+            Cree una nueva versi&oacute;n del formulario
+        <% } %>
+        <% if (user.LanguageContext == "CN") { %>
+            创建表单的新版本
+        <% } %>
+    </LabelFormNewVersion>
+
+    <LabelFormEdit>
+        <% if (user.LanguageContext == "IT") { %>
+            Modifica il titolo della form
+        <% } %>
+        <% if (user.LanguageContext == "GB") { %>
+            Edit form title
+        <% } %>
+        <% if (user.LanguageContext == "ES") { %>
+            Editar el t&iacute;tulo del formulario
+        <% } %>
+        <% if (user.LanguageContext == "CN") { %>
+            編輯表單標題
+        <% } %>
+    </LabelFormEdit>
 
     <LabelDescrizione style="display: none;">
 		<% if (user.LanguageContext == "IT") { %>

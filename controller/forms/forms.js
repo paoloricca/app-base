@@ -10,6 +10,12 @@ $(function () {
     $('.btn-filter-apply').click(function () {
         applyFilter();
     });
+    $('.btn-new-version').click(function () {
+        $('.form-new-version-header').html($('LabelFormNewVersion').html());
+        $('.form-new-version-header-sub').html($('.model-header').html());
+        $('#container-form-new-version').modal('show');
+    });
+
 
     $('.btn-filter-close').click(function () {
         $('.filtro-container').hide();
@@ -425,6 +431,10 @@ $(function () {
                                         loadFormsVersion(row);
                                     });
 
+                                    $('.container-form-edit-' + row.IDModello).find('.btn-model-edit').click(function () {
+                                        editForm(row);
+                                    });
+
                                 });
                             });
                         }
@@ -588,7 +598,104 @@ $(function () {
                 JSON.parse(ControlPagerArtworkOrdine.attr('data-options')).pageIndex
             );
     });
+    editForm = function (model) {
 
+        let fnName = getFnName();
+
+        try {
+            $('.form-new-header').html($('LabelFormEdit').html());
+            $(".container-control-model-culture-textbox").multiLanguageTextBox({
+                Title: null,
+                Label: $('TitoloForm').html(),
+                Id: 'DescrizioneForm',
+                LanguageContext: user.LanguageContext,
+                languages: [
+                    { code: "IT", title: "Italiano" },
+                    { code: "GB", title: "English" },
+                    { code: "ES", title: "Spain" },
+                    { code: "CN", title: "Cinese" }
+                ]
+            });
+
+            $(".container-control-model-culture-textbox").multiLanguageTextBox("option", "Title", null);
+            $(".container-control-model-culture-textbox").multiLanguageTextBox("load", {
+                Title: null,
+                IT: model.Description_IT,
+                GB: model.Description_GB,
+                ES: model.Description_ES,
+                CN: model.Description_CN
+            });
+
+            $('#txt-model-idmodello').val(model.IDModello);
+            $('#txt-model-codice').val(model.Codice);
+
+            $('#container-form-new').modal('show');
+        }
+
+        catch (err) {
+
+            ShowError(err.message, fnName);
+        }
+
+    }
+    $('.btn-success-form-new').click(function () {
+
+        let fnName = getFnName();
+
+        try {
+
+            /* Convalida i dati immessi dall'utente */
+            var isvalidform = true;
+
+            const forms = document.querySelectorAll('#frm-model-new .form-control')
+            Array.from(forms).forEach(form => {
+
+                if (form.offsetParent != null && !form.checkValidity()) {
+                    isvalidform = false;
+                }
+            });
+
+            /* Se i dati immessi sono validi */
+            if (isvalidform) {
+
+                const CtlTxtModelCulture = $(".container-control-model-culture-textbox").data("mltextbox");
+
+                $.ajax({
+                    type: "POST",
+                    url: "/post-model",
+                    data: {
+                        IDModello: $('#txt-model-idmodello').val(),
+                        Description_IT: CtlTxtModelCulture.value.IT,
+                        Description_GB: CtlTxtModelCulture.value.GB,
+                        Description_ES: CtlTxtModelCulture.value.ES,
+                        Description_CN: CtlTxtModelCulture.value.CN,
+                        Codice: $('#txt-model-codice').val(),
+                    },
+                    async: false
+                }).done(function (response) {
+
+                    if (response == "OK") {
+
+                        $('#container-form-new').modal('hide');
+
+                        loadForms(JSON.parse(ControlPagerArtworkOrdine.attr('data-options')).pageSize, 1);
+
+                    } else {
+
+                        ShowError(JSON.parse(response).error, fnName);
+
+                    }
+                });
+
+            }
+
+        }
+
+        catch (err) {
+
+            ShowError(err.message, fnName);
+        }
+    });
 
     /* inizializza il controllo action-button-nuovo */
     var ControlActionButtonInserimento = $('.action-button-inserimento');
@@ -611,6 +718,29 @@ $(function () {
             }).done(function (res) {
                 if (JSON.parse(JSON.stringify(res)).status == "OK") {
 
+                    $(".container-control-model-culture-textbox").multiLanguageTextBox({
+                        Title: null,
+                        Label: $('TitoloForm').html(),
+                        Id: 'DescrizioneForm',
+                        LanguageContext: user.LanguageContext,
+                        languages: [
+                            { code: "IT", title: "Italiano" },
+                            { code: "GB", title: "English" },
+                            { code: "ES", title: "Spain" },
+                            { code: "CN", title: "Cinese" }
+                        ]
+                    });
+
+                    $(".container-control-model-culture-textbox").multiLanguageTextBox("option", "Title", null);
+                    $(".container-control-model-culture-textbox").multiLanguageTextBox("load", {
+                        Title: null,
+                        IT: '',
+                        GB: '',
+                        ES: '',
+                        CN: ''
+                    });
+                    $('.form-new-header').html($('LabelFormNew').html());
+                    $('#container-form-new').modal('show');
 
                 } else {
                     RedirectToLogin();

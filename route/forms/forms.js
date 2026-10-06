@@ -3,6 +3,7 @@ const forms = express.Router();
 const bodyParser = require('body-parser');
 var requestForms = require('../../model/forms/request-forms.js');
 var requestFormsVersion = require('../../model/forms/request-forms-version.js');
+var requestBase = require('../../model/request-base.js');
 // var postRichiestaAssistenza = require('../../model/ticket/post-richiesta-assistenza');
 // var deleteRichiestaAssistenza = require('../../model/ticket/delete-richiesta-assistenza');
 var response = require('../../model/response');
@@ -89,33 +90,26 @@ forms.post('/forms', function (req, res) {
         });
     }
 });
-// forms.post('/richiesta-assistenza/:IDModelloIstanza', function (req, res) {
-//     if (sessionUtil.verifyUser(req, res)) {
-//         res.set('Access-Control-Allow-Origin', '*');
+forms.post('/post-model', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
 
-//         /* IDProcesso = 76 ==> Gestione Richieste Assistenza */
-//         var myRequest = new postRichiestaAssistenza(
-//             req.session.user.IdAttore,
-//             req.session.user.IdAccount,
-//             req.params.IDModelloIstanza,
-//             76,
-//             req.session.user.LanguageContext,
-//             req.body.pageIndex,
-//             req.body.pageSize,
-//             req.body
-//         );
+        res.set('Access-Control-Allow-Origin', '*');
 
-//         crud.PostRichiestaAssistenza(myRequest).then(listOf => {
-//             res.status(200).json(
-//                 new response('OK', JSON.stringify(listOf), null)
-//             );
-//         }).catch(err => {
-//             res.status(200).json(new response('ERR', null, err));
-//         }).finally(() => {
+        var myRequest = new requestBase(
+            req.session.user.IdAttore,
+            req.session.user.IdAccount,
+            req.session.user.LanguageContext,
+            req.body
+        );
+        crud.PostModel(myRequest).then(listOf => {
+            res.status(200).json(listOf);
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        }).finally(() => {
 
-//         });
-//     }
-// });
+        });
+    }
+ });
 // forms.delete('/richiesta-assistenza/:IDRecord', function (req, res) {
 //     if (sessionUtil.verifyUser(req, res)) {
 //         res.set('Access-Control-Allow-Origin', '*');

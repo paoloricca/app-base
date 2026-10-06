@@ -115,15 +115,18 @@ model.get('/model-class-attribute-values/:idattributo', function (req, res) {
     }
 });
 model.post('/post-class', function (req, res) {
+
     if (sessionUtil.verifyUser(req, res)) {
+
         res.set('Access-Control-Allow-Origin', '*');
 
         var myRequest = new requestBase(
-            req.body.IDCliente,
+            req.session.user.IdAttore,
             req.session.user.IdAccount,
             req.session.user.LanguageContext,
             req.body
         );
+
         crud.PostClass(myRequest).then(listOf => {
             res.status(200).json(listOf);
         }).catch(err => {

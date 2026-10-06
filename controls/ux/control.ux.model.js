@@ -1,5 +1,13 @@
 ﻿(function ($) {
     /* Questo controllo utente consente di interagire con un processo di sistema */
+
+    let labelNuovo = {
+        Description_IT: "Nuovo",
+        Description_GB: "New",
+        Description_ES: "Nuevo",
+        Description_CN: "新的",
+        Description: null,
+    }
     $.fn.model = function (options) {
         var options = $.extend({
             IDModello: null,
@@ -24,6 +32,8 @@
         $.fn.model.load = function () {
 
             var options = JSON.parse(plugin.attr('data-options'));
+
+            labelNuovo.Description = labelNuovo['Description_' + options.user.LanguageContext];
 
             $.ajax({
                 url: "/model-class/" + options.IDVersione,
@@ -687,15 +697,15 @@
                 plugin.find('#IDVersione').val(IDVersione);
 
                 var classe = {
-                    "Description": "Nuovo", /* Nuovo */
+                    "Description": labelNuovo.Description,
                     "IDClasse": null,
                     "IDClasseParent": null,
                     "IDVersione": IDVersione,
                     "Visibile": true,
-                    "Description_IT": "Nuovo",
-                    "Description_GB": "New",
-                    "Description_ES": "Nuevo",
-                    "Description_CN": "新的",
+                    "Description_IT": labelNuovo.Description_IT,
+                    "Description_GB": labelNuovo.Description_GB,
+                    "Description_ES": labelNuovo.Description_ES,
+                    "Description_CN": labelNuovo.Description_CN,
                     "NumeroCicliMin": null,
                     "NumeroCicli": null,
                     "Peso": null,
@@ -1274,7 +1284,7 @@
                         plugin.model.editAttribute(
                             {
 
-                                "Description": "Nuovo", /* TODO */
+                                "Description": labelNuovo.Description,
                                 "IDAttributo": null,
                                 "IDClasse": $(this).data('idclasse'),
                                 "Visibile": true,
@@ -1282,10 +1292,10 @@
                                 "IDTipoDati": null,
                                 "ValoreMinimo": null,
                                 "Peso": null,
-                                "Description_IT": "Nuovo",
-                                "Description_GB": "New",
-                                "Description_ES": "Nuevo",
-                                "Description_CN": "新的",
+                                "Description_IT": labelNuovo.Description_IT,
+                                "Description_GB": labelNuovo.Description_GB,
+                                "Description_ES": labelNuovo.Description_ES,
+                                "Description_CN": labelNuovo.Description_CN,
                                 "Description_DE": null,
                                 "HelpText_IT": null,
                                 "HelpText_GB": null,

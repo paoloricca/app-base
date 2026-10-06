@@ -342,6 +342,62 @@ function PostForms(myRequest) {
     });
     return customPromise
 }
+function PostModel(myRequest) {
+
+    const sender = arguments.callee.name;
+
+    var myIdAttore = myRequest.IdAttore;
+    var myIdAccount = myRequest.IdAccount;
+    var myLanguageContext = myRequest.LanguageContext;
+    var myRequestBody = JSON.stringify(myRequest.RequestBody);
+
+    console.log('myIdAttore: ' + myIdAttore);
+    console.log('myIdAccount: ' + myIdAccount);
+    console.log('myLanguageContext: ' + myLanguageContext);
+    console.log('myRequestBody: ' + myRequestBody);
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                } else {
+                    var request = new sql.Request();
+
+                    request.input('IDCliente', sql.Int, parseInt(myIdAttore));
+                    request.input('IDIstanziatore', sql.Int, myIdAccount);
+                    request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
+                    request.input('RequestBody', sql.NVarChar(sql.MAX), myRequestBody);
+                    request.output('Status', sql.NVarChar(500));
+
+                    request.execute("SP_POST_MODEL", function (err, response) {
+                        if (err) {
+                            reject(
+                                new exception(sender, err.message, err.name, err.stack)
+                            );
+                        } else {
+                            if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+                                resolve("OK");
+                            } else {
+                                reject(
+                                    new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
+                                );
+                            }
+                        }
+                    });
+                }
+            })
+        }
+        catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+    return customPromise
+}
 function RollBack(conn) {
     conn.query("ROLLBACK", () => conn.close());
 }
@@ -351,4 +407,5 @@ module.exports = {
     GetFormsVersion,
     DeleteForms,
     PostForms,
+    PostModel,
 }
