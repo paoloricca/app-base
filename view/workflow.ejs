@@ -63,19 +63,19 @@
 </div-->
 
 
-        <div class="col-xs-6 p-0 h-100">
-            <div class="panel panel-default h-100 p-0">
-                <div class="panel-heading p-3 f-roboto">
+        <div class="col-6 p-0 h-100">
+            <div class="card h-100 p-0">
+                <div class="card-header p-3 f-roboto">
                     <b>Processi</b>
                 </div>
-                <div class="panel-body h-100 p-2 f-roboto">
+                <div class="card-body h-100 p-2 f-roboto">
                     <div id="processi-container" style="overflow-y:auto; height:90%;">
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="modal" id="container-workflow" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal" id="container-workflow" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -91,16 +91,16 @@
                         <button type="button" class="btn btn-primary rounded-circle bi bi-plus-lg btn-workflow-states-new d-inline-flex align-items-center justify-content-center"
                             style="width:34px; height:34px; padding:0; margin:10px; left:20px; top:20px; position: absolute; z-index:1000;">
                         </button>
-                        <button class="btn btn-default bi bi-printer workflow-stampa" style="margin:10px; left:60px; top:20px; position: absolute; z-index:1000;"></button>
-                        <button class="btn btn-default bi bi-download workflow-download" style="margin:10px; left:105px; top:20px; position: absolute; z-index:1000;"></button>
+                        <button class="btn btn-secondary bi bi-printer workflow-stampa" style="margin:10px; left:60px; top:20px; position: absolute; z-index:1000;"></button>
+                        <button class="btn btn-secondary bi bi-download workflow-download" style="margin:10px; left:105px; top:20px; position: absolute; z-index:1000;"></button>
                         <div id="context-menu-node">
                             <input type="hidden" class="node" />
                             <input type="hidden" id="IdEventoTransizione" />
                             <input type="hidden" id="DescTransizione" />
-                            <h6 class="col-xs-12 p-0 px-2 f-roboto-b text-primary context-menu-node-header"></h6>
-                            <button type="button" class="btn-close btn-xs btn-cancel-context-menu-node"></button>
-                            <h6 class="col-xs-12 p-0 m-0"><div class="divider"></div></h6>
-                            <span class="col-xs-12 p-0 px-2 workflow-set-owner">
+                            <h6 class="col-12 p-0 px-2 f-roboto-b text-primary context-menu-node-header"></h6>
+                            <button type="button" class="btn-close btn-cancel-context-menu-node"></button>
+                            <h6 class="col-12 p-0 m-0"><div class="divider"></div></h6>
+                            <span class="col-12 p-0 px-2 workflow-set-owner">
                                 <i class="bi bi-person-gear"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Imposta owner
@@ -115,7 +115,7 @@
                                     設定所有者
                                 <% } %>
                             </span>
-                            <span class="col-xs-12 p-0 px-2 workflow-set-auth">
+                            <span class="col-12 p-0 px-2 workflow-set-auth">
                                 <i class="bi bi-person-lock"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Imposta autorizzazioni
@@ -130,7 +130,7 @@
                                     設定權限
                                 <% } %>
                             </span>
-                            <span class="col-xs-12 p-0 px-2 workflow-set-rel">
+                            <span class="col-12 p-0 px-2 workflow-set-rel">
                                 <i class="bi bi-link-45deg"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Collega stato
@@ -145,7 +145,7 @@
                                     設定權限
                                 <% } %>
                             </span>
-                            <span class="col-xs-12 p-0 px-2 workflow-set-node">
+                            <span class="col-12 p-0 px-2 workflow-set-node">
                                 <i class="bi bi-pencil"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Modifica
@@ -160,7 +160,7 @@
                                     編輯
                                 <% } %>
                             </span>
-                            <span class="col-xs-12 p-0 px-2 workflow-del-node">
+                            <span class="col-12 p-0 px-2 workflow-del-node">
                                 <i class="bi bi-trash"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Elimina
@@ -181,10 +181,10 @@
                             <input type="hidden" class="transition" />
                             <input type="hidden" id="IDEventoDirezione" />
                             <input type="hidden" id="DescDirezione" />
-                            <h6 class="col-xs-12 p-0 px-2 f-roboto-b text-primary context-menu-link-header"></h6>
-                            <button type="button" class="btn-close p-2 btn-xs btn-cancel-context-menu-link"></button>
-                            <h6 class="col-xs-12 p-0 m-0"><div class="divider"></div></h6>
-                            <span class="col-xs-12 p-0 px-2 workflow-set-link">
+                            <h6 class="col-12 p-0 px-2 f-roboto-b text-primary context-menu-link-header"></h6>
+                            <button type="button" class="btn-close p-2 btn-sm btn-cancel-context-menu-link"></button>
+                            <h6 class="col-12 p-0 m-0"><div class="divider"></div></h6>
+                            <span class="col-12 p-0 px-2 workflow-set-link">
                                 <i class="bi bi-link-45deg"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Imposta collegamento
@@ -199,7 +199,7 @@
                                     設定連結
                                 <% } %>
                             </span>
-                            <span class="col-xs-12 p-0 px-2 workflow-del-link">
+                            <span class="col-12 p-0 px-2 workflow-del-link">
                                 <i class="bi bi-trash"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Elimina
@@ -218,13 +218,13 @@
 
                     </div>
                     <div class="modal-footer">
-                        <button type="button" data-bs-dismiss="modal" class="btn btn-default btn-cancel-container-workflow">Annulla</button>
+                        <button type="button" data-bs-dismiss="modal" class="btn btn-secondary btn-cancel-container-workflow">Annulla</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="modal" id="container-workflow-set-owner" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal" id="container-workflow-set-owner" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -261,25 +261,25 @@
                                 <input type="hidden" id="IsAdminOwnerSelectedNode_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsAdminOwnerSelectedNode" name="rb-IsAdminOwnerSelectedNode">
                                 <span>Responsabile del proprietario dello stato <span id="IsAdminOwnerSelectedNode_Desc"></span></span>
-                                <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-admin-ownwer-selected-node"></i>
+                                <i class="bi bi-gear btn btn-secondary btn-sm bi-gear-is-admin-ownwer-selected-node"></i>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsOwnerSelectedNode_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsOwnerSelectedNode" name="rb-IsOwnerSelectedNode">
                                 <span>Proprietario dello stato <span id="IsOwnerSelectedNode_Desc"></span></span>
-                                <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-ownwer-selected-node"></i>
+                                <i class="bi bi-gear btn btn-secondary btn-sm bi-gear-is-ownwer-selected-node"></i>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsCreatorSelectedNode_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsCreatorSelectedNode" name="rb-IsCreatorSelectedNode">
                                 <span>Utente che ha registrato lo stato <span id="IsCreatorSelectedNode_Desc"></span></span>
-                                <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-creator-selected-node"></i>
+                                <i class="bi bi-gear btn btn-secondary btn-sm bi-gear-is-creator-selected-node"></i>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsSelectedProfile_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsSelectedProfile" name="rb-IsSelectedProfile">
                                 <span>Utenti del profilo <span id="IsSelectedProfile_Desc"></span></span>
-                                <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-selected-profile"></i>
+                                <i class="bi bi-gear btn btn-secondary btn-sm bi-gear-is-selected-profile"></i>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsUsersFromAdminProfileCreator" name="rb-IsUsersFromAdminProfileCreator">
@@ -291,7 +291,7 @@
                         <button type="button" class="btn btn-primary btn-confirm-container-workflow-set-owner">
                             OK
                         </button>
-                        <button type="button" data-bs-dismiss="modal" class="btn btn-default btn-cancel-container-workflow-set-owner">
+                        <button type="button" data-bs-dismiss="modal" class="btn btn-secondary btn-cancel-container-workflow-set-owner">
 		                    <% if (user.LanguageContext == "IT") { %>
                                 Annulla
                             <% } %>
@@ -310,7 +310,7 @@
             </div>
         </div>
 
-        <div class="modal" id="container-workflow-set-link" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal" id="container-workflow-set-link" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -334,22 +334,22 @@
                     </div>
                     <div class="modal-body">
 
-                        <div class="col-xs-12 p-0">
+                        <div class="col-12 p-0">
 
                             <form name="frmWorkflowSetLink" class="was-validated" novalidate>
 
                                 <div class="container-control-culture-textbox-codice"></div>
                                 <div class="container-control-culture-textbox-descrizione"></div>
                                 
-                                <div class="col-xs-12 p-0 form-switch">
-                                    <input class="form-check-input float-left btn-toggle-link m-2" type="checkbox" id="rb-is-available-note" name="rb-is-available-note">
-                                    <span class="h6 float-left text-decoration-none text-secondary f-roboto" data-idprocessoazione="">
+                                <div class="col-12 p-0 form-switch">
+                                    <input class="form-check-input float-start btn-toggle-link m-2" type="checkbox" id="rb-is-available-note" name="rb-is-available-note">
+                                    <span class="h6 float-start text-decoration-none text-secondary f-roboto" data-idprocessoazione="">
                                         Abilita inserimento testo
                                     </span>
                                 </div>
-                                <div class="col-xs-12 p-0 form-switch">
-                                    <input class="form-check-input float-left btn-toggle-link m-2" type="checkbox" id="rb-required-confirmation" name="rb-required-confirmation">
-                                    <span class="h6 float-left text-decoration-none text-secondary f-roboto" data-idprocessoazione="">
+                                <div class="col-12 p-0 form-switch">
+                                    <input class="form-check-input float-start btn-toggle-link m-2" type="checkbox" id="rb-required-confirmation" name="rb-required-confirmation">
+                                    <span class="h6 float-start text-decoration-none text-secondary f-roboto" data-idprocessoazione="">
                                         Abilita richiesta conferma
                                     </span>
                                 </div>
@@ -362,7 +362,7 @@
                         <button type="button" class="btn btn-primary btn-confirm-container-workflow-set-link">
                             OK
                         </button>
-                        <button type="button" data-bs-dismiss="modal" class="btn btn-default btn-cancel-container-workflow-set-link">
+                        <button type="button" data-bs-dismiss="modal" class="btn btn-secondary btn-cancel-container-workflow-set-link">
 		                    <% if (user.LanguageContext == "IT") { %>
                                 Annulla
                             <% } %>
@@ -381,7 +381,7 @@
             </div>
         </div>
 
-        <div class="modal" id="container-workflow-set-node" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal" id="container-workflow-set-node" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -404,7 +404,7 @@
                         <button type="button" class="btn-close btn-cancel-container-workflow-set-node" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="col-xs-12 p-0">
+                        <div class="col-12 p-0">
                             <form name="frmWorkflowSetNode" class="was-validated" novalidate>
                                 <div class="container-control-workflow-set-node-codice"></div>
                                 <div class="container-control-workflow-set-node-descrizione"></div>
@@ -415,7 +415,7 @@
                         <button type="button" class="btn btn-primary btn-confirm-container-workflow-set-node">
                             OK
                         </button>
-                        <button type="button" data-bs-dismiss="modal" class="btn btn-default btn-cancel-container-workflow-set-node">
+                        <button type="button" data-bs-dismiss="modal" class="btn btn-secondary btn-cancel-container-workflow-set-node">
 		                    <% if (user.LanguageContext == "IT") { %>
                                 Annulla
                             <% } %>
@@ -434,7 +434,7 @@
             </div>
         </div>
 
-        <div class="modal" id="container-workflow-set-profilo-utente" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalProcessi">
+        <div class="modal" id="container-workflow-set-profilo-utente" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="ModalProcessi">
             <div class="modal-dialog modal-dialog-centered modal-lg h-50">
                 <div class="modal-content h-75" style="margin-top:-7% !important; height:75% !important;">
                     <div class="modal-header">
@@ -458,8 +458,8 @@
                     <div class="modal-body p-1 pt-1" style="overflow-y:hidden;">
                         <div class="row g-0 h-100">
                             <div class="col-6 p-0 h-100">
-                                <div class="panel panel-default h-100 p-0">
-                                    <div class="panel-heading p-3 f-roboto">
+                                <div class="card h-100 p-0">
+                                    <div class="card-header p-3 f-roboto">
                                         <b>
 		                                    <% if (user.LanguageContext == "IT") { %>
                                                 Gruppi di lavoro
@@ -475,15 +475,15 @@
                                             <% } %>
                                         </b>
                                     </div>
-                                    <div class="panel-body h-100 p-2 f-roboto">
+                                    <div class="card-body h-100 p-2 f-roboto">
                                         <div id="gruppi-operativi-container" style="overflow-y:auto; height:90%;">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-6 p-0 h-100 px-1">
-                                <div class="panel panel-default h-100 p-0">
-                                    <div class="panel-heading p-3 f-roboto">
+                                <div class="card h-100 p-0">
+                                    <div class="card-header p-3 f-roboto">
                                         <b>
 		                                    <% if (user.LanguageContext == "IT") { %>
                                                 Profili utente
@@ -500,7 +500,7 @@
                                             <span class="profili-utente-text"></span>
                                         </b>
                                     </div>
-                                    <div class="panel-body h-100 p-2 f-roboto">
+                                    <div class="card-body h-100 p-2 f-roboto">
                                         <div id="profili-utente-container" style="overflow-y:auto; height:90%;">
                                         </div>
                                     </div>
@@ -509,7 +509,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-default btn-close-processi" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-secondary btn-close-processi" data-bs-dismiss="modal">
 		                    <% if (user.LanguageContext == "IT") { %>
                                 Annulla
                             <% } %>
@@ -528,7 +528,7 @@
             </div>
         </div>
 
-        <div class="modal" id="container-workflow-node-link" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal" id="container-workflow-node-link" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered h-50" role="document">
                 <div class="modal-content h-50">
                     <div class="modal-header">
@@ -572,7 +572,7 @@
             </div>
         </div>
 
-        <div class="modal" id="container-workflow-node-states" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+        <div class="modal" id="container-workflow-node-states" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -600,7 +600,7 @@
             </div>
         </div>
 
-        <div class="modal" id="container-workflow-set-auth" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="ModalProcessi">
+        <div class="modal" id="container-workflow-set-auth" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="ModalProcessi">
             <div class="modal-dialog modal-dialog-centered modal-lg h-50">
                 <div class="modal-content h-75" style="margin-top:-7% !important; height:75% !important;">
                     <div class="modal-header">
@@ -624,8 +624,8 @@
                     <div class="modal-body p-1 pt-1" style="overflow-y:hidden;">
                         <div class="row g-0 h-100">
                             <div class="col-4 p-0 h-100">
-                                <div class="panel panel-default h-100 p-0">
-                                    <div class="panel-heading p-1 px-2 f-roboto">
+                                <div class="card h-100 p-0">
+                                    <div class="card-header p-1 px-2 f-roboto">
                                     <b>
 		                                <% if (user.LanguageContext == "IT") { %>
                                             Gruppi di lavoro
@@ -641,15 +641,15 @@
                                         <% } %>
                                     </b>
                                     </div>
-                                    <div class="panel-body h-100 p-2 f-roboto">
+                                    <div class="card-body h-100 p-2 f-roboto">
                                         <div id="auth-gruppi-operativi-container" style="overflow-y:auto; height:90%;">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-4 p-0 h-100 px-1">
-                                <div class="panel panel-default h-100 p-0">
-                                    <div class="panel-heading p-1 px-2 f-roboto">
+                                <div class="card h-100 p-0">
+                                    <div class="card-header p-1 px-2 f-roboto">
                                     <b>
 		                                <% if (user.LanguageContext == "IT") { %>
                                             Profili utente
@@ -666,15 +666,15 @@
                                         <span class="auth-profili-utente-text"></span>
                                     </b>
                                     </div>
-                                    <div class="panel-body h-100 p-2 f-roboto">
+                                    <div class="card-body h-100 p-2 f-roboto">
                                         <div id="auth-profili-utente-container" style="overflow-y:auto; height:90%;">
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-4 p-0 h-100 px-1">
-                                <div class="panel panel-default h-100 p-0">
-                                    <div class="panel-heading p-1 px-2 f-roboto">
+                                <div class="card h-100 p-0">
+                                    <div class="card-header p-1 px-2 f-roboto">
                                     <b>
 		                                <% if (user.LanguageContext == "IT") { %>
                                             Autorizzazioni
@@ -691,7 +691,7 @@
                                         <span class="auth-autorizzazioni-text"></span>
                                     </b>
                                     </div>
-                                    <div class="panel-body h-100 p-2 f-roboto">
+                                    <div class="card-body h-100 p-2 f-roboto">
                                         <div id="auth-autorizzazioni-container" style="overflow-y:auto; height:90%;">
                                         </div>
                                     </div>
@@ -700,7 +700,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-default btn-close-container-workflow-set-auth" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-secondary btn-close-container-workflow-set-auth" data-bs-dismiss="modal">
 		                    <% if (user.LanguageContext == "IT") { %>
                                 Annulla
                             <% } %>

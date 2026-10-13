@@ -32,7 +32,7 @@
     <script type="text/javascript" src="/richiesta-assistenza-script"></script>
     <script type="text/javascript" src="/logout-script"></script>
 </head>
-<body>
+<body class="support-page">
     <%- include('partials/header'); %>
     <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= user.LanguageContext %>" />
     <input type="hidden" name="user" id="user" value="<%= JSON.stringify(user) %>" />
@@ -56,10 +56,10 @@
             </b>
         </h4>
     </div>
-    <div class="container-fluid h-75" style="display:block; position:absolute; height:78% !important; margin-top:0 !important;">
-        <div class="col-lg-3 col-md-3 col-sm-3 p-0 h-100 filtro-container">
-            <div class="panel panel-default h-100 p-0">
-                <div class="panel-heading p-2 f-roboto">
+    <div class="container-fluid support-layout">
+        <div class="support-filter filtro-container">
+            <div class="card h-100 p-0">
+                <div class="card-header p-2 f-roboto">
                     <button type="button" class="btn btn-light bi bi-arrow-left rounded-circle float-end btn-30 btn-filter-close"
                         data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<% if (user.LanguageContext == "IT") { %>Nascondi Filtro<% } %><% if (user.LanguageContext == "GB") { %>Hide Filter<% } %><% if (user.LanguageContext == "ES") { %>Ocultar filtro<% } %><% if (user.LanguageContext == "CN") { %>隱藏過濾器<% } %>">
                     </button>
@@ -88,16 +88,16 @@
                         <li>
                     </ul>
                 </div>
-                <div class="panel-body p-2">
+                <div class="card-body p-2">
 
                     <div class="tab-content mt-3" id="stepTabContent">
                         <div class="tab-pane show active" id="1step">
-                            <div id="myChart-container" style="height: 250px">
-                                <canvas id="myChart" width="250" height="250"></canvas>
+                            <div id="myChart-container" class="support-chart">
+                                <canvas id="myChart"></canvas>
                             </div>
                         </div>
                         <div class="tab-pane" id="2step">
-                            <div id="filtro-richieste-assistenza-container" style="overflow-y:auto; height:90%;">
+                            <div id="filtro-richieste-assistenza-container" class="support-filter-content">
                             </div>
                             <div class="p-3 pt-4">
 						        <button type="button" class="btn btn-md btn-secondary text-white w-100 btn-filter-apply">
@@ -121,9 +121,9 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-9 col-md-9 col-sm-9 p-0 h-100 px-2 result-container">
-            <div class="panel panel-default h-100 p-0">
-                <div class="panel-heading p-3 f-roboto">
+        <div class="result-container support-results">
+            <div class="card h-100 p-0">
+                <div class="card-header p-3 f-roboto">
                     <b>
 		                <% if (user.LanguageContext == "IT") { %>
                             Richieste di assistenza
@@ -143,14 +143,14 @@
                     </button>
                     <span class="action-button-inserimento"></span>&nbsp;
                 </div>
-                <div class="panel-body h-100 p-2 f-roboto">
-                    <div style="overflow-y:auto; height:80%;">
+                <div class="card-body p-2 f-roboto">
+                    <div class="support-results-content">
                         <table class="table table-hover table-xs">
                             <thead>
                                 <tr>
-                                    <th scope="col">
+                                    <th scope="col" class="support-mobile-hidden">
                                     </th>
-                                    <th scope="col" class="process-label-id">
+                                    <th scope="col" class="process-label-id support-mobile-id">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             ID Richiesta
                                         <% } %>
@@ -164,7 +164,7 @@
                                             ID 要求
                                         <% } %>
                                     </th>
-                                    <th scope="col">
+                                    <th scope="col" class="support-mobile-requester">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             Richiedente
                                         <% } %>
@@ -178,7 +178,7 @@
                                             申請人
                                         <% } %>
                                     </th>
-                                    <th scope="col">
+                                    <th scope="col" class="support-mobile-hidden">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             Data Richiesta
                                         <% } %>
@@ -192,7 +192,7 @@
                                             要求的日期
                                         <% } %>
                                     </th>
-                                    <th scope="col">
+                                    <th scope="col" class="support-mobile-hidden">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             Tipo Richiesta
                                         <% } %>
@@ -206,7 +206,7 @@
                                             請求類型
                                         <% } %>
                                     </th>
-                                    <th scope="col">
+                                    <th scope="col" class="support-mobile-hidden">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             Ambito
                                         <% } %>
@@ -220,7 +220,7 @@
                                             部門
                                         <% } %>
                                     </th>
-                                    <th scope="col">
+                                    <th scope="col" class="support-mobile-object">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             Oggetto
                                         <% } %>
@@ -234,7 +234,7 @@
                                             目的
                                         <% } %>
                                     </th>
-                                    <th scope="col" class="hidden-sm hidden-md">
+                                    <th scope="col" class="support-mobile-hidden">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             Descrizione
                                         <% } %>
@@ -248,7 +248,7 @@
                                             描述
                                         <% } %>
                                     </th>
-                                    <th scope="col">
+                                    <th scope="col" class="support-mobile-hidden">
 					                    <% if (user.LanguageContext == "IT") { %>
                                             Stato attuale
                                         <% } %>
@@ -262,7 +262,7 @@
                                             目前狀態
                                         <% } %>
                                     </th>
-                                    <th scope="col">
+                                    <th scope="col" class="support-mobile-actions">
                                         
                                     </th>
                                 </tr>
@@ -271,15 +271,16 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="p-3 pt-0" style="height:15%; margin-top:-1%;">
+                    <div class="support-pager p-3 pt-0">
                         <div class="artwork-ordine-pager pager"></div>
+                    </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="container-processo" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+    <div class="modal" id="container-processo" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -308,7 +309,7 @@
         </div>
     </div>
 
-    <div class="modal" id="container-history" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-keyboard="false">
+    <div class="modal" id="container-history" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">

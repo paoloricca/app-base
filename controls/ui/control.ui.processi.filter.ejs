@@ -1,13 +1,13 @@
 ﻿<div class="container-filtro-processi">
 	<!-- TESTO -->
-    <div class="col-xs-12 p-2">
+    <div class="col-12 p-2">
         <label class="col-form-label">
             <%= ProcessLabelId %>
         </label>
         <input type="text" class="form-control" id="filter_IdRecord" maxlength="50">
     </div>
 	<!-- DATA -->
-    <div class="col-xs-12 p-2">
+    <div class="col-12 p-2">
         <label class="col-form-label">
 			<% if (LanguageContext == "IT") { %>
                 Data Richiesta
@@ -25,7 +25,7 @@
         <input type="text" class="form-control" id="filter_DataRegistrazione" maxlength="50">
     </div>
 	<!-- LISTA -->
-    <div class="col-xs-12 p-2">
+    <div class="col-12 p-2">
         <label class="col-form-label">
 			<% if (LanguageContext == "IT") { %>
                 Stato
@@ -44,8 +44,8 @@
             <option value="">&hellip;</option>
         </select>
     </div>
-    <div class="col-xs-12 p-2">
-        <a class="btn btn-light btn-md f-roboto-b col-xs-12">
+    <div class="col-12 p-2">
+        <a class="btn btn-light btn-md f-roboto-b col-12">
 			<% if (LanguageContext == "IT") { %>
                 Cerca
             <% } %>

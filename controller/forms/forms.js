@@ -2,7 +2,7 @@ $(function () {
 
     user = JSON.parse($('#user').val());
 
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"], [data-bs-toggle="dropdown"][data-bs-title]');
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
     const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
     const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
@@ -18,12 +18,10 @@ $(function () {
 
 
     $('.btn-filter-close').click(function () {
-        $('.filtro-container').hide();
-        $('.result-container').removeClass('col-lg-9 col-md-9 col-sm-9').addClass('col-lg-12 col-md-12 col-sm-12');
+        $('.forms-layout').addClass('filter-hidden');
     });
     $('.btn-filter-open').click(function () {
-        $('.filtro-container').show();
-        $('.result-container').removeClass('col-lg-12 col-md-12 col-sm-12').addClass('col-lg-9 col-md-9 col-sm-9');
+        $('.forms-layout').removeClass('filter-hidden');
         $(this).blur();
     });
     updateForm = function () {

@@ -9,13 +9,13 @@ $(function () {
     $('.btn-login').click(function () {
         //var isvalidform = true;
         //if (!$('#Userid').val()) {
-        //    $('#Userid').parent('.form-group').children('.invalid-feedback').removeClass('d-none');
-        //    $('#Userid').parent('.form-group').children('.invalid-feedback').show();
+        //    $('#Userid').parent('.mb-3').children('.invalid-feedback').removeClass('d-none');
+        //    $('#Userid').parent('.mb-3').children('.invalid-feedback').show();
         //    isvalidform = false;
         //}
         //if (!$('#Password').val()) {
-        //    $('#Password').parent('.form-group').children('.invalid-feedback').removeClass('d-none');
-        //    $('#Password').parent('.form-group').children('.invalid-feedback').show();
+        //    $('#Password').parent('.mb-3').children('.invalid-feedback').removeClass('d-none');
+        //    $('#Password').parent('.mb-3').children('.invalid-feedback').show();
         //    isvalidform = false;
         //}
         //if (isvalidform) {

@@ -1,17 +1,15 @@
 $(function () {
 
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"], [data-bs-toggle="dropdown"][data-bs-title]');
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
     const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
     const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
 
     $('.btn-filter-close').click(function () {
-        $('.filtro-container').hide();
-        $('.result-container').removeClass('col-xs-10 px-3').addClass('col-xs-12');
+        $('.artwork-order-layout').addClass('filter-hidden');
     });
     $('.btn-filter-open').click(function () {
-        $('.filtro-container').show();
-        $('.result-container').removeClass().addClass('p-0 h-100 px-3 result-container col-xs-10');
+        $('.artwork-order-layout').removeClass('filter-hidden');
         $(this).blur();
     });
     loadArtworkOrdini = function (pageSize, pageIndex) {
@@ -80,7 +78,7 @@ $(function () {
                                 /* inizializza il controllo Model */
                                 var ArtwordOrdine = $('.model');
 
-                                /* Imposta le proprietà di default del plug-in <Model> */
+                                /* Imposta le proprietï¿½ di default del plug-in <Model> */
                                 ArtwordOrdine.model({
                                     IDModello: 31,
                                     IDVersione: 68,
@@ -112,7 +110,7 @@ $(function () {
                                 ArtwordOrdine.bind("onload", function () {                                        
                                 });
 
-                                /* Imposta le proprietà di default del plug-in <Model> */
+                                /* Imposta le proprietï¿½ di default del plug-in <Model> */
                                 ArtwordOrdine.model({
                                     IDModello: 31,
                                     IDVersione: 68,
@@ -166,7 +164,7 @@ $(function () {
                                 /* inizializza il controllo Model */
                                 var ArtworkHistory = $('.history');
 
-                                /* Imposta le proprietà di default del plug-in <WorkflowHistory> */
+                                /* Imposta le proprietï¿½ di default del plug-in <WorkflowHistory> */
                                 ArtworkHistory.workflowhistory({
                                     IdRecord: ordine.IdRecord,
                                     IdProcesso: 71,
@@ -308,7 +306,7 @@ $(function () {
     /* inizializza il controllo filtro */
     var ControlFiltroOrdini = $('#filtro-ordini-container');
 
-    /* Imposta le proprietà di default del plug-in <FiltroProcessi> */
+    /* Imposta le proprietï¿½ di default del plug-in <FiltroProcessi> */
     ControlFiltroOrdini.filtroprocessi({
         IdProfiloUtente: null,
         IdProcesso: null,
@@ -316,7 +314,7 @@ $(function () {
         LanguageContext: $('#LanguageContext').val()
     });
 
-    /* memorizza le proprietà della sessione user */
+    /* memorizza le proprietï¿½ della sessione user */
     var user = JSON.parse($('#user').val());
 
     var ControlActionButtonInserimento = $('.action-button-inserimento');
@@ -333,7 +331,7 @@ $(function () {
         ArtwordOrdine.bind("onload", function () {
         });
 
-        /* Imposta le proprietà di default del plug-in <Model> */
+        /* Imposta le proprietï¿½ di default del plug-in <Model> */
         ArtwordOrdine.model({
             IDModello: 31,
             IDVersione: 68,
@@ -357,7 +355,7 @@ $(function () {
     /* inizializza il controllo pager */
     var ControlPagerArtworkOrdine = $('.artwork-ordine-pager');
 
-    /* Imposta le proprietà di default del plug-in <Pager> */
+    /* Imposta le proprietï¿½ di default del plug-in <Pager> */
     ControlPagerArtworkOrdine.paging({
         pageIndex: 1,
         pageSize: 12,

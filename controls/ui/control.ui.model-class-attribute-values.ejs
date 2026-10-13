@@ -1,27 +1,25 @@
-﻿<div class="col-xs-12 p-0 process-bg" style="">
-    <div class="col-xs-12 p-1 text-start btn btn-value-<%= value.IDValue %>-edit">
+﻿<div class="col-12 p-0 process-bg" style="">
+    <div class="col-12 p-1 text-start btn btn-value-<%= value.IDValue %>-edit">
         <a class="text-start btn p-0 ps-2 text-secondary f-roboto lbl-value-<%= value.IDValue %>-edit" data-idvalue="<%= value.IDValue %>">
             <%= value.Description %>
         </a>
-        <a class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle float-start"
-		    data-toggle="dropdown" style="width:23px; height:23px; padding:0; font-size:1.1em;"
-		    data-bs-toggle="tooltip" data-bs-placement="left">
+        <a class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle float-start model-editor-menu-trigger"
+		    data-bs-toggle="dropdown"
+		    data-bs-placement="left">
 	    </a>
-	    <ul class="dropdown-menu dropdown-menu-left">
+	    <ul class="dropdown-menu model-editor-context-menu">
 		    <li>
-			    <div class="col-xs-12">
+			    <div class="model-editor-context-menu-heading">
 				    <b>
 					    <%= value.Description %>
 				    </b>
+                    <span class="spinner-border text-danger" role="status" style="display:none;"></span>
 			    </div>
-			    <span class="spinner-border text-danger mt-1" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
 		    </li>
-		    <li class="dropdown-item">
-			    <hr class="dropdown-divider">
-                </li>
-		    <li class="dropdown-item">
-			    <span class="col-xs-12 p-2 px-2 btn-menu-item btn-value-<%= value.IDValue %>-edit" data-idvalue="<%= value.IDValue %>">
-				    <i class="bi bi-pencil"></i>&nbsp;&nbsp;
+		    <li><hr class="dropdown-divider"></li>
+		    <li>
+			    <span class="dropdown-item model-editor-context-menu-action btn-menu-item btn-value-<%= value.IDValue %>-edit" data-idvalue="<%= value.IDValue %>">
+				    <i class="bi bi-pencil"></i>
 				    <% if (user.LanguageContext == "IT") { %>
 						    Modifica
                         <% } %>
@@ -36,9 +34,9 @@
                         <% } %>
 			    </span>
 		    </li>
-		    <li class="dropdown-item">
-			    <span class="col-xs-12 p-2 px-2 btn-menu-item btn-value-<%= value.IDValue %>-del" data-idvalue="<%= value.IDValue %>">
-				    <i class="bi bi-trash"></i>&nbsp;&nbsp;
+		    <li>
+			    <span class="dropdown-item model-editor-context-menu-action btn-menu-item btn-value-<%= value.IDValue %>-del" data-idvalue="<%= value.IDValue %>">
+				    <i class="bi bi-trash"></i>
 				    <% if (user.LanguageContext == "IT") { %>
                             Elimina
                         <% } %>

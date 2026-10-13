@@ -74,7 +74,7 @@
                     jQuery.each(options.filelist.substring(1).split('@'), function (i, fileString) {
                         var file = JSON.parse(fileString)
                         plugin.find('.file-container').append(
-                            '<div id="' + file.newFilename + '" class="col-xs-12 p-0 mb-0"><i data-id="' + file.newFilename + '" data-file="' + file.newFilename + '" class="btn px-3 bi bi-trash delete-file-' + file.newFilename + '"></i><a target="_blank" href="/files/' + file.newFilename + '.' + file.fileExtension + '">' + file.originalFilename + '</a></div>'
+                            '<div id="' + file.newFilename + '" class="col-12 p-0 mb-0"><i data-id="' + file.newFilename + '" data-file="' + file.newFilename + '" class="btn px-3 bi bi-trash delete-file-' + file.newFilename + '"></i><a target="_blank" href="/files/' + file.newFilename + '.' + file.fileExtension + '">' + file.originalFilename + '</a></div>'
                         );
                         plugin.find('.delete-file-' + file.newFilename).click(function () {
                             plugin.fileupload.DeleteFile($(this))
@@ -203,7 +203,7 @@
                                         );
                                     } else {
                                         plugin.find('.file-container').append(
-                                            '<div id="' + file.newFilename + '" class="col-xs-12 p-0 mb-0"><i data-id="' + file.newFilename + '" data-file="' + file.newFilename + '" class="btn px-3 bi bi-trash delete-file-' + file.newFilename + '"></i><a target="_blank" href="/files/' + file.newFilename + '.' + file.fileExtension + '">' + file.originalFilename + '</a></div>'
+                                            '<div id="' + file.newFilename + '" class="col-12 p-0 mb-0"><i data-id="' + file.newFilename + '" data-file="' + file.newFilename + '" class="btn px-3 bi bi-trash delete-file-' + file.newFilename + '"></i><a target="_blank" href="/files/' + file.newFilename + '.' + file.fileExtension + '">' + file.originalFilename + '</a></div>'
                                         );
                                         plugin.find('.delete-file-' + file.newFilename).click(function () {
                                             plugin.fileupload.DeleteFile($(this))

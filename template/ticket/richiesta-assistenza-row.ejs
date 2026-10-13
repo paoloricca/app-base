@@ -1,32 +1,32 @@
 <tr>
-    <td scope="col">
+    <td scope="col" class="support-mobile-hidden">
         <i class="bi bi-circle-fill" style="color: <%= row.ColoreStato %>" />
     </td>
-    <td scope="col">
+    <td scope="col" class="support-mobile-id">
         <%= row.IdRecord %>
     </td>
-    <td scope="col">
+    <td scope="col" class="support-mobile-requester">
         <%= row.Istanziatore %>
     </td>
-    <td scope="col">
+    <td scope="col" class="support-mobile-hidden">
         <%= row.DataRegistrazione %>
     </td>
-    <td scope="col">
+    <td scope="col" class="support-mobile-hidden">
         <%= row.TipoRichiesta %>
     </td>
-    <td scope="col">
+    <td scope="col" class="support-mobile-hidden">
         <%= row.Ambito %>
     </td>
-    <td scope="col">
+    <td scope="col" class="support-mobile-object">
         <%= row.Oggetto%>
     </td>
-    <td scope="col" class="hidden-sm hidden-md">
+    <td scope="col" class="support-mobile-hidden">
         <%= row.Descrizione%>
     </td>
-    <td scope="col">
+    <td scope="col" class="support-mobile-hidden">
         <%= row.Stato %>
     </td>
-    <td scope="col">
+    <td scope="col" class="support-mobile-actions">
         <div class="container-workflow-<%= row.IdRecord %>"></div>
     </td>
 </tr>

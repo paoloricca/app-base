@@ -215,7 +215,7 @@
                         if (options.Mode == 'design') {
 
                             plugin.find('.model-container').append(
-                                '<div class="col-xs-12 p-0 mt-2 mb-2 px-3"><a class="btn btn-primary btn-circle bi bi-plus-lg btn-new-class" data-idversione="' + options.IDVersione + '"></a></div>'
+                                '<div class="col-12 p-0 mt-2 mb-2 px-3"><a class="btn btn-primary btn-circle bi bi-plus-lg btn-new-class" data-idversione="' + options.IDVersione + '"></a></div>'
                             )
                             plugin.find('.btn-new-class').click(function () {
                                 plugin.model.newClass(options.IDVersione);
@@ -1277,7 +1277,7 @@
 
                     plugin.find('.model-class-' + IdClasse + '-container').append(
 
-                        '<div class="col-xs-12 p-0 mb-2 px-3"><a class="btn btn-primary btn-circle bi bi-plus-lg btn-new-attribute" data-idclasse="' + IdClasse + '"></a></div>'
+                        '<div class="col-12 p-0 mb-2 px-3"><a class="btn btn-primary btn-circle bi bi-plus-lg btn-new-attribute" data-idclasse="' + IdClasse + '"></a></div>'
                     );
 
                     plugin.find('.btn-new-attribute').click(function () {
@@ -1460,9 +1460,9 @@
                                         }
                                     })
                                 });
-                                plugin.find('.model-class-' + IdClasse + '-container .panel-success').fadeIn('slow');
+                                plugin.find('.model-class-' + IdClasse + '-container .card.border-success').fadeIn('slow');
                                 setTimeout(function () {
-                                    plugin.find('.model-class-' + IdClasse + '-container .panel-success').fadeOut('slow');
+                                    plugin.find('.model-class-' + IdClasse + '-container .card.border-success').fadeOut('slow');
                                 }, 3000);
                             })
                         });
@@ -1539,9 +1539,9 @@
                                     }
                                 })
                             });
-                            plugin.find('.model-class-' + IdClasse + '-container .panel-success').fadeIn('slow');
+                            plugin.find('.model-class-' + IdClasse + '-container .card.border-success').fadeIn('slow');
                             setTimeout(function () {
-                                plugin.find('.model-class-' + IdClasse + '-container .panel-success').fadeOut('slow');
+                                plugin.find('.model-class-' + IdClasse + '-container .card.border-success').fadeOut('slow');
                             }, 3000);
                         })
 

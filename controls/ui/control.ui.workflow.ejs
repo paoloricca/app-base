@@ -1,13 +1,13 @@
 ﻿<form name="frmWorkflow-<%= IdRecord %>" id="frmWorkflow-<%= IdRecord %>" class="was-validated">
-    <div class="col-xs-2 text-right p-0 processo-<%= IdRecord %>">
+    <div class="text-end p-0 processo-<%= IdRecord %>">
         <div class="btn-group">
             <button type="button" data-idrecord="<%= IdRecord %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle btn-workflow-<%= IdRecord %>"
-                data-toggle="dropdown" style="width:23px; height:23px; padding:0; font-size:1.1em;"
-                data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="<% if (LanguageContext == "IT") { %>Azioni<% } %><% if (LanguageContext == "GB") { %>Actions<% } %><% if (LanguageContext == "ES") { %>Comportamiento<% } %><% if (LanguageContext == "CN") { %>行動<% } %>">
+                data-bs-toggle="dropdown" style="width:23px; height:23px; padding:0; font-size:1.1em;"
+                data-bs-placement="left" data-bs-title="<% if (LanguageContext == "IT") { %>Azioni<% } %><% if (LanguageContext == "GB") { %>Actions<% } %><% if (LanguageContext == "ES") { %>Comportamiento<% } %><% if (LanguageContext == "CN") { %>行動<% } %>">
             </button>
-            <ul class="dropdown-menu dropdown-menu-right" style="width:350px;">
+            <ul class="dropdown-menu dropdown-menu-end workflow-context-menu">
                 <li>
-                    <div class="col-xs-12">
+                    <div class="workflow-context-menu-id px-3 py-2">
                         <b>
                             ID: <%= IdRecord %>
                         </b>
@@ -17,10 +17,10 @@
                 <li class="dropdown-item">
                     <hr class="dropdown-divider">
                 </li>
-                <div class="col-xs-12 p-0 container-workflow-actions-<%= IdRecord %>">
+                <div class="col-12 p-0 container-workflow-actions-<%= IdRecord %>">
                 </div>
                 <li class="dropdown-item">
-                    <button data-idrecord="<%= IdRecord %>" type="button" class="btn btn-light btn-xs col-xs-12 btn-imposta-workflow-<%= IdRecord %>">
+                    <button data-idrecord="<%= IdRecord %>" type="button" class="btn btn-light btn-sm col-12 btn-imposta-workflow-<%= IdRecord %>">
                         <% if (LanguageContext == "IT") { %>
                             Imposta Workflow
                         <% } %>
@@ -34,7 +34,7 @@
                             設定工作流程
                         <% } %>
                     </button>
-                    <h6 class="col-xs-12 p-2 m-0 text-secondary no-workflow-<%= IdRecord %>">
+                    <h6 class="col-12 p-2 m-0 text-secondary no-workflow-<%= IdRecord %>">
                         <% if (LanguageContext == "IT") { %>
                             Nessun workflow da impostare
                         <% } %>
@@ -50,7 +50,7 @@
                     </h6>
                 </li>
                 <li class="dropdown-item">
-                    <button data-idrecord="<%= IdRecord %>" type="button" class="btn btn-light btn-xs col-xs-12 btn-annulla-process-<%= IdRecord %>">
+                    <button data-idrecord="<%= IdRecord %>" type="button" class="btn btn-light btn-sm col-12 btn-annulla-process-<%= IdRecord %>">
                         <% if (LanguageContext == "IT") { %>
                             Annulla
                         <% } %>
@@ -68,7 +68,7 @@
             </ul>
         </div>
     </div>
-    <div class="modal confirm-action" id="confirm-action-<%= IdRecord %>" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal confirm-action" id="confirm-action-<%= IdRecord %>" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -121,7 +121,7 @@
                     </h5>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <% if (LanguageContext == "IT") { %>
                             Annulla
                         <% } %>
@@ -142,7 +142,7 @@
     </div>
 
 
-    <div class="modal confirm-workflow" id="confirm-workflow-<%= IdRecord %>" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal confirm-workflow" id="confirm-workflow-<%= IdRecord %>" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -167,7 +167,7 @@
                 <div class="modal-body text-secondary">
                     <div class="container-workflow-<%= IdRecord %>-transitions">
                     </div>
-                    <div class="col-xs-12 container-workflow-note-<%= IdRecord %>" style="display:none;">
+                    <div class="col-12 container-workflow-note-<%= IdRecord %>" style="display:none;">
                         <h6>
                             <% if (LanguageContext == "IT") { %>
                                 Note
@@ -186,7 +186,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="btn-annulla-workflow-<%= IdRecord %>" class="btn btn-default" data-bs-dismiss="modal">
+                    <button type="button" id="btn-annulla-workflow-<%= IdRecord %>" class="btn btn-secondary" data-bs-dismiss="modal">
                         <% if (LanguageContext == "IT") { %>
                             Annulla
                         <% } %>

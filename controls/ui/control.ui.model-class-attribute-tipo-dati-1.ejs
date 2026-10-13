@@ -1,28 +1,26 @@
 <!-- TESTO -->
-<div class="col-xs-6 p-0 mb-2 px-3">
+<div class="col-6 p-0 mb-2 px-3">
 
 	<% if (mode == "design") { %>
-        <a class="btn btn-light bi bi-three-dots-vertical btn-actions btn-circle m-1 ms-0"
-		    data-toggle="dropdown"
-		    data-bs-toggle="tooltip" data-bs-placement="left">
+        <a class="btn btn-light bi bi-three-dots-vertical btn-actions btn-circle m-1 ms-0 model-editor-menu-trigger"
+		    data-bs-toggle="dropdown"
+		    data-bs-placement="left">
 	    </a>
-		<ul class="dropdown-menu dropdown-menu-left" style="width:250px;">
+		<ul class="dropdown-menu model-editor-context-menu">
 			<li>
-				<div class="col-xs-12">
+				<div class="model-editor-context-menu-heading">
 					<b>
 						<%= row.Description %>
 					</b>
+                    <span class="spinner-border text-danger" role="status" style="display:none;"></span>
 				</div>
-				<span class="spinner-border text-danger mt-1" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
 			</li>
-			<li class="dropdown-item">
-				<hr class="dropdown-divider">
-				</li>
-			<li class="dropdown-item">
-				<span class="col-xs-12 p-2 px-2 btn-menu-item btn-attribute-<%= row.IDAttributo %>-edit"
+			<li><hr class="dropdown-divider"></li>
+			<li>
+				<span class="dropdown-item model-editor-context-menu-action btn-menu-item btn-attribute-<%= row.IDAttributo %>-edit"
 					data-idattributo="<%= row.IDAttributo %>" 
 					data-idtipodati="<%= row.IDTipoDati %>">
-					<i class="bi bi-pencil"></i>&nbsp;&nbsp;
+					<i class="bi bi-pencil"></i>
 					<% if (user.LanguageContext == "IT") { %>
 							Modifica
 						<% } %>
@@ -37,10 +35,10 @@
 						<% } %>
 				</span>
 			</li>
-			<li class="dropdown-item">
-				<span class="col-xs-12 p-2 px-2 btn-menu-item btn-attribute-<%= row.IDAttributo %>-del"
+			<li>
+				<span class="dropdown-item model-editor-context-menu-action btn-menu-item btn-attribute-<%= row.IDAttributo %>-del"
 					data-idattributo="<%= row.IDAttributo %>" data-idtipodati="<%= row.IDTipoDati %>">
-					<i class="bi bi-trash"></i>&nbsp;&nbsp;
+					<i class="bi bi-trash"></i>
 					<% if (user.LanguageContext == "IT") { %>
 							Elimina
 						<% } %>

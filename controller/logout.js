@@ -23,5 +23,5 @@ $(function () {
     });
 })
 $(document).ready(function () {
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-bs-toggle="tooltip"], [data-bs-toggle="dropdown"][data-bs-title]').tooltip();
 });

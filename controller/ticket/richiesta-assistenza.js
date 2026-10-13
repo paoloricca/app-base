@@ -1,17 +1,15 @@
 $(function () {
 
-    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"], [data-bs-toggle="dropdown"][data-bs-title]');
     const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
     const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
     const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
 
     $('.btn-filter-close').click(function () {
-        $('.filtro-container').hide();
-        $('.result-container').removeClass('col-lg-9 col-md-9 col-sm-9').addClass('col-lg-12 col-md-12 col-sm-12');
+        $('.support-layout').addClass('filter-hidden');
     });
     $('.btn-filter-open').click(function () {
-        $('.filtro-container').show();
-        $('.result-container').removeClass('col-lg-12 col-md-12 col-sm-12').addClass('col-lg-9 col-md-9 col-sm-9');
+        $('.support-layout').removeClass('filter-hidden');
         $(this).blur();
     });
     $('.btn-filter-apply').click(function () {
@@ -291,7 +289,7 @@ $(function () {
                 IdEventoTransizione: arrayIdEventoTransizione
             };
             $('#myChart').remove();
-            $('#myChart-container').append('<canvas id="myChart" width="250" height="250"></canvas>');
+            $('#myChart-container').append('<canvas id="myChart"></canvas>');
             var canvas = document.getElementById("myChart");
             var ctx = canvas.getContext("2d");
             
@@ -299,6 +297,8 @@ $(function () {
                 type: 'doughnut',
                 data: data,
                 options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
                     onClick: function (event, elements) {
                         const clickedElement = elements[0];
                         const datasetIndex = clickedElement.index;

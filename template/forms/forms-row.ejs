@@ -8,33 +8,31 @@
     <td scope="col">
         <%= row.Description %>
     </td>
-    <td scope="col" class="hidden-xs">
+    <td scope="col" class="d-none d-md-table-cell">
         <%= row.DataRegistrazione %>
     </td>
     <td scope="col" class="text-end">
         <div class="container-form-edit-<%= row.IDModello %>">
 
-            <div class="col-xs-12 text-right p-0 modello-<%= row.IDModello %>">
-                <div class="btn-group context-menu-model">
-                    <button type="button" data-idrecord="<%= row.IDModello %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle btn-workflow-<%= row.IDModello %>"
-                        data-toggle="dropdown" style="width:23px; height:23px; padding:0; font-size:1.1em;"
-                        data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="<% if (LanguageContext == "IT") { %>Azioni<% } %><% if (LanguageContext == "GB") { %>Actions<% } %><% if (LanguageContext == "ES") { %>Comportamiento<% } %><% if (LanguageContext == "CN") { %>行動<% } %>">
+            <div class="col-12 text-end p-0 modello-<%= row.IDModello %>">
+                <div class="btn-group context-menu-model forms-context-menu-container">
+                    <button type="button" data-idrecord="<%= row.IDModello %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle btn-workflow-<%= row.IDModello %> forms-context-menu-trigger"
+                        data-bs-toggle="dropdown"
+                        data-bs-placement="left" data-bs-title="<% if (LanguageContext == "IT") { %>Azioni<% } %><% if (LanguageContext == "GB") { %>Actions<% } %><% if (LanguageContext == "ES") { %>Comportamiento<% } %><% if (LanguageContext == "CN") { %>行動<% } %>">
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-right" style="width:250px;">
+                    <ul class="dropdown-menu dropdown-menu-end forms-context-menu">
                         <li>
-                            <div class="col-xs-12">
+                            <div class="forms-context-menu-heading">
                                 <b>
                                     ID: <%= row.IDModello %>
                                 </b>
+                                <span class="spinner-border text-danger" role="status" style="display:none;"></span>
                             </div>
-                            <span class="spinner-border text-danger mt-1" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
                         </li>
-                        <li class="dropdown-item">
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li class="dropdown-item">
-							<span class="col-xs-12 p-2 px-2 btn-model-versions">
-								<i class="bi bi-stickies"></i>&nbsp;&nbsp;
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+							<span class="dropdown-item forms-context-menu-action btn-model-versions">
+								<i class="bi bi-stickies"></i>
 							    <% if (LanguageContext == "IT") { %>
                                     Versioni
                                 <% } %>
@@ -49,9 +47,9 @@
                                 <% } %>
                             </span>
                         </li>
-						<li class="dropdown-item">
-							<span class="col-xs-12 p-2 px-2 btn-model-edit">
-							    <i class="bi bi-pencil"></i>&nbsp;&nbsp;
+						<li>
+							<span class="dropdown-item forms-context-menu-action btn-model-edit">
+							    <i class="bi bi-pencil"></i>
 							    <% if (LanguageContext == "IT") { %>
                                         Modifica
                                 <% } %>
@@ -66,9 +64,9 @@
                                 <% } %>
 							</span>
 						</li>
-                        <li class="dropdown-item">
-							<span class="col-xs-12 p-2 px-2 btn-model-del">
-								<i class="bi bi-trash"></i>&nbsp;&nbsp;
+                        <li>
+							<span class="dropdown-item forms-context-menu-action btn-model-del">
+								<i class="bi bi-trash"></i>
 								<% if (LanguageContext == "IT") { %>
                                     Elimina
                                 <% } %>
