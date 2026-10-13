@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Web APP DC - Login</title>
@@ -9,119 +9,100 @@
     <script type="text/javascript" src="/validation-script"></script>
     <script type="text/javascript" src="/login-script"></script>
 </head>
-<body>
+<body class="bg-light">
     <form name="frmLogin" id="frmLogin" method="POST" action="/login" class="was-validated" novalidate>
         <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= LanguageContext %>" />
-        <div class="container">
-            <div class="row pt-5" style="display:block;">
-                <div class="col-lg-3 col-xs-0"></div>
-                <div class="col-lg-6 col-xs-12">
-                    <div class="login">
-                        <div class="container-fluid cart-head">
-                            <div class="col-xs-11 p-0">
-                                <img src="/images/dc-login.png" class="img-fluid" />
+        <div class="container min-vh-100 d-flex justify-content-center align-items-center py-4">
+            <div class="row justify-content-center w-100">
+                <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5" style="max-width: 520px;">
+                    <div class="card login border shadow-sm position-relative">
+                        <div id="select-container" class="position-absolute top-0 end-0 m-3 z-3" style="left: auto; transform: none; padding: 16px;">
+                            <ul>
+                            <li class="IT" lang-selection="IT" tooltip="IT" flow="down">
+                                <img src="https://cdn.countryflags.com/thumbs/italy/flag-800.png" alt="IT">
+                            </li>
+                            <!--li class="ES" lang-selection="ES" tooltip="ES" flow="down">
+                                <img src="https://cdn.countryflags.com/thumbs/spain/flag-800.png" alt="ES">
+                            </li-->
+                            <!--li class="CN" lang-selection="CN" tooltip="CN" flow="down">
+                                <img src="https://cdn.countryflags.com/thumbs/china/flag-800.png" alt="CN">
+                            </li-->
+                            <li class="GB" lang-selection="GB" tooltip="GB" flow="down">
+                                <img src="https://cdn.countryflags.com/thumbs/united-states-of-america/flag-800.png" alt="GB">
+                            </li>
+                            </ul>
+                        </div>
+                        <div class="card-body p-4 pt-3">
+                            <div class="text-center mb-3">
+                                <img src="/images/dc-login.png" class="img-fluid" alt="DC Web Platform">
                             </div>
-                            <div class="col-xs-1 p-0">
-                                <div id="select-container" style="position:absolute; top:0; float:right; padding:16px;">
-                                    <ul>
-                                    <li class="IT" lang-selection="IT" tooltip="IT" flow="down">
-                                        <img src="https://cdn.countryflags.com/thumbs/italy/flag-800.png">
-                                    </li>
-                                    <!--li class="ES" lang-selection="ES" tooltip="ES" flow="down">
-                                        <img src="https://cdn.countryflags.com/thumbs/spain/flag-800.png">
-                                    </li-->
-                                    <!--li class="CN" lang-selection="CN" tooltip="CN" flow="down">
-                                        <img src="https://cdn.countryflags.com/thumbs/china/flag-800.png">
-                                    </li-->
-                                    <li class="GB" lang-selection="GB" tooltip="GB" flow="down">
-                                        <img src="https://cdn.countryflags.com/thumbs/united-states-of-america/flag-800.png">
-                                    </li>
-                                    </ul>
+
+                            <% if (error) { %>
+                                <div class="alert alert-danger d-flex align-items-center mb-3" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2 fs-5"></i>
+                                    <div><%= error %></div>
+                                </div>
+                            <% } %>
+
+                            <div class="mb-3">
+                                <label for="Userid" class="form-label">
+                                    <% if (LanguageContext == "IT") { %>
+                                        La tua e-mail
+                                    <% } else if (LanguageContext == "GB") { %>
+                                        Your e-mail
+                                    <% } else if (LanguageContext == "ES") { %>
+                                        Tu correo electr&oacute;nico
+                                    <% } else if (LanguageContext == "CN") { %>
+                                        手机号码
+                                    <% } %>
+                                </label>
+                                <input class="form-control" type="text" name="Userid" id="Userid" required value="francesco@dcgroupitalia.com">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="Password" class="form-label">
+                                    <% if (LanguageContext == "IT") { %>
+                                        Password
+                                    <% } else if (LanguageContext == "GB") { %>
+                                        Password
+                                    <% } else if (LanguageContext == "ES") { %>
+                                        Contrase&ntilde;a
+                                    <% } else if (LanguageContext == "CN") { %>
+                                        密码
+                                    <% } %>
+                                </label>
+                                <div class="position-relative">
+                                    <i class="btn bi bi-eye-slash-fill show-hide-password-login"></i>
+                                    <input class="form-control" type="password" name="Password" id="Password" required maxlength="20" value="Admin123456789@">
                                 </div>
                             </div>
-                            <div class="col-xs-12 p-0">
-                                <% if (error) { %>
-                                    <div class="form-group form-errors p-0">
-                                        <div class="panel panel-danger p-0">
-                                            <div class="panel-heading p-1 px-3">
-                                                <i class="bi bi-exclamation-triangle"></i>
-                                            </div>
-                                            <div class="panel-body pnl-errors p-2 px-3">
-                                                <%= error %>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <% } %>
-                                    <div class="form-group">
-                                        <label for="UserId">
-                                            <% if (LanguageContext == "IT") { %>
-                                                La tua e-mail
-                                            <% } %>
-                                            <% if (LanguageContext == "GB") { %>
-                                                Your e-mail
-                                            <% } %>
-                                            <% if (LanguageContext == "ES") { %>
-                                                Tu correo electr&oacute;nico
-                                            <% } %>
-                                            <% if (LanguageContext == "CN") { %>
-                                                手机号码
-                                            <% } %>
-                                        </label>
-                                        <input class="form-control" type="text" name="Userid" id="Userid" required value="francesco@dcgroupitalia.com">
-                                    </div>
-                                <div class="form-group">
-                                    <label for="Password">
+
+                            <div class="row align-items-center pt-2">
+                                <div class="col-6">
+                                    <button type="submit" class="btn btn-primary btn-lg btn-login" style="background-color: #1763a1; border-color: #1763a1;">
                                         <% if (LanguageContext == "IT") { %>
-                                            Password
+                                            Accedi
+                                        <% } else if (LanguageContext == "GB") { %>
+                                            Sign In
+                                        <% } else if (LanguageContext == "ES") { %>
+                                            Iniciar sesi&oacute;n
+                                        <% } else if (LanguageContext == "CN") { %>
+                                            登录
                                         <% } %>
-                                        <% if (LanguageContext == "GB") { %>
-                                            Password
-                                        <% } %>
-                                        <% if (LanguageContext == "ES") { %>
-                                            Contrase&ntilde;a
-                                        <% } %>
-                                        <% if (LanguageContext == "CN") { %>
-                                            密码
-                                        <% } %>
-                                    </label>
-                                    <div class="col-xs-12 p-0">
-                                        <i class="btn bi bi-eye-slash-fill show-hide-password-login"></i>
-                                        <input class="form-control" type="password" name="Password" id="Password" required maxlength="20" value="Admin123456789@">
-                                    </div>
+                                    </button>
                                 </div>
-                                <div class="form-group pt-5">
-                                    <div class="col-xs-6 p-4 px-0">
-                                        <button type="submit" class="btn btn-lg btn-default color-pry border-pry btn-login">
-                                            <% if (LanguageContext == "IT") { %>
-                                                Accedi
-                                            <% } %>
-                                            <% if (LanguageContext == "GB") { %>
-                                                Sign In
-                                            <% } %>
-                                            <% if (LanguageContext == "ES") { %>
-                                                Iniciar sesi&oacute;n
-                                            <% } %>
-                                            <% if (LanguageContext == "CN") { %>
-                                                登录
-                                            <% } %>
-                                        </button>
-                                    </div>
-                                    <div class="col-xs-6 p-4 px-0 pt-4 text-right">
-                                        <a href="/password-recovery/<%= LanguageContext %>">
-                                            <% if (LanguageContext == "IT") { %>
-                                                Password dimenticata?
-                                            <% } %>
-                                            <% if (LanguageContext == "GB") { %>
-                                                Lost password?
-                                            <% } %>
-                                            <% if (LanguageContext == "ES") { %>
-                                                Has perdido tu contrase&ntilde;a?
-                                            <% } %>
-                                            <% if (LanguageContext == "CN") { %>
-                                                忘记密码？
-                                            <% } %>
-                                        </a>
-                                    </div>
+                                <div class="col-6 text-end">
+                                    <a href="/password-recovery/<%= LanguageContext %>" class="text-decoration-none">
+                                        <% if (LanguageContext == "IT") { %>
+                                            Password dimenticata?
+                                        <% } else if (LanguageContext == "GB") { %>
+                                            Lost password?
+                                        <% } else if (LanguageContext == "ES") { %>
+                                            Has perdido tu contrase&ntilde;a?
+                                        <% } else if (LanguageContext == "CN") { %>
+                                            忘记密码？
+                                        <% } %>
+                                    </a>
                                 </div>
                             </div>
                         </div>

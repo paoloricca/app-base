@@ -1,15 +1,5 @@
-﻿<style type="text/css">
-    .form-group {
-        display: block;
-        float: left;
-    }
-    .form-group a {
-        cursor: pointer;
-    }
-</style>
-<div class="pager m-0 p-0">
-    <div class="form-inline">
-        <div class="form-group">
+﻿<div class="pager d-flex flex-wrap align-items-center gap-2 m-0 p-2">
+        <div class="d-flex align-items-center gap-1">
             <% if (LanguageContext == "IT") { %>
                 Pagina
             <% } %>
@@ -22,7 +12,7 @@
             <% if (LanguageContext == "CN") { %>
                 頁
             <% } %>
-            &nbsp; <input type="text" class="p-0 pageIndex mini" size="3" disabled="disabled" />&nbsp;
+            <input type="text" class="form-control form-control-sm pageIndex mini" style="width:3rem;" disabled="disabled" />
             <% if (LanguageContext == "IT") { %>
                 di
             <% } %>
@@ -35,11 +25,11 @@
             <% if (LanguageContext == "CN") { %>
                 /
             <% } %>
-            &nbsp;<strong><label class="totalPage roboto-font"></label></strong>&nbsp;&nbsp;
-            <i class="spinner-border text-primary mt-3" role="status" style="display:block; float:right;"></i>
+            <strong><label class="totalPage roboto-font"></label></strong>
+            <i class="spinner-border text-primary" role="status" style="display:block; width:1rem; height:1rem;"></i>
         </div>
-        <div class="form-group">
-            &nbsp;<a class="btn btn-prev btn-default pulsante btn-xs" title="Pagina precedente">
+        <div>
+            <a class="btn btn-prev btn-outline-secondary btn-sm pulsante" title="Pagina precedente">
             <% if (LanguageContext == "IT") { %>
                 Precedente
             <% } %>
@@ -52,10 +42,10 @@
             <% if (LanguageContext == "CN") { %>
                 以前的
             <% } %>
-            </a>&nbsp;
+            </a>
         </div>
-        <div class="form-group col-xs-empty">
-            &nbsp;<a class="btn btn-next btn-default pulsante btn-xs" title="Pagina successiva">
+        <div>
+            <a class="btn btn-next btn-outline-secondary btn-sm pulsante" title="Pagina successiva">
             <% if (LanguageContext == "IT") { %>
                 Successiva
             <% } %>
@@ -68,9 +58,9 @@
             <% if (LanguageContext == "CN") { %>
                 下一個
             <% } %>
-            </a>&nbsp;
+            </a>
         </div>
-        <div class="form-group container-totalRecord" style="float:right;">
+        <div class="container-totalRecord ms-auto">
             <% if (LanguageContext == "IT") { %>
                 Record Totali
             <% } %>

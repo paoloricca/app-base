@@ -1,5 +1,25 @@
-﻿
+
 $(function () {
+    function openNestedModal(parentModalId, childModalId) {
+        var parentModal = document.getElementById(parentModalId);
+        var childModal = document.getElementById(childModalId);
+        var parentInstance = bootstrap.Modal.getOrCreateInstance(parentModal);
+        var childInstance = bootstrap.Modal.getOrCreateInstance(childModal);
+
+        childModal.addEventListener('hidden.bs.modal', function () {
+            parentInstance.show();
+        }, { once: true });
+
+        if (parentModal.classList.contains('show')) {
+            parentModal.addEventListener('hidden.bs.modal', function () {
+                childInstance.show();
+            }, { once: true });
+            parentInstance.hide();
+        } else {
+            childInstance.show();
+        }
+    }
+
     DeleteGruppoOperativo = function (IdGruppoOperativo) {
         $.ajax({
             url: "/gruppo-operativo/" + IdGruppoOperativo,
@@ -101,6 +121,7 @@ $(function () {
                             }).always(function (xhr, status) {
                             });
                             $('.gruppo-operativo-profilo-utente').html(' / ' + $(this).data('profiloutentetext'));
+                            openNestedModal('profili-utente-modal', 'profilo-utente-modal');
                         });
                         $('.profilo-utente-' + profiloutente.IDProfiloUtente + '-risorse').click(function () {
 
@@ -117,12 +138,14 @@ $(function () {
                                 JSON.parse(ControlPagerProfiloUtenteRisorse.attr('data-options')).pageSize, 1);
 
                             $('.gruppo-operativo-profilo-utente-risorse').html($(this).data('profiloutentetext'));
+                            openNestedModal('profili-utente-modal', 'profilo-utente-risorse-modal');
                         });
                         $('.profilo-utente-' + profiloutente.IDProfiloUtente + '-autorizzazioni').click(function () {
                             var profiloutenteid = $(this).data('profiloutenteid');
                             var profiloutentetext = $(this).data('profiloutentetext');
                             $('#ProfiloUtenteID').val(profiloutenteid);
                             $('.gruppo-operativo-profilo-utente-processi').html($(this).data('profiloutentetext'));
+                            openNestedModal('profili-utente-modal', 'processi-modal');
                         });
                     });
                 });
@@ -450,7 +473,7 @@ $(function () {
         /* initial data loading */
         ControlUtenti.utenti.load();
 
-
+        openNestedModal('profilo-utente-risorse-modal', 'utenti-modal');
 
     });
     $('.profili-utente-new').click(function () {
@@ -460,6 +483,7 @@ $(function () {
         $('#ProfiloUtente-rbIsPublic').prop("checked", false);
         $('#ProfiloUtente-rbIsVisible').prop("checked", false);
         $('.gruppo-operativo-profilo-utente').html(' / Nuovo');
+        openNestedModal('profili-utente-modal', 'profilo-utente-modal');
     });
     $('.gruppi-operativi-new').click(function () {
         $.ajax({
@@ -697,5 +721,3 @@ $(function () {
     /* Renderizza il plug-in <utenti> */
     ControlUtenti.utenti.draw();
 })
-
-

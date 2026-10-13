@@ -1,11 +1,11 @@
-<nav class="navbar navbar-expand-md navbar-dark container-fluid mb-2" style="background-color:#1763a1; border-radius:0;">
+<nav class="navbar navbar-expand-md navbar-dark mb-2" style="background-color:#1763a1; border-radius:0;">
     <div class="container-fluid" style="background-color:#1763a1;">
         <a class="navbar-brand me-auto p-0" href="/dashboard">
             <span class="p-4 px-0" style="float:left;">
                 DC Platform
             </span>
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-controls="menu" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="menu">
@@ -30,10 +30,10 @@
             </ul>
 			<ul class="navbar-nav menu">
 			</ul>			
-            <ul class="navbar-nav navbar-right" style="margin-right:-40px;">
+            <ul class="navbar-nav ms-auto align-items-center">
                 <li class="nav-item">
                     <a class="nav-link text-decoration-none" id="logout" href="#">
-                        <i class="glyphicon glyphicon-log-out"></i>&nbsp;
+                        <i class="bi bi-box-arrow-right"></i>&nbsp;
 						<% if (user.LanguageContext == "IT") { %>
 								Esci
 							<% } %>
@@ -48,15 +48,13 @@
 							<% } %>  
                     </a>
                 </li>
-                <li class="nav-item">
-                    &nbsp;&nbsp;&nbsp;
-                </li>
-                <li class="dropdown">
-                    <a class="dropdown-toggle nav-link btn text-white" data-toggle="dropdown" href="#">
+                <li class="nav-item dropdown ms-3">
+                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <span class="bi bi-person fs-3"></span>
                     </a>
-                    <ul class="dropdown-menu bg-light" style="width:250px;">
-                        <li class="nav-item container-fluid">
+                    <ul class="dropdown-menu dropdown-menu-end bg-light" style="width:250px;">
+                        <li>
+                            <span class="dropdown-item-text">
 							<% if (user.LanguageContext == "IT") { %>
 								Ciao
 							<% } %>
@@ -70,10 +68,11 @@
 								你好
 							<% } %>                            
 							<b><%= user.Nome %> <%= user.Cognome %> ;-)</b>
+                            </span>
                         </li>
                         <li><hr class="dropdown-divider" /></li>
-                        <li class="nav-item container-fluid">
-                            <a class="dropdown-item nav-link" href="/account/<%= user.LanguageContext %>">
+                        <li>
+                            <a class="dropdown-item" href="/account/<%= user.LanguageContext %>">
 						        <% if (user.LanguageContext == "IT") { %>
 								    Impostazioni personali
 							    <% } %>
@@ -88,8 +87,8 @@
 							    <% } %>
                             </a>
                         </li>
-                        <li class="nav-item container-fluid">
-                            <a class="dropdown-item nav-link" href="/password-reset/<%= user.LanguageContext %>">
+                        <li>
+                            <a class="dropdown-item" href="/password-reset/<%= user.LanguageContext %>">
 								<% if (user.LanguageContext == "IT") { %>
                                     Modifica password
                                 <% } %>

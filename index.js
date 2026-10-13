@@ -3,30 +3,63 @@ const app = express();
 app.set('views', __dirname + '/view');
 app.set('view engine', 'ejs');
 
-const config = require('./utils/config')
-const sessionUtil = require('./utils/session')
+const config = require('./utils/config');
+const sessionUtil = require('./utils/session');
 const session = require('express-session');
-const cookieParser = require("cookie-parser");
+const { RedisStore } = require('connect-redis');
+const { createClient } = require('redis');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
+
+// Configurazione client Redis
+const redisConfig = config.Redis || {};
+const redisUrl = redisConfig.url || (
+    redisConfig.password
+        ? `redis://:${encodeURIComponent(redisConfig.password)}@${redisConfig.host || '127.0.0.1'}:${redisConfig.port || 6379}`
+        : `redis://${redisConfig.host || '127.0.0.1'}:${redisConfig.port || 6379}`
+);
+
+const redisClient = createClient({
+    url: redisUrl,
+    socket: {
+        reconnectStrategy: (retries) => 3000
+    }
+});
+
+redisClient.on('error', (err) => {
+    console.error('[Redis] Errore di connessione:', err.message);
+});
+
+redisClient.on('connect', () => {
+    console.log('[Redis] Connessione a Redis stabilita con successo.');
+});
+
+redisClient.connect().catch((err) => {
+    console.error('[Redis] Impossibile stabilire la connessione al server Redis:', err.message);
+});
+
+// Configurazione RedisStore per express-session
+const redisStore = new RedisStore({
+    client: redisClient,
+    prefix: redisConfig.prefix || 'sess:',
+    ttl: 14400 // 4 ore in secondi
+});
 
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(cookieParser());
 
 app.use(session({
-  secret: config.SecretKey, // A secret key used to sign the session ID cookie
-  resave: true, // Forces the session to be saved back to the session store
-  saveUninitialized: false, // Forces a session that is "uninitialized" to be saved to the store
-  cookie: {
-      maxAge: 14400000, // 4 hour Sets the cookie expiration time in milliseconds (1 hour = 3600000)
-      httpOnly: false, // Reduces client-side script control over the cookie
-      secure: false, // Ensures cookies are only sent over HTTPS
-  }
+    store: redisStore,
+    secret: config.SecretKey,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 14400000, // 4 ore
+        httpOnly: true,
+        secure: false
+    }
 }));
 
 app.use('/', require('./route/init'));
@@ -82,6 +115,7 @@ app.use(function (req, res, next) {
     res.status(404).sendFile(path.join(__dirname, "/view/404.html"));
 });
 
-const server = app.listen(5000, () => {
-  console.log('Server running on port 5000');
+const PORT = process.env.PORT || config.Port || 3000;
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

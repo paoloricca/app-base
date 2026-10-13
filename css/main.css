@@ -115,28 +115,36 @@ a.active, span.active {
     font-weight: 700 !important;
 }
 #container-workflow-set-owner input[type="checkbox"] {
-    margin-left: 6px !important;
-    margin-top: 6px !important;
+    float: none;
+    flex: 0 0 auto;
+    margin: 0 !important;
 }
 #container-workflow-set-owner div {
     font-size:12px;
 }
-#container-workflow-set-owner .form-switch:hover {
+#container-workflow-set-owner .workflow-owner-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #ffffff;
+    padding: 2px 10px 2px 6px;
+    padding-left: 6px !important;
+    min-height: 32px;
+}
+#container-workflow-set-owner .workflow-owner-option:hover {
     border: 1px solid #e1e1e1;
     background-color: #f1f1f1;
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
     border-radius: 16px;
-    margin-right: 16px !important;
 }
-#container-workflow-set-owner .form-switch {
-    border: 1px solid #ffffff;
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
+#container-workflow-set-owner .workflow-owner-option > span {
+    min-width: 0;
+    flex: 1 1 auto;
 }
-#container-workflow-set-owner .form-switch i {
-    float: right;
-    margin-right: 10px !important;
+#container-workflow-set-owner .workflow-owner-option > .bi-gear {
+    flex: 0 0 auto;
+    margin-left: auto;
 }
 #tooltip {
     position: absolute;
@@ -163,6 +171,9 @@ a.active, span.active {
     z-index: 5000;
     width: 250px;
 }
+#context-menu-node > span, #context-menu-link > span {
+    display: block;
+}
     #context-menu-node span, #context-menu-link span, .context-menu-model span, .btn-menu-item {
         font-family: "Roboto" !important;
         font-size: 12px;
@@ -178,13 +189,11 @@ a.active, span.active {
     color: #222;
     border-radius: 4px;
 }
+li.submenu ul.dropdown-menu,
 li.submenu ul.dropdown-menu[data-bs-popper] {
-    border-width: 0;
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
-}
-li.submenu ul.dropdown-menu[data-bs-popper] li {
-    padding-left: 0.5em;
+    border: var(--bs-dropdown-border-width, 1px) solid var(--bs-dropdown-border-color, rgba(0, 0, 0, 0.175));
+    border-radius: var(--bs-dropdown-border-radius, 0.375rem);
+    box-shadow: var(--bs-dropdown-box-shadow, 0 0.5rem 1rem rgba(0, 0, 0, 0.15));
 }
 li.submenu a[role="button"].show::after {
     transform: rotate(90deg);
@@ -229,11 +238,7 @@ div, span, h1, h2, h3, h4, h5, h6, .col-xs-12, label {
 }
 .action-tool {
     display:none;
-    float:right;
     margin-right:4px;
-}
-.action-tool-sub {
-    float: right;
 }
 .item-header {
     border-bottom: 1px solid #e1e1e1;
@@ -260,7 +265,7 @@ div, span, h1, h2, h3, h4, h5, h6, .col-xs-12, label {
     border-radius: 16px;
 }
 .item-bg:hover .action-tool {
-    display:block;
+    display:inline-flex;
 }
 .c-base {
     color: #337ab7;

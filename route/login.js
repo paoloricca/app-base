@@ -54,30 +54,34 @@ login.post('/login', (req, res) => {
         crud.login(myLogin).then(listOf => {
             var response = JSON.parse(listOf);
             req.session.user = response;
-            req.session.save();
+            req.session.save((saveErr) => {
+                if (saveErr) {
+                    console.error('[Session Save Error]', saveErr);
+                }
 
-            if (response.ActivePassword == 0) {
-                res.render('password-edit', {
-                    user: req.session.user,
-                    LanguageContext: req.body.LanguageContext,
-                    error: null
-                });
-            } else {
-                /* Ricorda il mio username */
-                //res.cookie('storeduser', req.session.user, {
-                //    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
-                //    httpOnly: true
-                //});
-                /* Non ricordare il mio username
-                    cookies.set('storeduser', {expires: Date.now()});
-                */
+                if (response.ActivePassword == 0) {
+                    res.render('password-edit', {
+                        user: req.session.user,
+                        LanguageContext: req.body.LanguageContext,
+                        error: null
+                    });
+                } else {
+                    /* Ricorda il mio username */
+                    //res.cookie('storeduser', req.session.user, {
+                    //    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
+                    //    httpOnly: true
+                    //});
+                    /* Non ricordare il mio username
+                        cookies.set('storeduser', {expires: Date.now()});
+                    */
 
-                res.render('dashboard', {
-                    user: req.session.user,
-                    LanguageContext: req.body.LanguageContext,
-                    error: null
-                });
-            }
+                    res.render('dashboard', {
+                        user: req.session.user,
+                        LanguageContext: req.body.LanguageContext,
+                        error: null
+                    });
+                }
+            });
         }).catch(err => {
             res.render('login', {
                 LanguageContext: req.body.LanguageContext,

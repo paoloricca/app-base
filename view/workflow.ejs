@@ -88,7 +88,7 @@
                         <span class="spinner-border text-info mt-3 spinner-workflow" role="status" style="display:none; position:absolute; left:50%;"></span>
                         <div id="tooltip"></div>
                         <div id="cy" style="width:100%; height: 700px; border:1px solid #e3e3e3; z-index:1000; border-radius: 2px;"></div>
-                        <button type="button" class="btn btn-primary rounded-circle glyphicon glyphicon-plus btn-workflow-states-new"
+                        <button type="button" class="btn btn-primary rounded-circle bi bi-plus-lg btn-workflow-states-new d-inline-flex align-items-center justify-content-center"
                             style="width:34px; height:34px; padding:0; margin:10px; left:20px; top:20px; position: absolute; z-index:1000;">
                         </button>
                         <button class="btn btn-default bi bi-printer workflow-stampa" style="margin:10px; left:60px; top:20px; position: absolute; z-index:1000;"></button>
@@ -249,41 +249,41 @@
                     <!-- TODO: traduzione -->
                     <div class="modal-body">
                         <div class="container-fluid p-0">
-                            <div class="col-xs-12 p-0 form-switch">
+                            <div class="workflow-owner-option form-switch">
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsCreator" name="rb-IsCreator">
-                                &nbsp; Utente che ha creato l'oggetto
+                                <span>Utente che ha creato l'oggetto</span>
                             </div>
-                            <div class="col-xs-12 p-0 form-switch">
+                            <div class="workflow-owner-option form-switch">
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsAdminOfCreator" name="rb-IsAdminOfCreator">
-                                &nbsp; Responsabile dell'utente che ha creato l'oggetto
+                                <span>Responsabile dell'utente che ha creato l'oggetto</span>
                             </div>
-                            <div class="col-xs-12 p-0 form-switch">
+                            <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsAdminOwnerSelectedNode_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsAdminOwnerSelectedNode" name="rb-IsAdminOwnerSelectedNode">
-                                &nbsp; Responsabile del proprietario dello stato <span id="IsAdminOwnerSelectedNode_Desc"></span>
+                                <span>Responsabile del proprietario dello stato <span id="IsAdminOwnerSelectedNode_Desc"></span></span>
                                 <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-admin-ownwer-selected-node"></i>
                             </div>
-                            <div class="col-xs-12 p-0 form-switch">
+                            <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsOwnerSelectedNode_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsOwnerSelectedNode" name="rb-IsOwnerSelectedNode">
-                                &nbsp; Proprietario dello stato <span id="IsOwnerSelectedNode_Desc"></span>
+                                <span>Proprietario dello stato <span id="IsOwnerSelectedNode_Desc"></span></span>
                                 <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-ownwer-selected-node"></i>
                             </div>
-                            <div class="col-xs-12 p-0 form-switch">
+                            <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsCreatorSelectedNode_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsCreatorSelectedNode" name="rb-IsCreatorSelectedNode">
-                                &nbsp; Utente che ha registrato lo stato <span id="IsCreatorSelectedNode_Desc"></span>
+                                <span>Utente che ha registrato lo stato <span id="IsCreatorSelectedNode_Desc"></span></span>
                                 <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-creator-selected-node"></i>
                             </div>
-                            <div class="col-xs-12 p-0 form-switch">
+                            <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsSelectedProfile_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsSelectedProfile" name="rb-IsSelectedProfile">
-                                &nbsp; Utenti del profilo <span id="IsSelectedProfile_Desc"></span>
+                                <span>Utenti del profilo <span id="IsSelectedProfile_Desc"></span></span>
                                 <i class="bi bi-gear btn btn-default btn-xs bi-gear-is-selected-profile"></i>
                             </div>
-                            <div class="col-xs-12 p-0 form-switch">
+                            <div class="workflow-owner-option form-switch">
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsUsersFromAdminProfileCreator" name="rb-IsUsersFromAdminProfileCreator">
-                                &nbsp; Utenti del profilo associato all'utente che ha creato l'oggetto
+                                <span>Utenti del profilo associato all'utente che ha creato l'oggetto</span>
                             </div>
                         </div>
                     </div>
@@ -456,51 +456,53 @@
                         <button type="button" class="btn-close btn-close-container-workflow-set-profilo-utente" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-1 pt-1" style="overflow-y:hidden;">
-                        <div class="col-xs-6 p-0 h-100">
-                            <div class="panel panel-default h-100 p-0">
-                                <div class="panel-heading p-3 f-roboto">
-                                    <b>
-		                                <% if (user.LanguageContext == "IT") { %>
-                                            Gruppi di lavoro
-                                        <% } %>
-                                        <% if (user.LanguageContext == "GB") { %>
-                                            Working groups
-                                        <% } %>
-                                        <% if (user.LanguageContext == "ES") { %>
-                                            Grupos de trabajo
-		                                <% } %>
-                                        <% if (user.LanguageContext == "CN") { %>
-                                            工作小組
-                                        <% } %>
-                                    </b>
-                                </div>
-                                <div class="panel-body h-100 p-2 f-roboto">
-                                    <div id="gruppi-operativi-container" style="overflow-y:auto; height:90%;">
+                        <div class="row g-0 h-100">
+                            <div class="col-6 p-0 h-100">
+                                <div class="panel panel-default h-100 p-0">
+                                    <div class="panel-heading p-3 f-roboto">
+                                        <b>
+		                                    <% if (user.LanguageContext == "IT") { %>
+                                                Gruppi di lavoro
+                                            <% } %>
+                                            <% if (user.LanguageContext == "GB") { %>
+                                                Working groups
+                                            <% } %>
+                                            <% if (user.LanguageContext == "ES") { %>
+                                                Grupos de trabajo
+		                                    <% } %>
+                                            <% if (user.LanguageContext == "CN") { %>
+                                                工作小組
+                                            <% } %>
+                                        </b>
+                                    </div>
+                                    <div class="panel-body h-100 p-2 f-roboto">
+                                        <div id="gruppi-operativi-container" style="overflow-y:auto; height:90%;">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-xs-6 p-0 h-100 px-1">
-                            <div class="panel panel-default h-100 p-0">
-                                <div class="panel-heading p-3 f-roboto">
-                                    <b>
-		                                <% if (user.LanguageContext == "IT") { %>
-                                            Profili utente
-                                        <% } %>
-                                        <% if (user.LanguageContext == "GB") { %>
-                                            User profiles
-                                        <% } %>
-                                        <% if (user.LanguageContext == "ES") { %>
-                                            Perfiles de usuario
-		                                <% } %>
-                                        <% if (user.LanguageContext == "CN") { %>
-                                            使用者資料
-                                        <% } %>
-                                        <span class="profili-utente-text"></span>
-                                    </b>
-                                </div>
-                                <div class="panel-body h-100 p-2 f-roboto">
-                                    <div id="profili-utente-container" style="overflow-y:auto; height:90%;">
+                            <div class="col-6 p-0 h-100 px-1">
+                                <div class="panel panel-default h-100 p-0">
+                                    <div class="panel-heading p-3 f-roboto">
+                                        <b>
+		                                    <% if (user.LanguageContext == "IT") { %>
+                                                Profili utente
+                                            <% } %>
+                                            <% if (user.LanguageContext == "GB") { %>
+                                                User profiles
+                                            <% } %>
+                                            <% if (user.LanguageContext == "ES") { %>
+                                                Perfiles de usuario
+		                                    <% } %>
+                                            <% if (user.LanguageContext == "CN") { %>
+                                                使用者資料
+		                                    <% } %>
+                                            <span class="profili-utente-text"></span>
+                                        </b>
+                                    </div>
+                                    <div class="panel-body h-100 p-2 f-roboto">
+                                        <div id="profili-utente-container" style="overflow-y:auto; height:90%;">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -620,9 +622,10 @@
                         <button type="button" class="btn-close btn-close-container-workflow-set-auth" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-1 pt-1" style="overflow-y:hidden;">
-                        <div class="col-xs-4 p-0 h-100">
-                            <div class="panel panel-default h-100 p-0">
-                                <div class="panel-heading p-1 px-2 f-roboto">
+                        <div class="row g-0 h-100">
+                            <div class="col-4 p-0 h-100">
+                                <div class="panel panel-default h-100 p-0">
+                                    <div class="panel-heading p-1 px-2 f-roboto">
                                     <b>
 		                                <% if (user.LanguageContext == "IT") { %>
                                             Gruppi di lavoro
@@ -637,16 +640,16 @@
                                             工作小組
                                         <% } %>
                                     </b>
-                                </div>
-                                <div class="panel-body h-100 p-2 f-roboto">
-                                    <div id="auth-gruppi-operativi-container" style="overflow-y:auto; height:90%;">
+                                    </div>
+                                    <div class="panel-body h-100 p-2 f-roboto">
+                                        <div id="auth-gruppi-operativi-container" style="overflow-y:auto; height:90%;">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-xs-4 p-0 h-100 px-1">
-                            <div class="panel panel-default h-100 p-0">
-                                <div class="panel-heading p-1 px-2 f-roboto">
+                            <div class="col-4 p-0 h-100 px-1">
+                                <div class="panel panel-default h-100 p-0">
+                                    <div class="panel-heading p-1 px-2 f-roboto">
                                     <b>
 		                                <% if (user.LanguageContext == "IT") { %>
                                             Profili utente
@@ -662,16 +665,16 @@
                                         <% } %>
                                         <span class="auth-profili-utente-text"></span>
                                     </b>
-                                </div>
-                                <div class="panel-body h-100 p-2 f-roboto">
-                                    <div id="auth-profili-utente-container" style="overflow-y:auto; height:90%;">
+                                    </div>
+                                    <div class="panel-body h-100 p-2 f-roboto">
+                                        <div id="auth-profili-utente-container" style="overflow-y:auto; height:90%;">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-xs-4 p-0 h-100 px-1">
-                            <div class="panel panel-default h-100 p-0">
-                                <div class="panel-heading p-1 px-2 f-roboto">
+                            <div class="col-4 p-0 h-100 px-1">
+                                <div class="panel panel-default h-100 p-0">
+                                    <div class="panel-heading p-1 px-2 f-roboto">
                                     <b>
 		                                <% if (user.LanguageContext == "IT") { %>
                                             Autorizzazioni
@@ -687,9 +690,10 @@
                                         <% } %>
                                         <span class="auth-autorizzazioni-text"></span>
                                     </b>
-                                </div>
-                                <div class="panel-body h-100 p-2 f-roboto">
-                                    <div id="auth-autorizzazioni-container" style="overflow-y:auto; height:90%;">
+                                    </div>
+                                    <div class="panel-body h-100 p-2 f-roboto">
+                                        <div id="auth-autorizzazioni-container" style="overflow-y:auto; height:90%;">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
