@@ -11,9 +11,57 @@ $(function () {
         applyFilter();
     });
     $('.btn-new-version').click(function () {
+        var model = $('#container-model-versions').data('model');
+        if (!model) {
+            ShowError('Selezionare un form prima di creare una nuova versione.', getFnName());
+            return;
+        }
         $('.form-new-version-header').html($('LabelFormNewVersion').html());
-        $('.form-new-version-header-sub').html($('.model-header').html());
+        $('.form-new-version-header-sub').html(model.Description);
         $('#container-form-new-version').modal('show');
+    });
+    $('.btn-success-form-new-version').click(function () {
+
+        let fnName = getFnName();
+        var model = $('#container-model-versions').data('model');
+        var IDModello = model ? Number(model.IDModello) : NaN;
+
+        if (!Number.isSafeInteger(IDModello) || IDModello <= 0) {
+            ShowError('Impossibile identificare il form da versionare.', fnName);
+            return;
+        }
+
+        var button = $(this);
+        button.prop('disabled', true);
+
+        $.ajax({
+            type: 'POST',
+            url: '/post-forms-version',
+            data: { IDModello: IDModello }
+        }).done(function (response) {
+            if (response.status === 'OK') {
+                $('#container-form-new-version').one('hidden.bs.modal', function () {
+                    loadFormsVersion(model);
+                }).modal('hide');
+            } else {
+                var message = response.error && response.error.message
+                    ? response.error.message
+                    : JSON.stringify(response.error);
+                ShowError(message, fnName);
+            }
+        }).fail(function (xhr) {
+            ShowError(xhr.responseText || xhr.statusText, fnName);
+        }).always(function () {
+            button.prop('disabled', false);
+        });
+    });
+    var CtlDeleteVersion = $('#container-confirm-delete-version').appendTo('body');
+    CtlDeleteVersion.confirmDelete({
+        LanguageContext: $('#LanguageContext').val(),
+    });
+    CtlDeleteVersion.bind('onconfirm', function () {
+        var option = JSON.parse(CtlDeleteVersion.attr('data-options'));
+        deleteFormsVersion(option.args.IDVersione);
     });
 
 
@@ -246,6 +294,7 @@ $(function () {
         let fnName = getFnName();
 
         try {
+            $('#container-model-versions').data('model', model);
 
             $.ajax({
                 url: '/checksession',
@@ -254,7 +303,6 @@ $(function () {
             }).done(function (res) {
 
                 if (JSON.parse(JSON.stringify(res)).status == "CN") {
-
                     $('.spinner-border').hide();
 
                     ShowErrorConn($('#LanguageContext').val());
@@ -312,6 +360,12 @@ $(function () {
                                     $('.result-forms-version-container').find('.btn-model-edit-' + row.IDVersione).click(function () {
                                         loadForm($(this).data('idmodello'), $(this).data('idversione'));
                                     });
+                                    $('.result-forms-version-container').find('.btn-model-del-' + row.IDVersione).click(function () {
+                                        var option = JSON.parse(CtlDeleteVersion.attr('data-options'));
+                                        option.args = { IDVersione: Number($(this).data('idversione')) };
+                                        CtlDeleteVersion.attr('data-options', JSON.stringify(option));
+                                        CtlDeleteVersion.confirmDelete.show(CtlDeleteVersion);
+                                    });
 
                                 });
 
@@ -361,6 +415,55 @@ $(function () {
 
             return false
         }
+    }
+    showDeleteVersionError = function (message, sender) {
+        var systemMessage = $('#system-message').appendTo('body');
+        var versionsModal = $('#container-model-versions');
+        var restoreVersions = versionsModal.hasClass('show');
+
+        var showMessage = function () {
+            systemMessage.find('.pnl-sender').text(sender || 'DeleteFormsVersion');
+            systemMessage.find('.pnl-errors').text(message);
+            systemMessage.one('hidden.bs.modal', function () {
+                if (restoreVersions) {
+                    versionsModal.modal('show');
+                }
+            });
+            systemMessage.modal('show');
+        };
+
+        var openModals = $('.modal.show').not(systemMessage);
+        if (openModals.length === 0) {
+            showMessage();
+            return;
+        }
+
+        var remainingModals = openModals.length;
+        openModals.each(function () {
+            $(this).one('hidden.bs.modal', function () {
+                remainingModals--;
+                if (remainingModals === 0) {
+                    showMessage();
+                }
+            });
+        });
+        openModals.modal('hide');
+    }
+    deleteFormsVersion = function (IDVersione) {
+        let fnName = getFnName();
+
+        $.ajax({
+            url: '/forms-version/' + encodeURIComponent(IDVersione),
+            type: 'DELETE',
+        }).done(function (response) {
+            if (response.status === 'OK') {
+                loadFormsVersion($('#container-model-versions').data('model'));
+            } else {
+                showDeleteVersionError(response.error && response.error.message ? response.error.message : 'Eliminazione della versione non riuscita.', fnName);
+            }
+        }).fail(function (xhr) {
+            showDeleteVersionError(xhr.responseText || xhr.statusText, fnName);
+        });
     }
     loadForms = function (pageSize, pageIndex, filter) {
 
@@ -426,7 +529,8 @@ $(function () {
                                     var user = JSON.parse($('#user').val());
 
                                     $('.container-form-edit-' + row.IDModello).find('.btn-model-versions').click(function () {
-                                        loadFormsVersion(row);
+                                        var model = $.extend({}, row, { IDModello: Number($(this).data('idmodello')) });
+                                        loadFormsVersion(model);
                                     });
 
                                     $('.container-form-edit-' + row.IDModello).find('.btn-model-edit').click(function () {

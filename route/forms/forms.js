@@ -49,6 +49,54 @@ forms.post('/forms-version', function (req, res) {
         });
     }
 });
+forms.post('/post-forms-version', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+
+        var IDModello = Number(req.body.IDModello);
+        if (!Number.isSafeInteger(IDModello) || IDModello <= 0) {
+            return res.status(200).json(new response('ERR', null, { message: 'IDModello non valido' }));
+        }
+
+        crud.CreateFormsVersion(IDModello).then(createdVersion => {
+            res.status(200).json(new response('OK', JSON.stringify(createdVersion), null));
+        }).catch(err => {
+            res.status(200).json(new response('ERR', null, err));
+        });
+    }
+});
+forms.delete('/forms-version/:IDVersione', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+
+        var IDVersione = Number(req.params.IDVersione);
+        if (!Number.isSafeInteger(IDVersione) || IDVersione <= 0) {
+            return res.status(200).json(new response('ERR', null, { message: 'IDVersione non valido' }));
+        }
+
+        crud.DeleteFormsVersion(IDVersione).then(() => {
+            res.status(200).json(new response('OK', null, null));
+        }).catch(err => {
+            var message = err && err.message ? err.message : err;
+            try {
+                var parsedError = JSON.parse(message);
+                message = parsedError.message || message;
+            } catch (parseError) { }
+
+            if (typeof message === 'string' && message.indexOf('Impossibile eliminare la versione:') === 0) {
+                var messagesByLanguage = {
+                    IT: 'Impossibile eliminare la versione: esistono istanze o associazioni collegate.',
+                    GB: 'The version cannot be deleted because linked instances or associations exist.',
+                    ES: 'No se puede eliminar la versión porque existen instancias o asociaciones vinculadas.',
+                    CN: '无法删除此版本：存在关联的实例或关联记录。'
+                };
+                message = messagesByLanguage[req.session.user.LanguageContext] || messagesByLanguage.IT;
+            }
+
+            res.status(200).json(new response('ERR', null, { message: message }));
+        });
+    }
+});
 forms.get('/forms', function (req, res) {
     var internetAvailable = require("internet-available");
     res.set('Access-Control-Allow-Origin', '*');

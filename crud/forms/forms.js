@@ -68,6 +68,154 @@ function GetFormsVersion(myRequest) {
     });
     return customPromise
 }
+function CreateFormsVersion(IDModello) {
+    const sender = arguments.callee.name;
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err, conn) {
+                if (err) {
+                    reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
+                    return;
+                }
+
+                var request = new sql.Request(conn);
+                request.input('IDModello', sql.Int, IDModello);
+                request.query(`
+                    SET XACT_ABORT ON;
+                    BEGIN TRY
+                        BEGIN TRANSACTION;
+
+                        DECLARE @Numero int;
+                        SELECT @Numero = ISNULL(MAX(Numero), 0) + 1
+                        FROM dbo.TModelliVersioni WITH (UPDLOCK, HOLDLOCK)
+                        WHERE IDModello = @IDModello;
+
+                        INSERT INTO dbo.TModelliVersioni (IDModello, Numero, DataVersione, DataIstanza, IsVisible)
+                        OUTPUT INSERTED.IDVersione, INSERTED.IDModello, INSERTED.Numero,
+                            INSERTED.DataVersione, INSERTED.DataIstanza, INSERTED.IsVisible
+                        VALUES (@IDModello, @Numero, GETDATE(), NULL, 1);
+
+                        COMMIT TRANSACTION;
+                    END TRY
+                    BEGIN CATCH
+                        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+                        THROW;
+                    END CATCH;
+                `, function (queryError, result) {
+                    if (queryError) {
+                        reject(JSON.stringify(new exception(sender, queryError.message, queryError.name, queryError.stack)));
+                    } else {
+                        resolve(result.recordset[0]);
+                    }
+                });
+            });
+        }
+        catch (err) {
+            reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
+        }
+    });
+    return customPromise;
+}
+function DeleteFormsVersion(IDVersione) {
+    const sender = arguments.callee.name;
+
+    const customPromise = new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err, conn) {
+                if (err) {
+                    reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
+                    return;
+                }
+
+                var request = new sql.Request(conn);
+                request.input('IDVersione', sql.Int, IDVersione);
+                request.query(`
+                    SET XACT_ABORT ON;
+                    BEGIN TRY
+                        BEGIN TRANSACTION;
+
+                        IF NOT EXISTS (
+                            SELECT 1
+                            FROM dbo.TModelliVersioni WITH (UPDLOCK, HOLDLOCK)
+                            WHERE IDVersione = @IDVersione
+                        )
+                            THROW 50001, 'Versione non trovata.', 1;
+
+                        IF EXISTS (SELECT 1 FROM dbo.TModelliIstanze WHERE IDVersione = @IDVersione)
+                            OR EXISTS (SELECT 1 FROM dbo.TModelliProdottiClassi WHERE IDVersione = @IDVersione OR IDVersioneValutazione = @IDVersione)
+                            THROW 50002, 'Impossibile eliminare la versione: esistono istanze o associazioni collegate.', 1;
+
+                        DECLARE @IDClassi TABLE (IDClasse int PRIMARY KEY);
+                        INSERT INTO @IDClassi (IDClasse)
+                        SELECT IDClasse
+                        FROM dbo.TModelliClassi
+                        WHERE IDVersione = @IDVersione;
+
+                        IF EXISTS (
+                            SELECT 1
+                            FROM dbo.TModelliIstanzeRecords AS records
+                            INNER JOIN @IDClassi AS classes ON classes.IDClasse = records.IDClasse
+                        )
+                            THROW 50003, 'Impossibile eliminare la versione: le classi sono utilizzate da record.', 1;
+
+                        DECLARE @IDAttributi TABLE (IDAttributo int PRIMARY KEY);
+                        INSERT INTO @IDAttributi (IDAttributo)
+                        SELECT attributes.IDAttributo
+                        FROM dbo.TModelliClassiAttributi AS attributes
+                        INNER JOIN @IDClassi AS classes ON classes.IDClasse = attributes.IDClasse;
+
+                        IF EXISTS (
+                            SELECT 1
+                            FROM dbo.TAttributiCondizioni AS conditions
+                            INNER JOIN @IDAttributi AS attributes ON attributes.IDAttributo = conditions.IDAttributo
+                        ) OR EXISTS (
+                            SELECT 1
+                            FROM dbo.TModelliIstanzeRecord AS records
+                            INNER JOIN @IDAttributi AS attributes ON attributes.IDAttributo = records.IDAttributo
+                        )
+                            THROW 50004, 'Impossibile eliminare la versione: gli attributi sono utilizzati da condizioni o record.', 1;
+
+                        DELETE media
+                        FROM dbo.TModelliClassiAttributiMedia AS media
+                        INNER JOIN @IDAttributi AS attributes ON attributes.IDAttributo = media.IDAttributo;
+
+                        DELETE valuesTable
+                        FROM dbo.TModelliClassiAttributiValues AS valuesTable
+                        INNER JOIN @IDAttributi AS attributes ON attributes.IDAttributo = valuesTable.IDAttributo;
+
+                        DELETE attributes
+                        FROM dbo.TModelliClassiAttributi AS attributes
+                        INNER JOIN @IDClassi AS classes ON classes.IDClasse = attributes.IDClasse;
+
+                        DELETE classes
+                        FROM dbo.TModelliClassi AS classes
+                        INNER JOIN @IDClassi AS selectedClasses ON selectedClasses.IDClasse = classes.IDClasse;
+
+                        DELETE FROM dbo.TModelliVersioni
+                        WHERE IDVersione = @IDVersione;
+
+                        COMMIT TRANSACTION;
+                    END TRY
+                    BEGIN CATCH
+                        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+                        THROW;
+                    END CATCH;
+                `, function (queryError) {
+                    if (queryError) {
+                        reject(JSON.stringify(new exception(sender, queryError.message, queryError.name, queryError.stack)));
+                    } else {
+                        resolve(true);
+                    }
+                });
+            });
+        }
+        catch (err) {
+            reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
+        }
+    });
+    return customPromise;
+}
 function GetForms(myRequest) {
     const sender = arguments.callee.name;
 
@@ -405,6 +553,8 @@ function RollBack(conn) {
 module.exports = {
     GetForms,
     GetFormsVersion,
+    CreateFormsVersion,
+    DeleteFormsVersion,
     DeleteForms,
     PostForms,
     PostModel,
