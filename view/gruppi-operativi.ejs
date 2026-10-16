@@ -57,28 +57,28 @@
                 <!-- RIGHT CONTEXT MENU -->
                 <div class="ms-auto text-end p-0">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-light bi bi-three-dots-vertical rounded-circle"
-                            data-bs-toggle="dropdown" style="width:30px; height:30px; padding:0; font-size:1.25em;">
+                        <button type="button" class="btn btn-light bi bi-three-dots-vertical groups-context-trigger"
+                            data-bs-toggle="dropdown" aria-label="Azioni">
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end" style="width:250px;">
+                        <ul class="dropdown-menu dropdown-menu-end groups-context-menu app-context-menu">
                             <li>
-                                <div class="px-3">
+                                <div class="groups-context-menu-heading app-context-menu-heading">
                                     <b class="gruppo-operativo-<%= item.IdGruppoOperativo %>"><%= item.Text_IT %></b>
                                 </div>
                             </li>
-                            <li class="dropdown-item">
+                            <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li class="dropdown-item">
-                                <button type="button" class="btn btn-light col-12 gruppi-operativi-edit"
+                            <li>
+                                <button type="button" class="dropdown-item p-2 gruppi-operativi-edit"
                                     data-gruppioperativotext="<%= item.Text_IT %>" 
                                     data-gruppioperativoid="<%= item.IdGruppoOperativo %>"
                                     data-gruppioperativoparentid="<%= item.IdGruppoOperativoParent %>">
                                     Modifica
                                 </button>
                             </li>
-                            <li class="dropdown-item">
-                                <button type="button" class="btn btn-light col-12"
+                            <li>
+                                <button type="button" class="dropdown-item p-2"
                                     data-bs-toggle="modal"
                                     data-bs-target="#confirm-delete"
                                     data-callback="DeleteGruppoOperativo"
@@ -89,8 +89,8 @@
                                     Elimina
                                 </button>
                             </li>
-                            <li class="dropdown-item">
-                                <button type="button" class="btn btn-light col-12 gruppi-operativi-profili-utente"
+                            <li>
+                                <button type="button" class="dropdown-item p-2 gruppi-operativi-profili-utente"
                                     data-gruppioperativotext="<%= item.Text_IT %>" 
                                     data-gruppioperativoid="<%= item.IdGruppoOperativo %>"
                                     data-gruppioperativoparentid="<%= item.IdGruppoOperativoParent %>"
@@ -98,8 +98,8 @@
                                     Profili Utente
                                 </button>
                             </li>
-                            <li class="dropdown-item">
-                                <button type="button" class="btn btn-light col-12">
+                            <li>
+                                <button type="button" class="dropdown-item p-2">
                                     Annulla
                                 </button>
                             </li>

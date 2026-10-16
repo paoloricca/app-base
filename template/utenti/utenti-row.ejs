@@ -1,0 +1,33 @@
+<tr>
+    <td class="users-column-id"><%= row.IDPersona %></td>
+    <td><%= row.Nome || '' %></td>
+    <td><%= row.Cognome || '' %></td>
+    <td><%= row.DataNascita ? new Date(row.DataNascita).toLocaleDateString(labels.locale) : '' %></td>
+    <td class="users-column-detail"><%= row.CodiceFiscale || '' %></td>
+    <td class="users-column-detail"><%= row.Sesso || '' %></td>
+    <td class="users-column-detail"><%= row.IsPublic === null ? labels.notSet : (row.IsPublic ? labels.yes : labels.no) %></td>
+    <td class="users-column-detail"><%= row.DataIstanza ? new Date(row.DataIstanza).toLocaleDateString('en-GB') : '' %></td>
+    <td class="text-end users-actions">
+        <div class="btn-group">
+            <button type="button" class="btn btn-light bi bi-three-dots-vertical users-context-trigger"
+                aria-label="<%= labels.actions %>" aria-haspopup="true" aria-expanded="false"></button>
+            <ul class="dropdown-menu dropdown-menu-end users-context-menu app-context-menu">
+                <li>
+                    <button type="button" class="dropdown-item btn-user-edit p-2" <% if (!permissions.canEdit) { %>disabled aria-disabled="true"<% } %>>
+                        <i class="bi bi-person-gear"></i>&nbsp;<%= labels.edit %>
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="dropdown-item btn-user-delete p-2" <% if (!permissions.canDelete) { %>disabled aria-disabled="true"<% } %>>
+                        <i class="bi bi-person-x"></i>&nbsp;<%= labels.delete %>
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="dropdown-item btn-user-account p-2" <% if (!permissions.canAccount) { %>disabled aria-disabled="true"<% } %>>
+                        <i class="bi bi-person-lock"></i>&nbsp;<%= labels.account %>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </td>
+</tr>

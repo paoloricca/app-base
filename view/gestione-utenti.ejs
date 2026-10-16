@@ -1,0 +1,379 @@
+<%
+const translations = {
+    IT: {
+        title: 'Gestione Utenti', filter: 'Filtro di ricerca', search: 'Cerca',
+        users: 'Utenti', showFilter: 'Visualizza filtro', hideFilter: 'Nascondi filtro',
+        nome: 'Nome', cognome: 'Cognome', public: 'Pubblico', all: 'Tutti',
+        yes: 'Sì', no: 'No', notSet: 'Non impostato', id: 'ID',
+        birthDate: 'Data di nascita', fiscalCode: 'Codice fiscale', gender: 'Sesso',
+        recordDate: 'Data Registrazione', actions: 'Azioni',
+        edit: 'Modifica', delete: 'Elimina', account: 'Account', newUser: 'Nuovo utente',
+        editUser: 'Modifica utente', save: 'Salva', cancel: 'Annulla',
+        deleteReferencedAccount: 'Impossibile eliminare l’utente: è associato a uno o più contratti. Puoi renderlo invisibile disattivando il selettore “Visibile” qui sopra e salvando.',
+        email: 'E-mail',         password: 'Password', visible: 'Visibile',
+        passwordGenerated: 'La password verrà generata automaticamente al primo salvataggio.',
+        accountTitle: 'Account utente',
+        required: 'Campo obbligatorio', invalidDate: 'Inserire una data valida nel formato gg/mm/aaaa.',
+        allRecords: 'Tutti i record',
+        errors: {
+            INVALID_INPUT: 'I dati inseriti non sono validi.',
+            INVALID_BIRTH_DATE: 'Inserire una data di nascita valida nel formato gg/mm/aaaa.',
+            INVALID_PERSON_FIELDS: 'Inserire Nome e Cognome (massimo 50 caratteri).',
+            INVALID_SESSION_ACCOUNT: 'Impossibile identificare l’utente della sessione per la registrazione.',
+            INVALID_SESSION_PROFILE: 'Impossibile identificare il profilo autorizzativo dell’utente.',
+            INVALID_SESSION_ACTOR: 'Impossibile identificare l’attore della sessione.',
+            INVALID_EMAIL: 'Inserire un indirizzo e-mail valido (massimo 50 caratteri).',
+            USER_MANAGEMENT_PROCESS_NOT_FOUND: 'Processo Utenti di sistema non trovato.',
+            MULTIPLE_PERSON_ACCOUNTS: 'L’utente è associato a più account.',
+            DUPLICATE_ACCOUNT_EMAIL: 'Esiste già un account con questo indirizzo e-mail.',
+            PERSON_NOT_FOUND: 'Utente non trovato.',
+            PERSON_REFERENCED: 'Impossibile eliminare l’utente: è associato a uno o più contratti.',
+            DUPLICATE_PERSON: 'Esiste già un utente con questo ID persona.',
+            FORBIDDEN: 'Non si dispone dell’autorizzazione necessaria per questa operazione.',
+            UNKNOWN: 'Si è verificato un errore durante l’operazione.'
+        }
+    },
+    GB: {
+        title: 'User Management', filter: 'Search filter', search: 'Search',
+        users: 'Users', showFilter: 'Show filter', hideFilter: 'Hide filter',
+        nome: 'First name', cognome: 'Surname', public: 'Public', all: 'All',
+        yes: 'Yes', no: 'No', notSet: 'Not set', id: 'ID',
+        birthDate: 'Date of birth', fiscalCode: 'Tax code', gender: 'Gender',
+        recordDate: 'Registration date', actions: 'Actions',
+        edit: 'Edit', delete: 'Delete', account: 'Account', newUser: 'New user',
+        editUser: 'Edit user', save: 'Save', cancel: 'Cancel',
+        deleteReferencedAccount: 'The user cannot be deleted because it is linked to one or more contracts. You can make the user invisible by turning off the “Visible” switch above and saving.',
+        email: 'E-mail',         password: 'Password', visible: 'Visible',
+        passwordGenerated: 'A password will be generated automatically when the account is first saved.',
+        accountTitle: 'User account',
+        required: 'Required field', invalidDate: 'Enter a valid date in dd/mm/yyyy format.',
+        allRecords: 'All records',
+        errors: {
+            INVALID_INPUT: 'The entered data is invalid.',
+            INVALID_BIRTH_DATE: 'Enter a valid date of birth in dd/mm/yyyy format.',
+            INVALID_PERSON_FIELDS: 'Enter a first name and surname (up to 50 characters).',
+            INVALID_SESSION_ACCOUNT: 'The current session user could not be identified for registration.',
+            INVALID_SESSION_PROFILE: 'The current user authorization profile could not be identified.',
+            INVALID_SESSION_ACTOR: 'The current session actor could not be identified.',
+            INVALID_EMAIL: 'Enter a valid e-mail address (up to 50 characters).',
+            USER_MANAGEMENT_PROCESS_NOT_FOUND: 'The System Users process was not found.',
+            MULTIPLE_PERSON_ACCOUNTS: 'This user is linked to multiple accounts.',
+            DUPLICATE_ACCOUNT_EMAIL: 'An account with this e-mail address already exists.',
+            PERSON_NOT_FOUND: 'User not found.',
+            PERSON_REFERENCED: 'The user cannot be deleted because it is linked to one or more contracts.',
+            DUPLICATE_PERSON: 'A user with this person ID already exists.',
+            FORBIDDEN: 'You are not authorized to perform this operation.',
+            UNKNOWN: 'An error occurred while processing the request.'
+        }
+    },
+    ES: {
+        title: 'Gestión de usuarios', filter: 'Filtro de búsqueda', search: 'Buscar',
+        users: 'Usuarios', showFilter: 'Mostrar filtro', hideFilter: 'Ocultar filtro',
+        nome: 'Nombre', cognome: 'Apellido', public: 'Público', all: 'Todos',
+        yes: 'Sí', no: 'No', notSet: 'Sin establecer', id: 'ID',
+        birthDate: 'Fecha de nacimiento', fiscalCode: 'Código fiscal', gender: 'Sexo',
+        recordDate: 'Fecha de registro', actions: 'Acciones',
+        edit: 'Editar', delete: 'Eliminar', account: 'Cuenta', newUser: 'Nuevo usuario',
+        editUser: 'Editar usuario', save: 'Guardar', cancel: 'Cancelar',
+        deleteReferencedAccount: 'No se puede eliminar el usuario porque está asociado a uno o más contratos. Puede hacerlo invisible desactivando el selector «Visible» de arriba y guardando.',
+        email: 'Correo electrónico', password: 'Contraseña', visible: 'Visible',
+        passwordGenerated: 'La contraseña se generará automáticamente al guardar la cuenta por primera vez.',
+        accountTitle: 'Cuenta de usuario',
+        required: 'Campo obligatorio', invalidDate: 'Introduzca una fecha válida con el formato dd/mm/aaaa.',
+        allRecords: 'Todos los registros',
+        errors: {
+            INVALID_INPUT: 'Los datos introducidos no son válidos.',
+            INVALID_BIRTH_DATE: 'Introduzca una fecha de nacimiento válida con el formato dd/mm/aaaa.',
+            INVALID_PERSON_FIELDS: 'Introduzca nombre y apellido (máximo 50 caracteres).',
+            INVALID_SESSION_ACCOUNT: 'No se pudo identificar al usuario de la sesión para el registro.',
+            INVALID_SESSION_PROFILE: 'No se pudo identificar el perfil de autorización del usuario.',
+            INVALID_SESSION_ACTOR: 'No se pudo identificar al actor de la sesión.',
+            INVALID_EMAIL: 'Introduzca un correo electrónico válido (máximo 50 caracteres).',
+            USER_MANAGEMENT_PROCESS_NOT_FOUND: 'No se encontró el proceso Usuarios del sistema.',
+            MULTIPLE_PERSON_ACCOUNTS: 'El usuario está asociado a varias cuentas.',
+            DUPLICATE_ACCOUNT_EMAIL: 'Ya existe una cuenta con este correo electrónico.',
+            PERSON_NOT_FOUND: 'Usuario no encontrado.',
+            PERSON_REFERENCED: 'No se puede eliminar el usuario porque está asociado a uno o más contratos.',
+            DUPLICATE_PERSON: 'Ya existe un usuario con este ID de persona.',
+            FORBIDDEN: 'No tiene autorización para realizar esta operación.',
+            UNKNOWN: 'Se produjo un error al procesar la solicitud.'
+        }
+    },
+    CN: {
+        title: '用户管理', filter: '搜索筛选', search: '搜索',
+        users: '用户', showFilter: '显示筛选', hideFilter: '隐藏筛选',
+        nome: '名字', cognome: '姓氏', public: '公开', all: '全部',
+        yes: '是', no: '否', notSet: '未设置', id: 'ID',
+        birthDate: '出生日期', fiscalCode: '税号', gender: '性别',
+        recordDate: '登记日期', actions: '操作',
+        edit: '编辑', delete: '删除', account: '账户', newUser: '新建用户',
+        editUser: '编辑用户', save: '保存', cancel: '取消',
+        deleteReferencedAccount: '无法删除此用户：该用户关联了一个或多个合同。您可以关闭上方的“可见”开关并保存，使用户不可见。',
+        email: '电子邮件', password: '密码', visible: '可见',
+        passwordGenerated: '首次保存账户时将自动生成密码。',
+        accountTitle: '用户账户',
+        required: '必填项', invalidDate: '请输入有效日期，格式为 dd/mm/yyyy。',
+        allRecords: '所有记录',
+        errors: {
+            INVALID_INPUT: '输入的数据无效。',
+            INVALID_BIRTH_DATE: '请输入有效的出生日期，格式为 dd/mm/yyyy。',
+            INVALID_PERSON_FIELDS: '请输入名字和姓氏（最多 50 个字符）。',
+            INVALID_SESSION_ACCOUNT: '无法识别当前会话用户，不能创建记录。',
+            INVALID_SESSION_PROFILE: '无法识别当前用户的授权配置。',
+            INVALID_SESSION_ACTOR: '无法识别当前会话的参与者。',
+            INVALID_EMAIL: '请输入有效的电子邮件地址（最多 50 个字符）。',
+            USER_MANAGEMENT_PROCESS_NOT_FOUND: '未找到系统用户流程。',
+            MULTIPLE_PERSON_ACCOUNTS: '该用户关联了多个账户。',
+            DUPLICATE_ACCOUNT_EMAIL: '此电子邮件地址已关联其他账户。',
+            PERSON_NOT_FOUND: '未找到用户。',
+            PERSON_REFERENCED: '无法删除此用户：该用户关联了一个或多个合同。',
+            DUPLICATE_PERSON: '此人员 ID 已存在用户。',
+            FORBIDDEN: '您没有执行此操作的权限。',
+            UNKNOWN: '处理请求时发生错误。'
+        }
+    }
+};
+const labels = translations[user.LanguageContext] || translations.IT;
+labels.locale = { IT: 'it-IT', GB: 'en-GB', ES: 'es-ES', CN: 'zh-CN' }[user.LanguageContext] || 'it-IT';
+%>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web APP DC - <%= labels.title %></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%- include('partials/head'); %>
+    <script type="text/javascript" src="/processi-script"></script>
+    <script type="text/javascript" src="/control-pager-script"></script>
+    <script type="text/javascript" src="/control-confirm-delete-script"></script>
+    <script type="text/javascript" src="/utility-script"></script>
+    <script type="text/javascript" src="/gestione-utenti-script"></script>
+    <script type="text/javascript" src="/logout-script"></script>
+</head>
+<body class="forms-page">
+    <%- include('partials/header'); %>
+    <input type="hidden" id="LanguageContext" value="<%= user.LanguageContext %>">
+    <input type="hidden" id="labels" value="<%= JSON.stringify(labels) %>">
+    <div class="container-fluid p-0 px-4">
+        <h4 class="p-0">
+            <span class="bi bi-people-fill" style="font-size:2rem;"></span>&nbsp;
+            <b class="f-roboto b"><%= labels.title %></b>
+        </h4>
+    </div>
+    <div class="container-fluid forms-layout">
+        <div class="filtro-container forms-filter">
+            <div class="card h-100 p-0">
+                <div class="card-header p-2 f-roboto">
+                    <button type="button" class="btn btn-light bi bi-arrow-left rounded-circle float-end btn-30 btn-filter-close"
+                        data-bs-toggle="tooltip" data-bs-trigger="manual" data-bs-title="<%= labels.hideFilter %>" aria-label="<%= labels.hideFilter %>"></button>
+                    <b><%= labels.filter %></b>
+                </div>
+                <div class="card-body p-2 forms-filter-body">
+                    <div class="tab-content mt-3">
+                        <div class="tab-pane active">
+                            <div id="filtro-forms-container">
+                                <div class="mb-3">
+                                    <label class="form-label" for="filter-nome"><%= labels.nome %></label>
+                                    <input class="form-control" id="filter-nome" maxlength="50">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="filter-cognome"><%= labels.cognome %></label>
+                                    <input class="form-control" id="filter-cognome" maxlength="50">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="filter-is-public"><%= labels.public %></label>
+                                    <select class="form-select" id="filter-is-public">
+                                        <option value=""><%= labels.all %></option>
+                                        <option value="true"><%= labels.yes %></option>
+                                        <option value="false"><%= labels.no %></option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="forms-filter-actions p-3 pt-4">
+                                <button type="button" class="btn btn-md btn-secondary text-white w-100 btn-filter-apply"><%= labels.search %></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="result-container forms-results">
+            <div class="card h-100 p-0">
+                <div class="card-header p-3 f-roboto">
+                    <b><%= labels.users %></b>
+                    <button type="button" class="btn btn-light bi bi-sliders rounded-circle float-end btn-30 btn-filter-open"
+                        data-bs-toggle="tooltip" data-bs-trigger="manual" data-bs-title="<%= labels.showFilter %>" aria-label="<%= labels.showFilter %>"></button>
+                    <button type="button" class="btn btn-primary btn-sm float-end me-2 btn-user-new" disabled>
+                        <i class="bi bi-plus-lg"></i>&nbsp;<%= labels.newUser %>
+                    </button>
+                </div>
+                <div class="card-body p-2 f-roboto">
+                    <div class="forms-results-content">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-xs users-table">
+                                <thead>
+                                    <tr>
+                                        <th class="users-column-id"><%= labels.id %></th>
+                                        <th><%= labels.nome %></th>
+                                        <th><%= labels.cognome %></th>
+                                        <th><%= labels.birthDate %></th>
+                                        <th class="users-column-detail"><%= labels.fiscalCode %></th>
+                                        <th class="users-column-detail"><%= labels.gender %></th>
+                                        <th class="users-column-detail"><%= labels.public %></th>
+                                        <th class="users-column-detail"><%= labels.recordDate %></th>
+                                        <th class="users-actions"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="result-utenti-container"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="forms-pager-container">
+                        <div class="utenti-pager pager p-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="container-user-edit" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form id="frm-user-edit" class="was-validated" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title f-roboto b" id="user-edit-title"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<%= labels.cancel %>"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="form-check form-switch p-0">
+                                    <input class="form-check-input" type="checkbox" id="user-is-public">&nbsp;
+                                    <label class="form-check-label text-dark" for="user-is-public"><%= labels.public %></label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="user-nome"><%= labels.nome %></label>
+                                <input class="form-control" id="user-nome" maxlength="50" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="user-cognome"><%= labels.cognome %></label>
+                                <input class="form-control" id="user-cognome" maxlength="50" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="user-data-nascita"><%= labels.birthDate %></label>
+                                <input class="form-control" id="user-data-nascita" type="text" autocomplete="off">
+                                <div class="invalid-feedback"><%= labels.invalidDate %></div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="user-codice-fiscale"><%= labels.fiscalCode %></label>
+                                <input class="form-control" id="user-codice-fiscale" maxlength="16">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="user-sesso"><%= labels.gender %></label>
+                                <input class="form-control" id="user-sesso" maxlength="10">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><%= labels.cancel %></button>
+                        <button type="submit" class="btn btn-primary" id="btn-user-save"><%= labels.save %></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="container-user-account" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form id="frm-user-account" class="was-validated" novalidate>
+                    <div class="modal-header">
+                        <h5 class="modal-title f-roboto b"><%= labels.accountTitle %></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<%= labels.cancel %>"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="user-account-delete-error" class="alert alert-danger d-none" role="alert" aria-live="assertive"></div>
+                        <div class="user-account-options mb-3">
+                            <div class="form-check form-switch d-flex align-items-center gap-2">
+                                <input class="form-check-input m-0" type="checkbox" id="user-account-is-public">
+                                <label class="form-check-label text-dark" for="user-account-is-public"><%= labels.public %></label>
+                            </div>
+                            <div class="form-check form-switch d-flex align-items-center gap-2">
+                                <input class="form-check-input m-0" type="checkbox" id="user-account-is-visible">
+                                <label class="form-check-label text-dark" for="user-account-is-visible"><%= labels.visible %></label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="user-account-email"><%= labels.email %></label>
+                            <input class="form-control" id="user-account-email" type="email" maxlength="50" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="user-account-password"><%= labels.password %></label>
+                            <div class="position-relative user-account-password-wrap">
+                                <i class="btn bi bi-eye-slash-fill show-hide-password"></i>
+                                <input class="form-control" id="user-account-password" type="password" maxlength="15" readonly>
+                            </div>
+                            <small class="form-text text-secondary" id="user-account-password-note"></small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><%= labels.cancel %></button>
+                        <button type="button" class="btn btn-danger" id="btn-user-account-delete" disabled aria-disabled="true"><%= labels.delete %></button>
+                        <button type="submit" class="btn btn-primary" id="btn-user-account-save"><%= labels.save %></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="container-confirm-delete-user"></div>
+    <style>
+        .users-table {
+            min-width: 1100px;
+        }
+        .ui-datepicker {
+            z-index: 2000 !important;
+        }
+        .user-account-options {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .user-account-options .form-check {
+            padding-left: 0;
+        }
+        .user-account-password-wrap .form-control {
+            padding-right: 2.5rem;
+        }
+        .user-account-password-wrap .show-hide-password {
+            position: absolute;
+            top: 50%;
+            right: .75rem;
+            left: auto;
+            z-index: 2;
+            margin: 0;
+            padding: 0;
+            transform: translateY(-50%);
+            color: #495057;
+            background: transparent;
+            border: 0;
+            font-size: 1rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        @media (max-width: 991.98px), (max-width: 1366px) and (orientation: portrait) {
+            .users-table {
+                min-width: 0;
+            }
+            .users-column-id,
+            .users-column-detail {
+                display: none;
+            }
+            .users-actions {
+                width: 1%;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</body>
+</html>

@@ -71,6 +71,7 @@ app.use('/', require('./route/fileupload'));
 app.use('/', require('./route/dashboard'));
 app.use('/', require('./route/account'));
 app.use('/', require('./route/forms/forms'));
+app.use('/', require('./route/gestione-utenti'));
 app.use('/', require('./route/model'));
 app.use('/', require('./route/workflow'));
 app.use('/', require('./route/gruppi-operativi'));

@@ -15,14 +15,14 @@ $(function () {
     /* inizializza il controllo processi */
     var ControlProcessi = $('#processi-container');
 
-    /* Imposta le proprietà di default del plug-in <Pager> */
+    /* Imposta le proprietï¿½ di default del plug-in <Pager> */
     ControlProcessi.processi({
     });
 
     ControlProcessi.bind(
         "onselect", function () {
 
-            /* Imposta le proprietà di default del plug-in */
+            /* Imposta le proprietï¿½ di default del plug-in */
             ControlWorkflowNodeStates.workflowNodeStates({
                 IdProcesso: JSON.parse(ControlProcessi.attr('data-options')).IDProcesso,
                 IdEventoTransizione: null,
@@ -54,7 +54,7 @@ $(function () {
     /* initialize il controllo <confirm-delete-workflow-link> */
     var CtlDeleteLink = $('#container-confirm-delete-workflow-link');
 
-    /* Imposta le proprietà di default del plug-in */
+    /* Imposta le proprietï¿½ di default del plug-in */
     CtlDeleteLink.confirmDelete({
         LanguageContext: $('#LanguageContext').val(),
     });
@@ -63,19 +63,21 @@ $(function () {
     CtlDeleteLink.bind("onconfirm", function () {
 
         var option = JSON.parse(CtlDeleteLink.attr('data-options'));
+        var IdEventoDirezione = option.args.IDEventoDirezione;
 
-        $.when(
-            deleteWorkflowLink(option.args.IdEventoTransizione)
-        ).then(function () {
-            $('#context-menu-link').hide();
-            CtlDeleteLink.confirmDelete.hide(CtlDeleteLink);
-        });
+        if (!IdEventoDirezione) {
+            ShowError("Workflow link ID is missing", "deleteWorkflowLink");
+            return;
+        }
+
+        deleteWorkflowLink(IdEventoDirezione);
+        CtlDeleteLink.confirmDelete.hide(CtlDeleteLink);
     });
 
     /* initialize il controllo <confirm-delete-workflow-state> */
     var CtlDeleteState = $('#container-confirm-delete-workflow-state');
 
-    /* Imposta le proprietà di default del plug-in */
+    /* Imposta le proprietï¿½ di default del plug-in */
     CtlDeleteState.confirmDelete({
         LanguageContext: $('#LanguageContext').val(),
     });
@@ -211,7 +213,11 @@ $(function () {
     });
     $('.workflow-set-rel').click(function () {
         var ControlWorkflowNodeLink = $('.control-workflow-node-link');
+        var optionsWorkflowNodeLink = JSON.parse(ControlWorkflowNodeLink.attr('data-options'));
+        optionsWorkflowNodeLink.IdProcesso = JSON.parse(ControlProcessi.attr('data-options')).IDProcesso;
+        ControlWorkflowNodeLink.attr('data-options', JSON.stringify(optionsWorkflowNodeLink));
         ControlWorkflowNodeLink.workflowNodeStates.clear(ControlWorkflowNodeLink);
+        ControlWorkflowNodeLink.workflowNodeStates.loadStates(ControlWorkflowNodeLink);
         $('.container-workflow-node-link-header').html(
             $('#context-menu-node').find('#DescTransizione').val()
         )
@@ -492,6 +498,7 @@ $(function () {
     }
     deleteWorkflowLink = function (IdEventoDirezione) {
         try {
+            $('#context-menu-link').hide();
             $('.spinner-workflow').show();
             $.ajax({
                 url: "/workflow-del-link/" + IdEventoDirezione,
@@ -501,7 +508,6 @@ $(function () {
                 if (response.status == "ERR") {
                     ShowError(response.error.message, response.error.sender);
                 } else if (response.status == "OK") {
-
                     initializeWorkflow(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso)
                 }
                 $('.spinner-workflow').hide();
@@ -1273,7 +1279,7 @@ $(function () {
     /* inizializza il controllo <profili-utente-auth> */
     var ControlAuthProfiliUtente = $('#auth-profili-utente-container');
 
-    /* Imposta le proprietà di default del plug-in <profili-utente-auth> */
+    /* Imposta le proprietï¿½ di default del plug-in <profili-utente-auth> */
     ControlAuthProfiliUtente.profiliutente({
         IDGruppoOperativo: null,
     });
@@ -1300,7 +1306,7 @@ $(function () {
     /* inizializza il controllo <gruppi-operativi-auth> */
     var ControlAuthGruppiOperativi = $('#auth-gruppi-operativi-container');
 
-    /* Imposta le proprietà di default del plug-in <gruppi-operativi-auth> */
+    /* Imposta le proprietï¿½ di default del plug-in <gruppi-operativi-auth> */
     ControlAuthGruppiOperativi.gruppioperativi({
         IDGruppoOperativo: null,
         IDGruppoOperativoParent: null,
@@ -1321,7 +1327,7 @@ $(function () {
     /* inizializza il controllo <profili-utente> */
     var ControlProfiliUtente = $('#profili-utente-container');
 
-    /* Imposta le proprietà di default del plug-in <profili-utente> */
+    /* Imposta le proprietï¿½ di default del plug-in <profili-utente> */
     ControlProfiliUtente.profiliutente({
         IDGruppoOperativo: null,
     });
@@ -1342,7 +1348,7 @@ $(function () {
     /* inizializza il controllo <gruppi-operativi> */
     var ControlGruppiOperativi = $('#gruppi-operativi-container');
 
-    /* Imposta le proprietà di default del plug-in <gruppi-operativi> */
+    /* Imposta le proprietï¿½ di default del plug-in <gruppi-operativi> */
     ControlGruppiOperativi.gruppioperativi({
         IDGruppoOperativo: null,
         IDGruppoOperativoParent: null,
@@ -1362,7 +1368,7 @@ $(function () {
     /* inizializza il controllo processi azioni */
     var ControlAuthProcessiAzioni = $('#auth-autorizzazioni-container');
 
-    /* Imposta le proprietà di default del plug-in <Pager> */
+    /* Imposta le proprietï¿½ di default del plug-in <Pager> */
     ControlAuthProcessiAzioni.processiazioni({
     });
 
@@ -1386,14 +1392,16 @@ $(function () {
     /* inizializza il controllo workflow-node-link */
     var ControlWorkflowNodeLink = $('.control-workflow-node-link');
 
-    /* Imposta le proprietà di default del plug-in */
+    /* Imposta le proprietï¿½ di default del plug-in */
     ControlWorkflowNodeLink.workflowNodeStates({
         IdProcesso: JSON.parse(ControlProcessi.attr('data-options')).IDProcesso,
         IdEventoTransizione: null,
         LanguageContext: $('#LanguageContext').val()
     });
 
-    ControlWorkflowNodeLink.workflowNodeStates.loadStates(ControlWorkflowNodeLink);
+    ControlWorkflowNodeLink.bind("onready", function () {
+        ControlWorkflowNodeLink.workflowNodeStates.loadStates(ControlWorkflowNodeLink);
+    });
 
     /* Registra l'evento {onselect} */
     ControlWorkflowNodeLink.bind("onselect", function () {

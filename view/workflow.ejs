@@ -97,10 +97,10 @@
                             <input type="hidden" class="node" />
                             <input type="hidden" id="IdEventoTransizione" />
                             <input type="hidden" id="DescTransizione" />
-                            <h6 class="col-12 p-0 px-2 f-roboto-b text-primary context-menu-node-header"></h6>
+                            <h6 class="col-12 p-0 px-2 f-roboto-b text-primary context-menu-node-header app-context-menu-heading"></h6>
                             <button type="button" class="btn-close btn-cancel-context-menu-node"></button>
                             <h6 class="col-12 p-0 m-0"><div class="divider"></div></h6>
-                            <span class="col-12 p-0 px-2 workflow-set-owner">
+                            <span class="col-12 p-0 px-2 workflow-set-owner app-context-menu-item">
                                 <i class="bi bi-person-gear"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Imposta owner
@@ -115,7 +115,7 @@
                                     設定所有者
                                 <% } %>
                             </span>
-                            <span class="col-12 p-0 px-2 workflow-set-auth">
+                            <span class="col-12 p-0 px-2 workflow-set-auth app-context-menu-item">
                                 <i class="bi bi-person-lock"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Imposta autorizzazioni
@@ -130,7 +130,7 @@
                                     設定權限
                                 <% } %>
                             </span>
-                            <span class="col-12 p-0 px-2 workflow-set-rel">
+                            <span class="col-12 p-0 px-2 workflow-set-rel app-context-menu-item">
                                 <i class="bi bi-link-45deg"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Collega stato
@@ -145,7 +145,7 @@
                                     設定權限
                                 <% } %>
                             </span>
-                            <span class="col-12 p-0 px-2 workflow-set-node">
+                            <span class="col-12 p-0 px-2 workflow-set-node app-context-menu-item">
                                 <i class="bi bi-pencil"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Modifica
@@ -160,7 +160,7 @@
                                     編輯
                                 <% } %>
                             </span>
-                            <span class="col-12 p-0 px-2 workflow-del-node">
+                            <span class="col-12 p-0 px-2 workflow-del-node app-context-menu-item">
                                 <i class="bi bi-trash"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Elimina
@@ -181,10 +181,10 @@
                             <input type="hidden" class="transition" />
                             <input type="hidden" id="IDEventoDirezione" />
                             <input type="hidden" id="DescDirezione" />
-                            <h6 class="col-12 p-0 px-2 f-roboto-b text-primary context-menu-link-header"></h6>
-                            <button type="button" class="btn-close p-2 btn-sm btn-cancel-context-menu-link"></button>
+                            <h6 class="col-12 p-0 px-2 f-roboto-b text-primary context-menu-link-header app-context-menu-heading"></h6>
+                            <button type="button" class="btn-close btn-cancel-context-menu-link"></button>
                             <h6 class="col-12 p-0 m-0"><div class="divider"></div></h6>
-                            <span class="col-12 p-0 px-2 workflow-set-link">
+                            <span class="col-12 p-0 px-2 workflow-set-link app-context-menu-item">
                                 <i class="bi bi-link-45deg"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Imposta collegamento
@@ -199,7 +199,7 @@
                                     設定連結
                                 <% } %>
                             </span>
-                            <span class="col-12 p-0 px-2 workflow-del-link">
+                            <span class="col-12 p-0 px-2 workflow-del-link app-context-menu-item">
                                 <i class="bi bi-trash"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
                                     Elimina
@@ -341,17 +341,19 @@
                                 <div class="container-control-culture-textbox-codice"></div>
                                 <div class="container-control-culture-textbox-descrizione"></div>
                                 
-                                <div class="col-12 p-0 form-switch">
-                                    <input class="form-check-input float-start btn-toggle-link m-2" type="checkbox" id="rb-is-available-note" name="rb-is-available-note">
-                                    <span class="h6 float-start text-decoration-none text-secondary f-roboto" data-idprocessoazione="">
-                                        Abilita inserimento testo
-                                    </span>
-                                </div>
-                                <div class="col-12 p-0 form-switch">
-                                    <input class="form-check-input float-start btn-toggle-link m-2" type="checkbox" id="rb-required-confirmation" name="rb-required-confirmation">
-                                    <span class="h6 float-start text-decoration-none text-secondary f-roboto" data-idprocessoazione="">
-                                        Abilita richiesta conferma
-                                    </span>
+                                <div class="workflow-link-options">
+                                    <div class="form-switch workflow-link-option">
+                                        <input class="form-check-input btn-toggle-link" type="checkbox" id="rb-is-available-note" name="rb-is-available-note">
+                                        <span class="workflow-link-option-label text-secondary f-roboto" data-idprocessoazione="">
+                                            Abilita inserimento testo
+                                        </span>
+                                    </div>
+                                    <div class="form-switch workflow-link-option">
+                                        <input class="form-check-input btn-toggle-link" type="checkbox" id="rb-required-confirmation" name="rb-required-confirmation">
+                                        <span class="workflow-link-option-label text-secondary f-roboto" data-idprocessoazione="">
+                                            Abilita richiesta conferma
+                                        </span>
+                                    </div>
                                 </div>
                             </form>
 

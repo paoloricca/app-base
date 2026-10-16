@@ -68,8 +68,51 @@
 .btn-cancel-context-menu-node, .btn-cancel-context-menu-link {
     position: absolute;
     display: block;
-    left: 88% !important;
-    top: 6%;
+    left: auto !important;
+    right: 4px;
+    top: 3px;
+    transform: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    padding: 0.15rem;
+    background-size: 0.7rem;
+    opacity: 0.75;
+}
+.btn-cancel-context-menu-node:hover, .btn-cancel-context-menu-link:hover {
+    opacity: 1;
+}
+.context-menu-node-header, .context-menu-link-header {
+    margin: 0 !important;
+    display: flex;
+    min-height: 36px;
+    align-items: center;
+    padding: 6px 1.75rem 6px 10px !important;
+    font-size: 12px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+#container-workflow-set-link .workflow-link-options {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+#container-workflow-set-link .workflow-link-option {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding-left: 0;
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+#container-workflow-set-link .workflow-link-option .form-check-input {
+    float: none;
+    flex: 0 0 auto;
+    margin: 0 0.35rem 0 0 !important;
+}
+#container-workflow-set-link .workflow-link-option-label {
+    font-size: 12px;
+    line-height: 1.25;
 }
 .selected-node {
     background-color: #e74c3c;
@@ -174,20 +217,99 @@ a.active, span.active {
 #context-menu-node > span, #context-menu-link > span {
     display: block;
 }
-    #context-menu-node span, #context-menu-link span, .context-menu-model span, .btn-menu-item {
-        font-family: "Roboto" !important;
-        font-size: 12px;
-        padding: 4px;
+    #context-menu-node span, #context-menu-link span, .context-menu-model span,
+        .users-context-menu .dropdown-item, .groups-context-menu .dropdown-item, .btn-menu-item {
+        display: flex;
+        min-height: 34px;
+        align-items: center;
+        box-sizing: border-box;
+        padding: 6px 10px;
         margin: 0;
-        padding-bottom: 0;
+        font-family: "Roboto" !important;
+        font-size: 13px;
+        line-height: 1.25;
         cursor: pointer;
     }
 #context-menu-node span:hover, #context-menu-link span:hover, .context-menu-model span:hover,
-    .btn-menu-item:hover {
+    .users-context-menu .dropdown-item:hover, .users-context-menu .dropdown-item:focus,
+        .groups-context-menu .dropdown-item:hover, .groups-context-menu .dropdown-item:focus,
+        .btn-menu-item:hover {
     background: #E1e1e1;
     font-weight: 600;
     color: #222;
     border-radius: 4px;
+}
+.app-context-menu .dropdown-item:hover,
+.app-context-menu .dropdown-item:focus-visible,
+.app-context-menu-item:hover,
+.app-context-menu .forms-context-menu-action:hover,
+.app-context-menu .forms-context-menu-action:focus-visible,
+.app-context-menu .model-editor-context-menu-action:hover,
+.app-context-menu .model-editor-context-menu-action:focus-visible {
+    background: #e1e1e1;
+    color: #222;
+    font-weight: 600;
+    border-radius: 4px;
+}
+.users-context-trigger,
+.groups-context-trigger {
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+    line-height: 1;
+}
+.users-context-menu,
+.groups-context-menu {
+    width: 250px;
+    min-width: 150px;
+    padding: 2px;
+    border: 1px solid lightgray;
+    border-radius: 4px;
+    box-shadow: 0 3px 10px rgba(0,0,0,.25);
+}
+.app-context-menu {
+    padding: 0.25rem 0.375rem;
+}
+.app-context-menu .dropdown-item,
+.app-context-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 34px;
+    padding: 6px 10px !important;
+    font-family: "Roboto" !important;
+    font-size: 13px;
+    line-height: 1.25;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.app-context-menu-heading {
+    display: flex;
+    min-height: 36px;
+    align-items: center;
+    padding: 6px 10px;
+    font-size: 14px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+.app-context-menu .dropdown-divider {
+    margin: 2px 0;
+}
+.users-context-menu .dropdown-item,
+.groups-context-menu .dropdown-item {
+    min-height: 34px;
+}
+.groups-context-menu-heading {
+    min-height: 36px;
+    padding: 6px 10px;
+}
+.groups-context-menu .dropdown-divider {
+    margin: 2px 0;
 }
 li.submenu ul.dropdown-menu,
 li.submenu ul.dropdown-menu[data-bs-popper] {
@@ -214,6 +336,62 @@ li.submenu a[role="button"].show::after {
 }
 .nav-link {
     cursor:pointer;
+}
+.app-header-navbar {
+    min-height: 60px;
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+    line-height: 1.2;
+}
+.app-header-navbar-content {
+    line-height: inherit;
+}
+.app-header-navbar .navbar-brand {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+.app-header-logo {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 150px;
+    max-height: 48px;
+    object-fit: contain;
+    border-radius: 2px;
+}
+.app-header-navbar .navbar-nav .nav-link {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+.app-header-navbar .navbar-toggler {
+    padding: 0.125rem 0.375rem;
+}
+@media (max-width: 767.98px) {
+    .app-header-navbar-content {
+        flex-wrap: wrap;
+    }
+    .app-header-navbar .navbar-collapse {
+        flex-basis: 100%;
+        margin-top: 0.5rem;
+    }
+    .app-header-navbar .navbar-nav,
+    .app-header-navbar .navbar-nav.ms-auto {
+        align-items: flex-start !important;
+        margin-left: 0 !important;
+    }
+    .app-header-navbar .navbar-nav .nav-item {
+        width: 100%;
+        margin-left: 0 !important;
+    }
+    .app-header-navbar .navbar-nav .nav-link {
+        padding-left: 0;
+        text-align: left;
+    }
 }
 .table td {
     vertical-align: top !important;
@@ -594,16 +772,14 @@ a, btn {
     width: 250px;
     max-width: calc(100vw - 2rem);
     box-sizing: border-box;
-    padding: 0.35rem;
+    padding: 0.25rem 0.375rem;
     border-radius: var(--bs-dropdown-border-radius, 0.375rem);
     box-shadow: var(--bs-dropdown-box-shadow, 0 0.5rem 1rem rgba(0, 0, 0, 0.15));
 }
 .forms-context-menu-heading {
     position: relative;
-    min-height: 2.5rem;
-    display: flex;
-    align-items: center;
-    padding: 0.5rem 0.75rem;
+    min-height: 36px;
+    padding: 6px 10px;
     padding-right: 2rem;
     overflow-wrap: anywhere;
 }
@@ -622,7 +798,10 @@ a, btn {
     align-items: center;
     gap: 0.65rem;
     width: 100%;
-    padding: 0.55rem 0.75rem;
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.25;
     border-radius: var(--bs-dropdown-item-border-radius, 0.25rem);
     cursor: pointer;
     white-space: normal;
@@ -659,7 +838,7 @@ a, btn {
     width: 250px;
     max-width: calc(100vw - 2rem);
     box-sizing: border-box;
-    padding: 0.35rem;
+    padding: 0.25rem 0.375rem;
     border-radius: var(--bs-dropdown-border-radius, 0.375rem);
     box-shadow: var(--bs-dropdown-box-shadow, 0 0.5rem 1rem rgba(0, 0, 0, 0.15));
 }
@@ -667,8 +846,8 @@ a, btn {
     position: relative;
     display: flex;
     align-items: center;
-    min-height: 2.5rem;
-    padding: 0.5rem 0.75rem;
+    min-height: 36px;
+    padding: 6px 10px;
     padding-right: 2rem;
     overflow-wrap: anywhere;
 }
@@ -687,7 +866,10 @@ a, btn {
     align-items: center;
     gap: 0.65rem;
     width: 100%;
-    padding: 0.55rem 0.75rem;
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.25;
     border-radius: var(--bs-dropdown-item-border-radius, 0.25rem);
     cursor: pointer;
     white-space: normal;

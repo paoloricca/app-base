@@ -30,6 +30,13 @@
 
         };
         $.fn.workflowNodeStates.loadStates = function (plugin) {
+            if (!plugin.find('.container-workflow-node-states').length) {
+                plugin.one("onready", function () {
+                    plugin.workflowNodeStates.loadStates(plugin);
+                });
+                return;
+            }
+
             plugin.find('.spinner-workflow-node-states').show();
             var optionsWorkflow = JSON.parse(plugin.attr('data-options'));
             try {
@@ -38,36 +45,38 @@
                     type: "GET",
                     data: {},
                 }).done(function (response) {
-
                     plugin.find('.btn-confirm-container-workflow-node-states').prop('disabled', true);
 
                     if (response.status == "ERR") {
-                        //$('.spinner-border').hide();
+                        plugin.find('.spinner-workflow-node-states').hide();
                         ShowError(response.error.message, response.error.sender);
+                        return;
+                    }
 
-                    } else if (response.status == "OK") {
+                    if (response.status != "OK") {
+                        plugin.find('.spinner-workflow-node-states').hide();
+                        ShowError("Unexpected response while loading workflow states", "workflowNodeStates.loadStates");
+                        return;
+                    }
 
-                        plugin.find('.container-workflow-node-states').empty();
+                    plugin.find('.container-workflow-node-states').empty();
 
-                        var optionsWorkflow = JSON.parse(plugin.attr('data-options'));
+                    var optionsWorkflow = JSON.parse(plugin.attr('data-options'));
+                    $.get("/controls/ui/control.ui.workflow.node.state.ejs?" + Date.now())
+                        .done(function (templateString) {
+                            try {
+                                if (response.data && !Array.isArray(response.data)) {
+                                    throw new Error("Workflow states response is not a list");
+                                }
 
-                        $.when(
-                            $.get("/controls/ui/control.ui.workflow.node.state.ejs?" + Date.now(),
-                                function (templateString) {
-                                })
-                        ).then(function (templateString, textStatus, jqXHR) {
-                            if (response.data) {
-                                $.each(response.data, function (key, state) {
-
+                                $.each(response.data || [], function (key, state) {
                                     var partialToRender = ejs.render(templateString, { state, optionsWorkflow });
                                     if (optionsWorkflow.SelectedState != null) {
                                         plugin.find('.btn-confirm-container-workflow-node-states').prop('disabled', false);
                                     }
 
                                     plugin.find('.container-workflow-node-states').append(partialToRender);
-
                                     plugin.find('.container-workflow-node-states #state-' + state.IdEventoTransizione).click(function () {
-
                                         var optionsWorkflow = JSON.parse(plugin.attr('data-options'));
 
                                         plugin.find('.node-state span').removeClass('active');
@@ -79,16 +88,22 @@
 
                                         optionsWorkflow.SelectedState = $(this).data('id');
                                         optionsWorkflow.SelectedText = $(this).data('desc');
-
-                                        /* re-store plugin attribute option */
                                         plugin.attr('data-options', JSON.stringify(optionsWorkflow));
                                     });
-
                                 });
+                            } catch (err) {
+                                ShowError(err.message, "workflowNodeStates.loadStates.render");
+                            } finally {
+                                plugin.find('.spinner-workflow-node-states').hide();
                             }
+                        })
+                        .fail(function (xhr, status, errorThrown) {
+                            plugin.find('.spinner-workflow-node-states').hide();
+                            ShowError(errorThrown || status, "workflowNodeStates.loadStates.template");
                         });
-                        plugin.find('.spinner-workflow-node-states').hide();
-                    }
+                }).fail(function (xhr, status, errorThrown) {
+                    plugin.find('.spinner-workflow-node-states').hide();
+                    ShowError(errorThrown || status, "workflowNodeStates.loadStates");
                 });
             }
             catch (err) {
@@ -128,6 +143,7 @@
             //})
 
             plugin.workflowNodeStates.draw(plugin);
+            plugin.trigger("onready");
 
             //plugin.find('.btn-workflow-' + optionsWorkflow.IdRecord).click(function (e) {
             //    plugin.workflowNodeStates.loadActions(plugin);

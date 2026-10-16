@@ -11,25 +11,25 @@
             <button type="button" class="btn btn-light bi bi-three-dots-vertical rounded-circle"
                 data-bs-toggle="dropdown" style="width:30px; height:30px; padding:0; font-size:1.25em;">
             </button>
-            <ul class="dropdown-menu dropdown-menu-end" style="width:250px;">
+            <ul class="dropdown-menu dropdown-menu-end app-context-menu groups-context-menu">
                 <li>
-                    <div class="px-3">
+                    <div class="app-context-menu-heading">
                         <b class="gruppo-operativo-<%= profiloutente.IDGruppoOperativo %>"><%= profiloutente.ProfiloUtente %></b>
                     </div>
                 </li>
-                <li class="dropdown-item">
+                <li>
                     <hr class="dropdown-divider">
                 </li>
-                <li class="dropdown-item">
-                    <button type="button" class="btn btn-light col-12 profilo-utente-<%= profiloutente.IDProfiloUtente %>-edit"
+                <li>
+                    <button type="button" class="dropdown-item profilo-utente-<%= profiloutente.IDProfiloUtente %>-edit"
                         data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
                         data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>"
                         data-gruppioperativoid="<%= profiloutente.IDGruppoOperativo %>">
                         Modifica
                     </button>
                 </li>
-                <li class="dropdown-item">
-                    <button type="button" class="btn btn-light col-12 profilo-utente-<%= profiloutente.IDProfiloUtente %>-delete"
+                <li>
+                    <button type="button" class="dropdown-item profilo-utente-<%= profiloutente.IDProfiloUtente %>-delete"
                         data-args="<%= profiloutente.IDProfiloUtente %>"
                         data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
                         data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>"
@@ -37,15 +37,15 @@
                         Elimina
                     </button>
                 </li>
-                <li class="dropdown-item">
-                    <button type="button" class="btn btn-light col-12 profilo-utente-<%= profiloutente.IDProfiloUtente %>-risorse"
+                <li>
+                    <button type="button" class="dropdown-item profilo-utente-<%= profiloutente.IDProfiloUtente %>-risorse"
                         data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
                         data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>">
                         Utenti collegati
                     </button>
                 </li>
-                <li class="dropdown-item">
-                    <button type="button" class="btn btn-light col-12 profilo-utente-<%= profiloutente.IDProfiloUtente %>-autorizzazioni"
+                <li>
+                    <button type="button" class="dropdown-item profilo-utente-<%= profiloutente.IDProfiloUtente %>-autorizzazioni"
                         data-profiloutentetext="<%= profiloutente.ProfiloUtente %>"
                         data-profiloutenteid="<%= profiloutente.IDProfiloUtente %>">
                         Autorizzazioni
