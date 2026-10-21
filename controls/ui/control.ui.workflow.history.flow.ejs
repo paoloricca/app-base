@@ -1,33 +1,31 @@
-﻿<div class="col-12 p-2 m-0 event-workflow-history" style="border-bottom: 1px solid #ffffff;">
-	<div class="divider-workflow-history col-lg-1 col-md-1 d-none d-lg-block">
-		<i class="bi bi-circle-fill bullet-workflow-history" style="color:<%= flowhistory.ColoreStato %>">
-		</i>
+<div class="event-workflow-history">
+	<div class="divider-workflow-history" aria-hidden="true">
+		<i class="bi bi-circle-fill bullet-workflow-history" style="--workflow-history-color:<%= flowhistory.ColoreStato %>"></i>
 	</div>
-	<div class="data-workflow-history col-lg-3 col-md-3 col-sm-2 col-12">
-		<div class="col-12 p-0">
+	<div class="data-workflow-history">
+		<div>
 			<span class="f-roboto-b"><%= flowhistory.DataRegistrazione %></span><span class="f-roboto">, <%= flowhistory.OraRegistrazione %></span>
 		</div>
-		<div class="col-12 p-0 d-none d-lg-block">
-			<span class="f-roboto text-secondary">
+		<div class="workflow-history-actor">
+			<div class="f-roboto text-secondary">
 				<%= flowhistory.Istanziatore %>
-			</span>
+			</div>
 		</div>
 	</div>
-	<div class="stato-workflow-history col-lg-6 col-md-6 col-sm-6 col-8">
-		<i class="bi bi-circle-fill d-lg-none" style="color:<%= flowhistory.ColoreStato %>"></i>
-		<span class="d-lg-none">&nbsp;</span>
+	<div class="stato-workflow-history">
+		<i class="bi bi-circle-fill workflow-history-mobile-marker" style="color:<%= flowhistory.ColoreStato %>"></i>
 		<span class="f-roboto"><%= flowhistory.Stato %></span>
-		<span class="f-roboto text-secondary d-lg-none">
+		<span class="f-roboto text-secondary workflow-history-mobile-actor">
 			&nbsp;(<%= flowhistory.Istanziatore %>)
 		</span>
 		<% if (flowhistory.Note != "" && flowhistory.Note != undefined) { %>
-			<div class="f-roboto p-3 px-1">
+			<div class="f-roboto workflow-history-note">
 				<i class="bi bi-arrow-return-right">&nbsp;<%= flowhistory.Note %></i>
 			</div>
 		<% } %>
 	</div>
-	<div class="durata-workflow-history col-lg-2 col-md-2 col-sm-3 col-4 mt-0 text-end">
-		<span class="f-roboto text-secondary">
+	<div class="durata-workflow-history">
+		<div class="f-roboto text-secondary">
 			<% if (flowhistory.GiorniStato == null) { %>
 				<span class="badge bg-danger">
 					<% if (LanguageContext == "IT") { %>
@@ -160,7 +158,6 @@
 					</div>
 				<% } %>
 			<% } %>
-		</span>
+		</div>
 	</div>
-	<hr class="d-lg-none col-12 p-0" style="border-top:1px solid #c1c1c1;" />
 </div>

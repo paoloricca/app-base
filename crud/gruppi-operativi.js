@@ -25,7 +25,7 @@ function GetAttoreRisorse(myRequest) {
                     );
                 } else {
                     var request = new sql.Request();
-                    request.query("SELECT * FROM [PS].[dbo].[VW_ATTORI_RISORSE] AR WHERE AR.IdAttore = " + myIdAttore, function (err, response) {
+                    request.query("SELECT * FROM [dbo].[VW_ATTORI_RISORSE] AR WHERE AR.IdAttore = " + myIdAttore, function (err, response) {
                         if (err) {
                             reject(
                                 JSON.stringify(new exception(sender, err.message, err.name, err.stack))
@@ -257,7 +257,7 @@ function GetGruppoOperativo(myRequest) {
                     );
                 } else {
                     var request = new sql.Request();
-                    request.query("SELECT * FROM [PS].[dbo].[VW_GRUPPO_OPERATIVO] GO WHERE GO.IdGruppoOperativo = " + myIdGruppoOperativo, function (err, response) {
+                    request.query("SELECT * FROM [dbo].[VW_GRUPPO_OPERATIVO] GO WHERE GO.IdGruppoOperativo = " + myIdGruppoOperativo, function (err, response) {
                         if (err) {
                             reject(
                                 JSON.stringify(new exception(sender, err.message, err.name, err.stack))
@@ -318,7 +318,7 @@ function GetGruppiOperativi(myRequest) {
                     } else {
                         myWhere += " IS NULL";
                     }
-                    request.query("SELECT GO.IdOwner, GO.IdGruppoOperativo, GO.IdGruppoOperativoParent, GO.Text_IT, GO.Text_GB, GO.Supervisor, GO.IsPublic, GO.IsVisible FROM [PS].[dbo].[TGruppiOperativi] GO WHERE GO.IdOwner = " + myIdAttore + myWhere, function (err, response) {
+                    request.query("SELECT GO.IdOwner, GO.IdGruppoOperativo, GO.IdGruppoOperativoParent, GO.Text_IT, GO.Text_GB, GO.Supervisor, GO.IsPublic, GO.IsVisible FROM [dbo].[TGruppiOperativi] GO WHERE GO.IdOwner = " + myIdAttore + myWhere, function (err, response) {
                         if (err) {
                             reject(
                                 JSON.stringify(new exception(sender, err.message, err.name, err.stack))
@@ -379,7 +379,7 @@ function GetGruppiOperativiList(myRequest) {
                     } else {
                         myWhere += " IS NULL";
                     }
-                    request.query("SELECT GO.IdOwner, GO.IDGruppoOperativo, GO.IDGruppoOperativoParent, GO.Text_" + myLanguageContext + " AS Description, GO.Supervisor, GO.IsPublic, GO.IsVisible FROM [PS].[dbo].[TGruppiOperativi] GO WHERE GO.IdOwner = " + myIdAttore + myWhere, function (err, response) {
+                    request.query("SELECT GO.IdOwner, GO.IDGruppoOperativo, GO.IDGruppoOperativoParent, GO.Text_" + myLanguageContext + " AS Description, GO.Supervisor, GO.IsPublic, GO.IsVisible FROM [dbo].[TGruppiOperativi] GO WHERE GO.IdOwner = " + myIdAttore + myWhere, function (err, response) {
                         if (err) {
                             reject(
                                 JSON.stringify(new exception(sender, err.message, err.name, err.stack))

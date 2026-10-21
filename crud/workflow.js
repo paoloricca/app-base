@@ -484,7 +484,7 @@ function GetWorkflowTransitionsByIdProcesso(myRequest) {
                     request.input('IdAccount', sql.Int, parseInt(myIdAccount));
                     request.input('IdProcesso', sql.Int, parseInt(myIdProcesso));
                     request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
-                    request.output('Status', sql.NVarChar(2))
+                    request.output('Status', sql.NVarChar(500))
 
                     request.execute("SP_GET_WORKFLOW_TRANSITIONS_BY_IDPROCESSO", function (err, response) {
                         if (err) {
@@ -492,6 +492,14 @@ function GetWorkflowTransitionsByIdProcesso(myRequest) {
                                 JSON.stringify(new exception(sender, err.message, err.name, err.stack))
                             );
                         } else {
+                            var status = JSON.parse(JSON.stringify(response.output)).Status;
+                            if (status != 'OK') {
+                                reject(
+                                    JSON.stringify(new exception(sender, status, null, null))
+                                );
+                                return;
+                            }
+
                             var myResponse = JSON.stringify(response);
 
                             if (JSON.parse(myResponse).recordset != undefined) {

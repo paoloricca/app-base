@@ -1,8 +1,8 @@
 ﻿<form name="frmWorkflow-<%= IdRecord %>" id="frmWorkflow-<%= IdRecord %>" class="was-validated">
     <div class="text-end p-0 processo-<%= IdRecord %>">
         <div class="btn-group">
-            <button type="button" data-idrecord="<%= IdRecord %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle btn-workflow-<%= IdRecord %>"
-                data-bs-toggle="dropdown" style="width:23px; height:23px; padding:0; font-size:1.1em;"
+            <button type="button" data-idrecord="<%= IdRecord %>" class="btn btn-light bi bi-three-dots-vertical btn-actions rounded-circle workflow-context-menu-trigger btn-workflow-<%= IdRecord %>"
+                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
                 data-bs-placement="left" data-bs-title="<% if (LanguageContext == "IT") { %>Azioni<% } %><% if (LanguageContext == "GB") { %>Actions<% } %><% if (LanguageContext == "ES") { %>Comportamiento<% } %><% if (LanguageContext == "CN") { %>行動<% } %>">
             </button>
             <ul class="dropdown-menu dropdown-menu-end workflow-context-menu app-context-menu">
@@ -14,13 +14,11 @@
                     </div>
                     <span class="spinner-border text-danger mt-1" role="status" style="float:right; display:none; position:absolute; left:92%;"></span>
                 </li>
-                <li class="dropdown-item">
-                    <hr class="dropdown-divider">
-                </li>
+                <li><hr class="dropdown-divider"></li>
                 <div class="col-12 p-0 container-workflow-actions-<%= IdRecord %>">
                 </div>
-                <li class="dropdown-item">
-                    <button data-idrecord="<%= IdRecord %>" type="button" class="btn btn-light btn-sm col-12 btn-imposta-workflow-<%= IdRecord %>">
+                <li>
+                    <button data-idrecord="<%= IdRecord %>" type="button" class="dropdown-item app-context-menu-item btn-imposta-workflow-<%= IdRecord %>">
                         <% if (LanguageContext == "IT") { %>
                             Imposta Workflow
                         <% } %>
@@ -34,7 +32,7 @@
                             設定工作流程
                         <% } %>
                     </button>
-                    <h6 class="col-12 p-2 m-0 text-secondary no-workflow-<%= IdRecord %>">
+                    <div class="app-context-menu-item text-secondary no-workflow-<%= IdRecord %>">
                         <% if (LanguageContext == "IT") { %>
                             Nessun workflow da impostare
                         <% } %>
@@ -47,10 +45,10 @@
                         <% if (LanguageContext == "CN") { %>
                             無需設定工作流程
                         <% } %>
-                    </h6>
+                    </div>
                 </li>
-                <li class="dropdown-item">
-                    <button data-idrecord="<%= IdRecord %>" type="button" class="btn btn-light btn-sm col-12 btn-annulla-process-<%= IdRecord %>">
+                <li>
+                    <button data-idrecord="<%= IdRecord %>" type="button" class="dropdown-item app-context-menu-item btn-annulla-process-<%= IdRecord %>">
                         <% if (LanguageContext == "IT") { %>
                             Annulla
                         <% } %>

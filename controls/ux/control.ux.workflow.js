@@ -1,4 +1,13 @@
 (function ($) {
+    $(document).on('click.workflow-context-menu', function (event) {
+        $('.workflow-context-menu.show').each(function () {
+            var toggle = this.parentElement.querySelector('.workflow-context-menu-trigger');
+            if (toggle && !toggle.contains(event.target) && !this.contains(event.target)) {
+                bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
+            }
+        });
+    });
+
     $.fn.workflow = function (myoptions) {
 
         let optionsWorkflow = $.extend({
@@ -98,7 +107,7 @@
 
                             });
                             plugin.find('.container-workflow-actions-' + optionsWorkflow.IdRecord).append(
-                                '<li class="dropdown-item"><hr class="dropdown-divider"></li>'
+                                '<li><hr class="dropdown-divider"></li>'
                             );
                         }
                     });
@@ -256,6 +265,13 @@
             plugin.workflow.draw(plugin);
 
             plugin.find('.btn-workflow-' + optionsWorkflow.IdRecord).click(function (e) {
+                $('.workflow-context-menu.show').each(function () {
+                    var toggle = this.parentElement.querySelector('.workflow-context-menu-trigger');
+                    if (toggle && toggle !== e.currentTarget) {
+                        bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
+                    }
+                });
+
                 plugin.workflow.loadActions(plugin);
 
                 $.when(
@@ -301,6 +317,13 @@
                 ).then(function (response, textStatus, jqXHR) {
                     plugin.find('.confirm-workflow .spinner-border').hide();
                 });
+            });
+
+            plugin.find('.btn-annulla-process-' + optionsWorkflow.IdRecord).click(function () {
+                var toggle = plugin.find('.workflow-context-menu-trigger')[0];
+                if (toggle) {
+                    bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
+                }
             });
 
             plugin.find('#btn-annulla-workflow-' + optionsWorkflow.IdRecord).click(function (e) {
