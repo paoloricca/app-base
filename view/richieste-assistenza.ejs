@@ -310,7 +310,7 @@
     </div>
 
     <div class="modal" id="container-history" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered workflow-history-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title f-roboto b">
@@ -327,7 +327,7 @@
                         <% if (user.LanguageContext == "CN") { %>
                             查看歷史記錄
                         <% } %>
-                        {ID                     
+                        ID
                         <% if (user.LanguageContext == "IT") { %>
                             Richiesta
                         <% } %>
@@ -339,11 +339,11 @@
                         <% } %>
                         <% if (user.LanguageContext == "CN") { %>
                             要求
-                        <% } %>: <span class="history-idrecord"></span>}
+                        <% } %>: <span class="history-idrecord"></span>
                     </h5>
                     <button type="button" class="btn-close btn-cancel-history" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body workflow-history-modal-body">
                     <div data-user="<%= JSON.stringify(user) %>" class="history"></div>
                 </div>
             </div>
