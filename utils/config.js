@@ -1,25 +1,43 @@
 const fs = require('fs');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-/* Legge il file di configurazione JSON */
-var data = fs.readFileSync('./config.json');
+const configPath = path.resolve(__dirname, '../config.json');
+const fileConfig = fs.existsSync(configPath)
+    ? JSON.parse(fs.readFileSync(configPath, 'utf8'))
+    : {};
 
-/* Valorizza le chiavi applicative */
-var SapWebServiceURL = JSON.parse(data).SapWebServiceURL;
-var SecretKey = JSON.parse(data).SecretKey;
-var LanguageContext = JSON.parse(data).LanguageContext;
-var OffsetRows = JSON.parse(data).OffsetRows;
-var NextRows = JSON.parse(data).NextRows;
-var Port = JSON.parse(data).Port || 3000;
-var Redis = JSON.parse(data).Redis || { host: '127.0.0.1', port: 6379, password: '', prefix: 'sess:' };
+function readNumber(name, fallback) {
+    const value = process.env[name] !== undefined ? process.env[name] : fallback;
+    if (value === undefined || value === null || value === '') {
+        return undefined;
+    }
 
-var config = {
-    Port: Port,
-    SapWebServiceURL: SapWebServiceURL,
-    SecretKey: SecretKey,
-    LanguageContext: LanguageContext,
-    OffsetRows: OffsetRows,
-    NextRows: NextRows,
-    Redis: Redis
+    const number = Number(value);
+    if (!Number.isFinite(number)) {
+        throw new Error(`La variabile ${name} deve essere numerica.`);
+    }
+    return number;
 }
+
+const fileRedis = fileConfig.Redis || {};
+const config = {
+    Port: readNumber('PORT', fileConfig.Port) || 3000,
+    SapWebServiceURL: process.env.SAP_WEB_SERVICE_URL || fileConfig.SapWebServiceURL,
+    SecretKey: process.env.SESSION_SECRET || fileConfig.SecretKey,
+    LanguageContext: process.env.LANGUAGE_CONTEXT || fileConfig.LanguageContext,
+    OffsetRows: readNumber('OFFSET_ROWS', fileConfig.OffsetRows),
+    NextRows: readNumber('NEXT_ROWS', fileConfig.NextRows),
+    Redis: {
+        ...fileRedis,
+        url: process.env.REDIS_URL || fileRedis.url,
+        host: process.env.REDIS_HOST || fileRedis.host || '127.0.0.1',
+        port: readNumber('REDIS_PORT', fileRedis.port) || 6379,
+        password: process.env.REDIS_PASSWORD !== undefined
+            ? process.env.REDIS_PASSWORD
+            : (fileRedis.password || ''),
+        prefix: process.env.REDIS_PREFIX || fileRedis.prefix || 'sess:'
+    }
+};
 
 module.exports = config;
