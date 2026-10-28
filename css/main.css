@@ -65,6 +65,32 @@
 .form-check-input{
     margin-left:0 !important;
 }
+.processi-custom-action-controls {
+    flex-shrink: 0;
+}
+.processi-custom-action-translation {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.processi-custom-action-translation .bi {
+    font-size: 13px;
+}
+.processi-custom-action-switch {
+    display: flex;
+    align-items: center;
+    min-height: 0;
+    padding: 0;
+}
+.processi-custom-action-switch .form-check-input {
+    display: block;
+    float: none;
+    margin: 0 !important;
+}
 .btn-cancel-context-menu-node, .btn-cancel-context-menu-link {
     position: absolute;
     display: block;
@@ -253,6 +279,7 @@ a.active, span.active {
 }
 .users-context-trigger,
 .groups-context-trigger,
+.processi-context-trigger,
 .workflow-context-menu-trigger {
     width: 32px;
     height: 32px;

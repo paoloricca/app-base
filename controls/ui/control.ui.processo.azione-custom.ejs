@@ -1,0 +1,22 @@
+<div class="d-flex align-items-center w-100 p-2 border-bottom process-bg">
+    <label class="flex-grow-1 m-0 text-start text-secondary f-roboto"
+        for="processi-custom-action-<%= processoAzione.IDProcessoAzione %>">
+        <%= processoAzione.Description %>
+    </label>
+    <div class="d-flex align-items-center gap-1 processi-custom-action-controls">
+        <div class="form-check form-switch m-0 processi-custom-action-switch">
+            <input class="form-check-input processi-custom-action-toggle" type="checkbox"
+                id="processi-custom-action-<%= processoAzione.IDProcessoAzione %>"
+                data-idazione="<%= processoAzione.IDProcessoAzione %>"
+                <%= processoAzione.IsMapped ? 'checked' : '' %>>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-sm processi-custom-action-translation"
+            data-idazione="<%= processoAzione.IDProcessoAzione %>"
+            data-description="<%= processoAzione.Description %>"
+            data-translations="<%= JSON.stringify(processoAzione.Translations) %>"
+            aria-label="<% if (LanguageContext == 'IT') { %>Modifica traduzioni<% } %><% if (LanguageContext == 'GB') { %>Edit translations<% } %><% if (LanguageContext == 'ES') { %>Editar traducciones<% } %><% if (LanguageContext == 'CN') { %>编辑翻译<% } %>"
+            <%= processoAzione.IsMapped ? '' : 'disabled' %>>
+            <i class="bi bi-gear"></i>
+        </button>
+    </div>
+</div>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web APP DC - Processi</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%- include('partials/head'); %>
+    <script type="text/javascript" src="/utility-script"></script>
+    <script type="text/javascript" src="/processi-script"></script>
+    <script type="text/javascript" src="/control-culture-textbox-script"></script>
+    <script type="text/javascript" src="/control-processi-script"></script>
+    <script type="text/javascript" src="/processi-gestione-script"></script>
+    <script type="text/javascript" src="/logout-script"></script>
+</head>
+<body>
+    <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= user.LanguageContext %>" />
+    <%- include('partials/header'); %>
+    <div class="container-fluid p-0 px-4">
+        <h4 class="p-0">
+            <span class="bi bi-diagram-3" style="font-size:2rem;"></span>&nbsp;
+            <span class="f-roboto b">
+                <% if (user.LanguageContext == "IT") { %>Processi<% } %>
+                <% if (user.LanguageContext == "GB") { %>Processes<% } %>
+                <% if (user.LanguageContext == "ES") { %>Procesos<% } %>
+                <% if (user.LanguageContext == "CN") { %>流程<% } %>
+            </span>
+        </h4>
+
+        <div class="col-12 col-xl-6 p-0">
+            <div class="card">
+                <div class="card-header p-3 f-roboto">
+                    <b>
+                        <% if (user.LanguageContext == "IT") { %>Processi<% } %>
+                        <% if (user.LanguageContext == "GB") { %>Processes<% } %>
+                        <% if (user.LanguageContext == "ES") { %>Procesos<% } %>
+                        <% if (user.LanguageContext == "CN") { %>流程<% } %>
+                    </b>
+                </div>
+                <div class="card-body p-2 f-roboto">
+                    <div id="processi-container" style="overflow-y:auto; max-height:75vh;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="processi-custom-actions-modal" tabindex="-1" aria-labelledby="processi-custom-actions-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title f-roboto b" id="processi-custom-actions-title">
+                            <% if (user.LanguageContext == "IT") { %>Azioni custom<% } %>
+                            <% if (user.LanguageContext == "GB") { %>Custom actions<% } %>
+                            <% if (user.LanguageContext == "ES") { %>Acciones personalizadas<% } %>
+                            <% if (user.LanguageContext == "CN") { %>自定义操作<% } %>
+                        </h5>
+                        <span class="text-secondary processi-custom-actions-process-name"></span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center processi-custom-actions-loading" style="display:none;">
+                        <span class="spinner-border text-info" role="status"></span>
+                    </div>
+                    <div class="processi-custom-actions-list"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <% if (user.LanguageContext == "IT") { %>Chiudi<% } %>
+                        <% if (user.LanguageContext == "GB") { %>Close<% } %>
+                        <% if (user.LanguageContext == "ES") { %>Cerrar<% } %>
+                        <% if (user.LanguageContext == "CN") { %>关闭<% } %>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="processi-action-culture-control"></div>
+</body>
+</html>

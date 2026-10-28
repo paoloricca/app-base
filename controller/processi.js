@@ -90,7 +90,7 @@ $(function () {
                     $('.tempMenu').empty();
                 });
             }
-            
+
         })
     }
     laodMenu = function () {

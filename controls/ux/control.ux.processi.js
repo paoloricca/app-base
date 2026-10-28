@@ -7,6 +7,9 @@
             Descrizione: null,
             onselect: null,
             onworkflow: null,
+            dataUrl: null,
+            selectionEnabled: true,
+            contextMenu: null,
         }, options);
 
         var plugin = $(this);
@@ -18,9 +21,17 @@
         $.fn.processi.load = function (IDProcesso) {
 
             var options = JSON.parse(plugin.attr('data-options'));
+            if (!plugin.find('.processi-list').length) {
+                plugin.data('processi-pending-load', { IDProcesso: IDProcesso });
+                return;
+            }
+
+            var url = options.dataUrl
+                ? options.dataUrl + (IDProcesso == null ? '' : '/' + IDProcesso)
+                : "/processi/" + IDProcesso;
 
             $.ajax({
-                url: "/processi/" + IDProcesso,
+                url: url,
                 type: "GET",
                 data: {},
             }).done(function (response) {
@@ -33,14 +44,13 @@
 
                     //plugin.find('.processi-list').empty();
 
-                    $.when(
-                        $.get("/controls/ui/control.ui.processo.ejs?" + Date.now(),
-                            function (templateString) {
-                            })
-                    ).then(function (templateString, textStatus, jqXHR) {
+                    $.get("/controls/ui/control.ui.processo.ejs?" + Date.now()).done(function (templateString) {
                         $.each(response.data, function (key, processo) {
 
-                            var partialToRender = ejs.render(templateString, { processo });
+                            var partialToRender = ejs.render(templateString, {
+                                processo,
+                                contextMenu: options.contextMenu
+                            });
 
                             if (Number.isInteger(IDProcesso)) {
                                 plugin.find('.processo-' + IDProcesso + '-container').append(partialToRender);
@@ -54,22 +64,25 @@
 
                             /* raise plugin event */
                             plugin.find('.btn-processo-' + processo.IDProc).click(function (e) {
+                                var processOptions = JSON.parse(plugin.attr('data-options'));
 
-                                /* get plugin attribute option */
-                                var options = JSON.parse(plugin.attr('data-options'));
+                                if (processOptions.contextMenu && $(e.target).closest('.processo-context-dropdown').length) {
+                                    return;
+                                }
 
-                                /* set pluging attribute */
-                                options.IDProcesso = processo.IDProc
-                                options.Descrizione = processo.Description;
-                                    ;
-                                /* re-store plugin attribute option */
-                                plugin.attr('data-options', JSON.stringify(options));
+                                if (processOptions.selectionEnabled !== false) {
+                                    /* set pluging attribute */
+                                    processOptions.IDProcesso = processo.IDProc
+                                    processOptions.Descrizione = processo.Description;
+                                    /* re-store plugin attribute option */
+                                    plugin.attr('data-options', JSON.stringify(processOptions));
 
-                                /* raise event */
-                                $(this).trigger("onselect");
+                                    /* raise event */
+                                    $(this).trigger("onselect");
 
-                                if (processo.HasWorkflow == 1) {
-                                    $(this).trigger("onworkflow");
+                                    if (processo.HasWorkflow == 1) {
+                                        $(this).trigger("onworkflow");
+                                    }
                                 }
 
                                 if ($(this).parent().parent().find('div[class*=-container]').length > 0) {
@@ -81,9 +94,12 @@
                             });
                         });
 
+                    }).fail(function (xhr, status, errorThrown) {
+                        ShowError(errorThrown || status, "processi.row-template");
                     });
                 }
             }).fail(function (xhr, status, errorThrown) {
+                ShowError(errorThrown || status, "processi.load");
             }).always(function (xhr, status) {
 
             });
@@ -101,6 +117,8 @@
             $.get("/controls/ui/control.ui.processi.html", function (response) {
                 /* render plugin template */
                 renderTemplate(response);
+            }).fail(function (xhr, status, errorThrown) {
+                ShowError(errorThrown || status, "processi.template");
             });
             function renderTemplate(response) {
                 /* fill plugin template */
@@ -110,6 +128,11 @@
                 var options = JSON.parse(plugin.attr('data-options'));
 
                 plugin.processi.draw();
+                var pendingLoad = plugin.data('processi-pending-load');
+                if (pendingLoad) {
+                    plugin.removeData('processi-pending-load');
+                    plugin.processi.load(pendingLoad.IDProcesso);
+                }
 
                 /* raise plugin event */
                 //plugin.find('a.btn-select').click(function (e) {
