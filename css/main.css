@@ -482,8 +482,9 @@ div, span, h1, h2, h3, h4, h5, h6, .col-12, label {
 }
 #select-container {
     position: absolute;
-    width: 50px;
+    width: 38px;
     height: 40px;
+    padding: 0;
     background: #ffffff;
     top: 50px;
     left: 50%;
@@ -496,6 +497,7 @@ div, span, h1, h2, h3, h4, h5, h6, .col-12, label {
 
     #select-container:hover {
         height: auto;
+        overflow: visible;
         /* Can't use height: auto & transition effect */
         border-radius: 20px;
         box-shadow: 0px 7px 10px rgba(79, 104, 113, 0.3);
@@ -504,6 +506,9 @@ div, span, h1, h2, h3, h4, h5, h6, .col-12, label {
     #select-container ul {
         list-style-type: none;
         position: relative;
+        width: 100%;
+        margin: 6px 0 0;
+        padding: 0;
     }
 
         #select-container ul li {
@@ -519,9 +524,7 @@ div, span, h1, h2, h3, h4, h5, h6, .col-12, label {
                 width: 25px;
                 height: 25px;
                 display: block;
-                left: 50%;
-                transform: translate(-103%, -40%);
-                margin-bottom: 8px;
+                margin: 0 auto 8px;
                 border-radius: 50%;
                 border: 2px solid #ffffff;
                 box-shadow: 0px 0px 6px rgba(79, 104, 113, 0.3);
@@ -531,8 +534,35 @@ div, span, h1, h2, h3, h4, h5, h6, .col-12, label {
 
                 #select-container ul li img:hover {
                     box-shadow: 0px 5px 10px rgba(79, 104, 113, 0.3);
-                    transform: translate(-103%, -40%) scale(1.08);
+                    transform: scale(1.08);
                 }
+
+#select-container [tooltip][flow^=down]::before {
+    top: calc(100% - 2px);
+    left: 50%;
+    transform: translate(-50%, 0);
+    z-index: 1101;
+}
+#select-container [tooltip][flow^=down]::after {
+    top: calc(100% + 3px);
+    left: 50%;
+    width: auto;
+    min-width: 34px;
+    padding: 5px 8px;
+    overflow: visible;
+    text-overflow: clip;
+    transform: translate(-50%, 0.5em);
+    z-index: 1100;
+}
+#select-container [tooltip][flow^=down]:hover::after {
+    animation: language-tooltip-in 150ms ease-out forwards;
+}
+@keyframes language-tooltip-in {
+    to {
+        opacity: 0.95;
+        transform: translate(-50%, 0);
+    }
+}
 
 /* TOOLTIP STYLES FROM THIS PEN https://codepen.io/tutsplus/pen/WROvdG */
 [tooltip] {
