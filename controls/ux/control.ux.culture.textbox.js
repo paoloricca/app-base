@@ -25,7 +25,8 @@
             { code: "CN", title: "Cinese" }
         ],
 
-        values: {}
+        values: {},
+        modalToBody: false
 
     };
     MultiLanguageTextBox.prototype.initializeProperties = function () {
@@ -117,7 +118,11 @@
 
         this.$tabs.append(templateString);
 
-        this.$tabs.find('.tab-language').append(nav).append(content);
+        this.$cultureModal = this.$tabs.find('.container-culture-textbox-edit');
+        this.$cultureModal.find('.tab-language').append(nav).append(content);
+        if (this.options.modalToBody) {
+            this.$cultureModal.appendTo('body');
+        }
 
         this.$input.after(this.$tabs);
 
@@ -156,17 +161,17 @@
     };
     MultiLanguageTextBox.prototype.hide = function () {
 
-        this.$tabs.find('.container-culture-textbox-edit').modal('hide');
+        this.$cultureModal.modal('hide');
     }
     MultiLanguageTextBox.prototype.show = function () {
 
-        this.$tabs.find('.nav-link').removeClass('active');
-        this.$tabs.find('.tab-pane').removeClass('show active');
+        this.$cultureModal.find('.nav-link').removeClass('active');
+        this.$cultureModal.find('.tab-pane').removeClass('show active');
 
-        this.$tabs.find('#tabs_' + this.options.Id + '_' + this.options.LanguageContext).addClass('active');
-        this.$tabs.find('#tab_' + this.options.Id + '_' + this.options.LanguageContext).addClass('show active');
+        this.$cultureModal.find('#tabs_' + this.options.Id + '_' + this.options.LanguageContext).addClass('active');
+        this.$cultureModal.find('#tab_' + this.options.Id + '_' + this.options.LanguageContext).addClass('show active');
 
-        this.$tabs.find('.container-culture-textbox-edit').modal('show');
+        this.$cultureModal.modal('show');
 
     }
     MultiLanguageTextBox.prototype.setDefault = function () {
@@ -180,29 +185,30 @@
     MultiLanguageTextBox.prototype.setTitle = function (title) {
 
         if (title != null) {
-            this.$tabs.find('.container-culture-textbox-edit-title').html(title);
+            this.$cultureModal.find('.container-culture-textbox-edit-title').html(title);
         } else {
-            this.$tabs.find('.container-culture-textbox-edit-title').parent().empty();
+            this.$cultureModal.find('.container-culture-textbox-edit-title').parent().empty();
         }
 
     }
     MultiLanguageTextBox.prototype.setLabel = function (label) {
 
         this.$tabs.find('.label-title-' + this.options.Id).html(label);
-        this.$tabs.find('.container-culture-textbox-edit-label').html(label);
+        this.$cultureModal.find('.label-title-' + this.options.Id).html(label);
+        this.$cultureModal.find('.container-culture-textbox-edit-label').html(label);
 
     }
     MultiLanguageTextBox.prototype.bind = function () {
 
         let self = this;
 
-        this.$tabs.find('.btn-cancel-container-culture-textbox-edit').click(function () {
+        this.$cultureModal.find('.btn-cancel-container-culture-textbox-edit').click(function () {
 
             self.resetOptions();
             self.hide();
 
         })
-        this.$tabs.find('.btn-confirm-container-culture-textbox-edit').click(function () {
+        this.$cultureModal.find('.btn-confirm-container-culture-textbox-edit').click(function () {
 
             self.refreshValues();
 
@@ -222,10 +228,10 @@
         })
         this.$tabs.find('#txt-culture-edit-' + this.options.Id).change(function () {
             self.values[self.options.LanguageContext] = $(this).val();
-            self.$tabs.find('#text-' + self.options.Id + '_' + self.options.LanguageContext).val($(this).val());
+            self.$cultureModal.find('#text-' + self.options.Id + '_' + self.options.LanguageContext).val($(this).val());
 
         })
-        this.$tabs.on("input", ".lang-input", function () {
+        this.$cultureModal.on("input", ".lang-input", function () {
 
             let lang = $(this).data("lang");
 
@@ -239,7 +245,7 @@
 
             if ($(this).data('lang') == self.options.LanguageContext) {
 
-                self.$tabs.find('#txt-culture-edit-' + self.options.Id).val($(this).val());
+                self.$cultureModal.find('#txt-culture-edit-' + self.options.Id).val($(this).val());
             }
         });
 
@@ -250,7 +256,7 @@
 
         this.options.languages.forEach((lang, index) => {
 
-            this.values[lang.code] = self.$tabs.find('#text-' + self.options.Id + '_' + lang.code).val();
+            this.values[lang.code] = self.$cultureModal.find('#text-' + self.options.Id + '_' + lang.code).val();
 
         });
     }
@@ -258,7 +264,7 @@
 
         let self = this;
 
-        this.$tabs.find(".lang-input").each(function () {
+        this.$cultureModal.find(".lang-input").each(function () {
 
             let lang = $(this).data("lang");
 
@@ -268,7 +274,7 @@
 
         this.options.languages.forEach(function (lang) {
 
-            self.$tabs.find('#text-' + self.options.Id + '_' + lang.code).val(self.values[lang.code]);
+            self.$cultureModal.find('#text-' + self.options.Id + '_' + lang.code).val(self.values[lang.code]);
 
         });
         

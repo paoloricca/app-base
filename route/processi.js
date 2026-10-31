@@ -53,6 +53,103 @@ processi.get('/processi-gestione/dati/:IdProcessoParent?', function (req, res) {
         });
     }
 });
+processi.post('/processi-gestione', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        crud.CreateProcessiManagement({
+            Process: req.body.Process
+        }).then(process => {
+            res.status(200).json(
+                new response('OK', JSON.parse(process), null)
+            );
+        }).catch(err => {
+            let error = err;
+            try {
+                error = JSON.parse(err);
+            } catch (parseError) {
+            }
+            res.status(200).json(new response('ERR', null, error));
+        });
+    }
+});
+processi.get('/processi-gestione/:IdProcesso', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        crud.GetProcessiManagementDetails({
+            IdProcesso: req.params.IdProcesso
+        }).then(process => {
+            res.status(200).json(
+                new response('OK', JSON.parse(process), null)
+            );
+        }).catch(err => {
+            let error = err;
+            try {
+                error = JSON.parse(err);
+            } catch (parseError) {
+            }
+            res.status(200).json(new response('ERR', null, error));
+        });
+    }
+});
+processi.get('/processi-gestione/:IdProcesso/padri', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        crud.GetProcessiParentOptions({
+            IdProcesso: req.params.IdProcesso,
+            LanguageContext: req.session.user.LanguageContext
+        }).then(processes => {
+            res.status(200).json(
+                new response('OK', JSON.parse(processes), null)
+            );
+        }).catch(err => {
+            let error = err;
+            try {
+                error = JSON.parse(err);
+            } catch (parseError) {
+            }
+            res.status(200).json(new response('ERR', null, error));
+        });
+    }
+});
+processi.put('/processi-gestione/:IdProcesso', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        crud.UpdateProcessiManagement({
+            IdProcesso: req.params.IdProcesso,
+            Process: req.body.Process
+        }).then(process => {
+            res.status(200).json(
+                new response('OK', JSON.parse(process), null)
+            );
+        }).catch(err => {
+            let error = err;
+            try {
+                error = JSON.parse(err);
+            } catch (parseError) {
+            }
+            res.status(200).json(new response('ERR', null, error));
+        });
+    }
+});
+processi.delete('/processi-gestione/:IdProcesso', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        crud.DeleteProcessiManagement({
+            IdProcesso: req.params.IdProcesso
+        }).then(process => {
+            res.status(200).json(
+                new response('OK', JSON.parse(process), null)
+            );
+        }).catch(err => {
+            let error = err;
+            try {
+                error = JSON.parse(err);
+            } catch (parseError) {
+            }
+            res.status(200).json(new response('ERR', null, error));
+        });
+    }
+});
 processi.get('/processi-gestione/:IdProcesso/azioni', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {
         res.set('Access-Control-Allow-Origin', '*');

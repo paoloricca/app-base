@@ -133,9 +133,14 @@ function GetProcessiManagement(myRequest) {
                             COALESCE(NULLIF(C.[${descriptionColumn}], N''),
                                      NULLIF(C.Text_IT, N''), NULLIF(C.Text_GB, N''),
                                      P.Descrizione) AS Description,
+                            COALESCE(NULLIF(PC.[${descriptionColumn}], N''),
+                                     NULLIF(PC.Text_IT, N''), NULLIF(PC.Text_GB, N''),
+                                     PP.Descrizione) AS ParentDescription,
                             P.HasWorkflow
                      FROM dbo.TProcessi AS P
                      LEFT JOIN dbo.TProcessiCulture AS C ON C.IDProcesso = P.IDProcesso
+                     LEFT JOIN dbo.TProcessi AS PP ON PP.IDProcesso = P.IDProcessoParent
+                     LEFT JOIN dbo.TProcessiCulture AS PC ON PC.IDProcesso = PP.IDProcesso
                      WHERE (@IdProcessoParent IS NULL AND P.IDProcessoParent IS NULL)
                         OR P.IDProcessoParent = @IdProcessoParent
                      ORDER BY P.Ordine, P.IDProcesso`,
@@ -148,6 +153,607 @@ function GetProcessiManagement(myRequest) {
                         }
 
                         resolve(JSON.stringify(result.recordset));
+                    }
+                );
+            });
+        } catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+}
+function GetProcessiManagementDetails(myRequest) {
+    const sender = arguments.callee.name;
+    const processId = Number(myRequest.IdProcesso);
+
+    if (!Number.isInteger(processId) || processId <= 0) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid process ID', 'ValidationError', '')
+        ));
+    }
+
+    return new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                    return;
+                }
+
+                const request = new sql.Request();
+                request.input('IdProcesso', sql.Int, processId);
+                request.query(
+                    `SELECT P.IDProcesso, P.IDProcessoParent, P.Descrizione,
+                            P.PageUrl, P.PageUrlVendor, P.Parameters, P.ImageUrl,
+                            P.Ordine, P.IsPublic, P.IsMenu, P.IsSystemConfiguration,
+                            P.IsChannel, P.IsVendor, P.IsProcess, P.HasWorkflow,
+                            P.LinkedObject, P.ObjectName, P.ObjectPk, P.ObjectFk,
+                            C.Text_IT, C.Text_GB, C.Text_ES, C.Text_CN
+                     FROM dbo.TProcessi AS P
+                     LEFT JOIN dbo.TProcessiCulture AS C ON C.IDProcesso = P.IDProcesso
+                     WHERE P.IDProcesso = @IdProcesso`,
+                    function (queryError, result) {
+                        if (queryError) {
+                            reject(JSON.stringify(
+                                new exception(sender, queryError.message, queryError.name, queryError.stack))
+                            );
+                            return;
+                        }
+
+                        if (!result.recordset.length) {
+                            reject(JSON.stringify(
+                                new exception(sender, 'Process was not found', 'ValidationError', '')
+                            ));
+                            return;
+                        }
+
+                        resolve(JSON.stringify(result.recordset[0]));
+                    }
+                );
+            });
+        } catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+}
+function GetProcessiParentOptions(myRequest) {
+    const sender = arguments.callee.name;
+    const processId = Number(myRequest.IdProcesso);
+    const languageColumns = {
+        IT: 'Text_IT',
+        GB: 'Text_GB',
+        ES: 'Text_ES',
+        CN: 'Text_CN'
+    };
+    const descriptionColumn = languageColumns[myRequest.LanguageContext];
+
+    if (!Number.isInteger(processId) || processId <= 0 || !descriptionColumn) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid process ID or language context', 'ValidationError', '')
+        ));
+    }
+
+    return new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                    return;
+                }
+
+                const request = new sql.Request();
+                request.input('IdProcesso', sql.Int, processId);
+                request.query(
+                    `IF NOT EXISTS (SELECT 1 FROM dbo.TProcessi WHERE IDProcesso = @IdProcesso)
+                         THROW 50001, 'Process was not found.', 1;
+
+                     ;WITH Descendants AS (
+                         SELECT IDProcesso
+                         FROM dbo.TProcessi
+                         WHERE IDProcesso = @IdProcesso
+                         UNION ALL
+                         SELECT P.IDProcesso
+                         FROM dbo.TProcessi AS P
+                         INNER JOIN Descendants AS D ON P.IDProcessoParent = D.IDProcesso
+                     )
+                     SELECT P.IDProcesso, P.IDProcessoParent,
+                            COALESCE(NULLIF(C.[${descriptionColumn}], N''),
+                                     NULLIF(C.Text_IT, N''), NULLIF(C.Text_GB, N''),
+                                     P.Descrizione) AS Description,
+                            COALESCE(NULLIF(PC.[${descriptionColumn}], N''),
+                                     NULLIF(PC.Text_IT, N''), NULLIF(PC.Text_GB, N''),
+                                     PP.Descrizione) AS ParentDescription
+                     FROM dbo.TProcessi AS P
+                     LEFT JOIN dbo.TProcessiCulture AS C ON C.IDProcesso = P.IDProcesso
+                     LEFT JOIN dbo.TProcessi AS PP ON PP.IDProcesso = P.IDProcessoParent
+                     LEFT JOIN dbo.TProcessiCulture AS PC ON PC.IDProcesso = PP.IDProcesso
+                     WHERE NOT EXISTS (
+                         SELECT 1 FROM Descendants AS D WHERE D.IDProcesso = P.IDProcesso
+                     )
+                     ORDER BY P.IDProcesso
+                     OPTION (MAXRECURSION 32767);`,
+                    function (queryError, result) {
+                        if (queryError) {
+                            reject(JSON.stringify(
+                                new exception(sender, queryError.message, queryError.name, queryError.stack))
+                            );
+                            return;
+                        }
+
+                        resolve(JSON.stringify(result.recordset));
+                    }
+                );
+            });
+        } catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+}
+function UpdateProcessiManagement(myRequest) {
+    const sender = arguments.callee.name;
+    const processId = Number(myRequest.IdProcesso);
+    const process = myRequest.Process;
+    const bitFields = [
+        'IsPublic', 'IsMenu', 'IsSystemConfiguration', 'IsChannel',
+        'IsVendor', 'IsProcess', 'HasWorkflow'
+    ];
+    const textFields = {
+        PageUrl: 50,
+        PageUrlVendor: 50,
+        Parameters: 255,
+        ImageUrl: 100000
+    };
+
+    if (!Number.isInteger(processId) || processId <= 0 ||
+        !process || typeof process !== 'object' ||
+        !process.Descriptions || typeof process.Descriptions !== 'object') {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid process data', 'ValidationError', '')
+        ));
+    }
+
+    const parentId = process.IDProcessoParent == null || process.IDProcessoParent === ''
+        ? null
+        : Number(process.IDProcessoParent);
+    const order = process.Ordine == null || process.Ordine === ''
+        ? null
+        : Number(process.Ordine);
+    if ((parentId !== null && (!Number.isInteger(parentId) || parentId <= 0)) ||
+        (order !== null && !Number.isInteger(order))) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid parent process or order', 'ValidationError', '')
+        ));
+    }
+
+    const descriptions = {};
+    for (const language of ['IT', 'GB', 'ES', 'CN']) {
+        const value = process.Descriptions[language];
+        if (typeof value !== 'string' || value.length > 50) {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, 'Descriptions must be strings of at most 50 characters', 'ValidationError', '')
+            ));
+        }
+        descriptions[language] = value.trim();
+    }
+    if (!descriptions.IT || descriptions.IT.length > 30) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'The Italian description is required and must be at most 30 characters', 'ValidationError', '')
+        ));
+    }
+
+    const fields = {};
+    for (const [field, maxLength] of Object.entries(textFields)) {
+        const value = process[field];
+        if (value !== null && value !== undefined && typeof value !== 'string') {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, field + ' must be a string or null', 'ValidationError', '')
+            ));
+        }
+        fields[field] = value == null || value === '' ? null : value;
+        if (fields[field] !== null && fields[field].length > maxLength) {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, field + ' exceeds its maximum length of ' + maxLength + ' characters', 'ValidationError', '')
+            ));
+        }
+    }
+
+    for (const field of ['LinkedObject', 'ObjectName', 'ObjectPk', 'ObjectFk']) {
+        const value = process[field];
+        if (value !== null && value !== undefined && typeof value !== 'string') {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, field + ' must be a string or null', 'ValidationError', '')
+            ));
+        }
+        fields[field] = value == null || value === '' ? null : value;
+    }
+
+    for (const field of bitFields) {
+        if (typeof process[field] !== 'boolean') {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, field + ' must be a boolean', 'ValidationError', '')
+            ));
+        }
+    }
+
+    return new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                    return;
+                }
+
+                const request = new sql.Request();
+                request.input('IdProcesso', sql.Int, processId);
+                request.input('IdProcessoParent', sql.Int, parentId);
+                request.input('Descrizione', sql.VarChar(30), descriptions.IT);
+                request.input('PageUrl', sql.VarChar(50), fields.PageUrl);
+                request.input('PageUrlVendor', sql.VarChar(50), fields.PageUrlVendor);
+                request.input('Parameters', sql.VarChar(255), fields.Parameters);
+                request.input('ImageUrl', sql.VarChar(sql.MAX), fields.ImageUrl);
+                request.input('Ordine', sql.Int, order);
+                request.input('IsPublic', sql.Bit, process.IsPublic);
+                request.input('IsMenu', sql.Bit, process.IsMenu);
+                request.input('IsSystemConfiguration', sql.Bit, process.IsSystemConfiguration);
+                request.input('IsChannel', sql.Bit, process.IsChannel);
+                request.input('IsVendor', sql.Bit, process.IsVendor);
+                request.input('IsProcess', sql.Bit, process.IsProcess);
+                request.input('HasWorkflow', sql.Bit, process.HasWorkflow);
+                request.input('LinkedObject', sql.VarChar(sql.MAX), fields.LinkedObject);
+                request.input('ObjectName', sql.VarChar(sql.MAX), fields.ObjectName);
+                request.input('ObjectPk', sql.VarChar(sql.MAX), fields.ObjectPk);
+                request.input('ObjectFk', sql.VarChar(sql.MAX), fields.ObjectFk);
+                request.input('Text_IT', sql.NVarChar(50), descriptions.IT);
+                request.input('Text_GB', sql.NVarChar(50), descriptions.GB || null);
+                request.input('Text_ES', sql.NVarChar(50), descriptions.ES || null);
+                request.input('Text_CN', sql.NVarChar(50), descriptions.CN || null);
+
+                request.query(
+                    `SET XACT_ABORT ON;
+                     BEGIN TRANSACTION;
+
+                     IF NOT EXISTS (SELECT 1 FROM dbo.TProcessi WITH (UPDLOCK, HOLDLOCK) WHERE IDProcesso = @IdProcesso)
+                         THROW 50001, 'Process was not found.', 1;
+                     IF @IdProcessoParent IS NOT NULL AND
+                        NOT EXISTS (SELECT 1 FROM dbo.TProcessi WHERE IDProcesso = @IdProcessoParent)
+                         THROW 50002, 'Parent process was not found.', 1;
+
+                     DECLARE @InvalidParent BIT = 0;
+                     ;WITH Descendants AS (
+                         SELECT IDProcesso
+                         FROM dbo.TProcessi
+                         WHERE IDProcesso = @IdProcesso
+                         UNION ALL
+                         SELECT P.IDProcesso
+                         FROM dbo.TProcessi AS P
+                         INNER JOIN Descendants AS D ON P.IDProcessoParent = D.IDProcesso
+                     )
+                     SELECT @InvalidParent = CASE WHEN EXISTS (
+                         SELECT 1 FROM Descendants WHERE IDProcesso = @IdProcessoParent
+                     ) THEN 1 ELSE 0 END
+                     OPTION (MAXRECURSION 32767);
+
+                     IF @InvalidParent = 1
+                         THROW 50003, 'A process cannot be moved under itself or one of its descendants.', 1;
+
+                     UPDATE dbo.TProcessi
+                     SET IDProcessoParent = @IdProcessoParent,
+                         Descrizione = @Descrizione,
+                         PageUrl = @PageUrl,
+                         PageUrlVendor = @PageUrlVendor,
+                         Parameters = @Parameters,
+                         ImageUrl = @ImageUrl,
+                         Ordine = @Ordine,
+                         IsPublic = @IsPublic,
+                         IsMenu = @IsMenu,
+                         IsSystemConfiguration = @IsSystemConfiguration,
+                         IsChannel = @IsChannel,
+                         IsVendor = @IsVendor,
+                         IsProcess = @IsProcess,
+                         HasWorkflow = @HasWorkflow,
+                         LinkedObject = @LinkedObject,
+                         ObjectName = @ObjectName,
+                         ObjectPk = @ObjectPk,
+                         ObjectFk = @ObjectFk
+                     WHERE IDProcesso = @IdProcesso;
+
+                     IF EXISTS (
+                         SELECT 1 FROM dbo.TProcessiCulture WITH (UPDLOCK, HOLDLOCK)
+                         WHERE IDProcesso = @IdProcesso
+                     )
+                     BEGIN
+                         UPDATE dbo.TProcessiCulture
+                         SET Text_IT = @Text_IT,
+                             Text_GB = @Text_GB,
+                             Text_ES = @Text_ES,
+                             Text_CN = @Text_CN
+                         WHERE IDProcesso = @IdProcesso;
+                     END
+                     ELSE
+                     BEGIN
+                         INSERT INTO dbo.TProcessiCulture (IDProcesso, Text_IT, Text_GB, Text_ES, Text_CN)
+                         VALUES (@IdProcesso, @Text_IT, @Text_GB, @Text_ES, @Text_CN);
+                     END;
+
+                     COMMIT TRANSACTION;`,
+                    function (queryError) {
+                        if (queryError) {
+                            reject(JSON.stringify(
+                                new exception(sender, queryError.message, queryError.name, queryError.stack))
+                            );
+                            return;
+                        }
+
+                        resolve(JSON.stringify({ IDProcesso: processId }));
+                    }
+                );
+            });
+        } catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+}
+function CreateProcessiManagement(myRequest) {
+    const sender = arguments.callee.name;
+    const process = myRequest.Process;
+    const bitFields = [
+        'IsPublic', 'IsMenu', 'IsSystemConfiguration', 'IsChannel',
+        'IsVendor', 'IsProcess', 'HasWorkflow'
+    ];
+    const textFields = {
+        PageUrl: 50,
+        PageUrlVendor: 50,
+        Parameters: 255,
+        ImageUrl: 100000
+    };
+
+    if (!process || typeof process !== 'object' ||
+        !process.Descriptions || typeof process.Descriptions !== 'object') {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid process data', 'ValidationError', '')
+        ));
+    }
+
+    const parentId = Number(process.IDProcessoParent);
+    const order = process.Ordine == null || process.Ordine === ''
+        ? null
+        : Number(process.Ordine);
+    if (!Number.isInteger(parentId) || parentId <= 0 ||
+        (order !== null && !Number.isInteger(order))) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'A valid parent process and order are required', 'ValidationError', '')
+        ));
+    }
+
+    const descriptions = {};
+    for (const language of ['IT', 'GB', 'ES', 'CN']) {
+        const value = process.Descriptions[language];
+        if (typeof value !== 'string' || value.length > 50) {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, 'Descriptions must be strings of at most 50 characters', 'ValidationError', '')
+            ));
+        }
+        descriptions[language] = value.trim();
+    }
+    if (!descriptions.IT || descriptions.IT.length > 30) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'The Italian description is required and must be at most 30 characters', 'ValidationError', '')
+        ));
+    }
+
+    const fields = {};
+    for (const [field, maxLength] of Object.entries(textFields)) {
+        const value = process[field];
+        if (value !== null && value !== undefined && typeof value !== 'string') {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, field + ' must be a string or null', 'ValidationError', '')
+            ));
+        }
+        fields[field] = value == null || value === '' ? null : value;
+        if (fields[field] !== null && fields[field].length > maxLength) {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, field + ' exceeds its maximum length of ' + maxLength + ' characters', 'ValidationError', '')
+            ));
+        }
+    }
+
+    for (const field of ['LinkedObject', 'ObjectName', 'ObjectPk', 'ObjectFk']) {
+        const value = process[field];
+        if (value !== null && value !== undefined && typeof value !== 'string') {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, field + ' must be a string or null', 'ValidationError', '')
+            ));
+        }
+        fields[field] = value == null || value === '' ? null : value;
+    }
+
+    for (const field of bitFields) {
+        if (typeof process[field] !== 'boolean') {
+            return Promise.reject(JSON.stringify(
+                new exception(sender, field + ' must be a boolean', 'ValidationError', '')
+            ));
+        }
+    }
+
+    return new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                    return;
+                }
+
+                const request = new sql.Request();
+                request.input('IdProcessoParent', sql.Int, parentId);
+                request.input('Descrizione', sql.VarChar(30), descriptions.IT);
+                request.input('PageUrl', sql.VarChar(50), fields.PageUrl);
+                request.input('PageUrlVendor', sql.VarChar(50), fields.PageUrlVendor);
+                request.input('Parameters', sql.VarChar(255), fields.Parameters);
+                request.input('ImageUrl', sql.VarChar(sql.MAX), fields.ImageUrl);
+                request.input('Ordine', sql.Int, order);
+                request.input('IsPublic', sql.Bit, process.IsPublic);
+                request.input('IsMenu', sql.Bit, process.IsMenu);
+                request.input('IsSystemConfiguration', sql.Bit, process.IsSystemConfiguration);
+                request.input('IsChannel', sql.Bit, process.IsChannel);
+                request.input('IsVendor', sql.Bit, process.IsVendor);
+                request.input('IsProcess', sql.Bit, process.IsProcess);
+                request.input('HasWorkflow', sql.Bit, process.HasWorkflow);
+                request.input('LinkedObject', sql.VarChar(sql.MAX), fields.LinkedObject);
+                request.input('ObjectName', sql.VarChar(sql.MAX), fields.ObjectName);
+                request.input('ObjectPk', sql.VarChar(sql.MAX), fields.ObjectPk);
+                request.input('ObjectFk', sql.VarChar(sql.MAX), fields.ObjectFk);
+                request.input('Text_IT', sql.NVarChar(50), descriptions.IT);
+                request.input('Text_GB', sql.NVarChar(50), descriptions.GB || null);
+                request.input('Text_ES', sql.NVarChar(50), descriptions.ES || null);
+                request.input('Text_CN', sql.NVarChar(50), descriptions.CN || null);
+
+                request.query(
+                    `SET XACT_ABORT ON;
+                     BEGIN TRANSACTION;
+
+                     IF NOT EXISTS (
+                         SELECT 1 FROM dbo.TProcessi WITH (UPDLOCK, HOLDLOCK)
+                         WHERE IDProcesso = @IdProcessoParent
+                     )
+                         THROW 50002, 'Parent process was not found.', 1;
+
+                     INSERT INTO dbo.TProcessi (
+                         IDProcessoParent, Descrizione, PageUrl, PageUrlVendor,
+                         Parameters, ImageUrl, Ordine, IsPublic, IsMenu,
+                         IsSystemConfiguration, IsChannel, IsVendor, IsProcess,
+                         HasWorkflow, LinkedObject, ObjectName, ObjectPk, ObjectFk
+                     )
+                     VALUES (
+                         @IdProcessoParent, @Descrizione, @PageUrl, @PageUrlVendor,
+                         @Parameters, @ImageUrl, @Ordine, @IsPublic, @IsMenu,
+                         @IsSystemConfiguration, @IsChannel, @IsVendor, @IsProcess,
+                         @HasWorkflow, @LinkedObject, @ObjectName, @ObjectPk, @ObjectFk
+                     );
+
+                     DECLARE @IdProcesso INT = SCOPE_IDENTITY();
+                     INSERT INTO dbo.TProcessiCulture (IDProcesso, Text_IT, Text_GB, Text_ES, Text_CN)
+                     VALUES (@IdProcesso, @Text_IT, @Text_GB, @Text_ES, @Text_CN);
+
+                     COMMIT TRANSACTION;
+                     SELECT @IdProcesso AS IDProcesso;`,
+                    function (queryError, result) {
+                        if (queryError) {
+                            reject(JSON.stringify(
+                                new exception(sender, queryError.message, queryError.name, queryError.stack))
+                            );
+                            return;
+                        }
+
+                        resolve(JSON.stringify(result.recordset[0]));
+                    }
+                );
+            });
+        } catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+}
+function DeleteProcessiManagement(myRequest) {
+    const sender = arguments.callee.name;
+    const processId = Number(myRequest.IdProcesso);
+
+    if (!Number.isInteger(processId) || processId <= 0) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid process ID', 'ValidationError', '')
+        ));
+    }
+
+    return new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                    return;
+                }
+
+                const request = new sql.Request();
+                request.input('IdProcesso', sql.Int, processId);
+                request.query(
+                    `SET XACT_ABORT ON;
+                     BEGIN TRY
+                         BEGIN TRANSACTION;
+
+                         IF NOT EXISTS (
+                             SELECT 1 FROM dbo.TProcessi WITH (UPDLOCK, HOLDLOCK)
+                             WHERE IDProcesso = @IdProcesso
+                         )
+                             THROW 50001, 'Process was not found.', 1;
+
+                         DELETE FROM dbo.TProcessiAzioniCustom
+                         WHERE IDProcesso = @IdProcesso;
+                         DELETE FROM dbo.TProcessiCulture
+                         WHERE IDProcesso = @IdProcesso;
+                         DELETE FROM dbo.TProcessiHelp
+                         WHERE IDProcesso = @IdProcesso;
+                         DELETE FROM dbo.TProcessi
+                         WHERE IDProcesso = @IdProcesso;
+
+                         COMMIT TRANSACTION;
+                         SELECT CAST(NULL AS INT) AS ErrorNumber,
+                                CAST(NULL AS NVARCHAR(4000)) AS ErrorMessage;
+                     END TRY
+                     BEGIN CATCH
+                         IF XACT_STATE() <> 0
+                             ROLLBACK TRANSACTION;
+
+                         SELECT ERROR_NUMBER() AS ErrorNumber,
+                                ERROR_MESSAGE() AS ErrorMessage;
+                     END CATCH;`,
+                    function (queryError, result) {
+                        if (queryError) {
+                            reject(JSON.stringify(
+                                new exception(sender, queryError.message, queryError.name, queryError.stack))
+                            );
+                            return;
+                        }
+
+                        const databaseError = result.recordset && result.recordset[0];
+                        if (databaseError && databaseError.ErrorNumber != null) {
+                            const error = databaseError.ErrorNumber === 547
+                                ? new exception(
+                                    sender,
+                                    'The process is referenced by other system records.',
+                                    'ProcessHasReferences',
+                                    ''
+                                )
+                                : new exception(
+                                    sender,
+                                    databaseError.ErrorMessage,
+                                    'DatabaseError',
+                                    ''
+                                );
+                            if (databaseError.ErrorNumber === 547) {
+                                error.code = 'PROCESS_HAS_REFERENCES';
+                            }
+                            reject(JSON.stringify(error));
+                            return;
+                        }
+
+                        resolve(JSON.stringify({ IDProcesso: processId }));
                     }
                 );
             });
@@ -539,6 +1145,11 @@ function GetMenuChild(myRequest) {
 module.exports = {
     GetProcessi,
     GetProcessiManagement,
+    GetProcessiManagementDetails,
+    GetProcessiParentOptions,
+    UpdateProcessiManagement,
+    CreateProcessiManagement,
+    DeleteProcessiManagement,
     GetProcessiCustomActions,
     SetProcessiCustomActionMapping,
     UpdateProcessiCustomActionTranslations,

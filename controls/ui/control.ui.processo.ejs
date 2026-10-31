@@ -11,16 +11,23 @@
                 <div class="btn-group ms-auto flex-shrink-0 processo-context-dropdown">
                     <button type="button" class="btn btn-light bi bi-three-dots-vertical processi-context-trigger"
                         data-bs-toggle="dropdown" aria-expanded="false" aria-label="<%= contextMenu.actions %>"></button>
-                    <ul class="dropdown-menu dropdown-menu-end app-context-menu">
+                    <ul class="dropdown-menu dropdown-menu-end app-context-menu processi-context-menu">
                         <li>
                             <div class="app-context-menu-heading"><b><%= processo.Description %></b></div>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><button type="button" class="dropdown-item p-2"><i class="bi bi-pencil"></i>&nbsp;&nbsp;<%= contextMenu.edit %></button></li>
+                        <li><button type="button" class="dropdown-item p-2 processi-new"
+                            data-idprocesso="<%= processo.IDProc %>"
+                            data-process-description="<%= processo.Description %>"
+                            data-parent-description="<%= processo.ParentDescription || '' %>"><i class="bi bi-plus-lg"></i>&nbsp;&nbsp;<%= contextMenu.new %></button></li>
+                        <li><button type="button" class="dropdown-item p-2 processi-edit"
+                            data-idprocesso="<%= processo.IDProc %>"><i class="bi bi-pencil"></i>&nbsp;&nbsp;<%= contextMenu.edit %></button></li>
                         <li><button type="button" class="dropdown-item p-2 processi-custom-actions"
                             data-idprocesso="<%= processo.IDProc %>"
                             data-process-description="<%= processo.Description %>"><i class="bi bi-lightning"></i>&nbsp;&nbsp;<%= contextMenu.customActions %></button></li>
-                        <li><button type="button" class="dropdown-item p-2"><i class="bi bi-trash"></i>&nbsp;&nbsp;<%= contextMenu.delete %></button></li>
+                        <li><button type="button" class="dropdown-item p-2 processi-delete"
+                            data-idprocesso="<%= processo.IDProc %>"
+                            data-process-description="<%= processo.Description %>"><i class="bi bi-trash"></i>&nbsp;&nbsp;<%= contextMenu.delete %></button></li>
                         <li><button type="button" class="dropdown-item p-2"><i class="bi bi-x-lg"></i>&nbsp;&nbsp;<%= contextMenu.cancel %></button></li>
                     </ul>
                 </div>

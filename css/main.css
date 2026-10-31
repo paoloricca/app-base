@@ -302,6 +302,12 @@ a.active, span.active {
 .app-context-menu {
     padding: 0.25rem 0.375rem;
 }
+.processi-context-menu {
+    min-width: 210px;
+}
+.processi-context-menu .app-context-menu-heading {
+    white-space: nowrap;
+}
 .app-context-menu .dropdown-item,
 .app-context-menu-item {
     display: flex;
