@@ -13,8 +13,7 @@ $(function () {
             delete: 'Elimina',
             deleteReferenceWarning: 'Non è possibile eliminare il processo perché è collegato a uno o più elementi presenti nel sistema.',
             cancel: 'Annulla',
-            description: 'Descrizione',
-            invalidDescription: 'La descrizione italiana è obbligatoria e deve contenere al massimo 30 caratteri.'
+            description: 'Descrizione'
         },
         GB: {
             actions: 'Actions',
@@ -28,8 +27,7 @@ $(function () {
             delete: 'Delete',
             deleteReferenceWarning: 'The process cannot be deleted because it is linked to one or more items in the system.',
             cancel: 'Cancel',
-            description: 'Description',
-            invalidDescription: 'The Italian description is required and must be at most 30 characters.'
+            description: 'Description'
         },
         ES: {
             actions: 'Acciones',
@@ -43,8 +41,7 @@ $(function () {
             delete: 'Eliminar',
             deleteReferenceWarning: 'No se puede eliminar el proceso porque está vinculado a uno o más elementos del sistema.',
             cancel: 'Cancelar',
-            description: 'Descripción',
-            invalidDescription: 'La descripción italiana es obligatoria y debe tener un máximo de 30 caracteres.'
+            description: 'Descripción'
         },
         CN: {
             actions: '操作',
@@ -58,8 +55,7 @@ $(function () {
             delete: '刪除',
             deleteReferenceWarning: '无法删除此流程，因为它与系统中的一个或多个项目相关联。',
             cancel: '取消',
-            description: '描述',
-            invalidDescription: '意大利语描述为必填项，且最多为 30 个字符。'
+            description: '描述'
         }
     };
 
@@ -77,6 +73,7 @@ $(function () {
     });
 
     var $processEditModal = $('#processi-edit-modal');
+    var $processEditForm = $processEditModal.find('#processi-edit-form');
     var $processEditLoading = $processEditModal.find('.processi-edit-loading');
     var $descriptionControl = $processEditModal.find('.processi-edit-description-control');
     $descriptionControl.multiLanguageTextBox({
@@ -93,10 +90,39 @@ $(function () {
         modalToBody: true
     });
     var $descriptionEditorModal = $descriptionControl.data('mltextbox').$cultureModal;
+    var $descriptionInput = $descriptionControl.find('#txt-culture-edit-ProcessiDescription');
+    var descriptionMaxLength = languageContext === 'IT' ? 30 : 50;
+    $descriptionInput.prop('required', false);
+    $descriptionEditorModal.find('.lang-input').removeAttr('required');
     $descriptionEditorModal.find('#text-ProcessiDescription_IT').attr('maxlength', 30);
     $descriptionEditorModal.find('.lang-input:not([data-lang="IT"])').attr('maxlength', 50);
-    $descriptionEditorModal.find('#txt-culture-edit-ProcessiDescription')
-        .attr('maxlength', languageContext === 'IT' ? 30 : 50);
+    $descriptionInput.attr('maxlength', descriptionMaxLength);
+    $descriptionControl.find('.label-title-ProcessiDescription')
+        .addClass('processi-required-label');
+    function updateDescriptionValidity() {
+        var currentDescription = $descriptionEditorModal
+            .find('#text-ProcessiDescription_' + languageContext).val() || '';
+        var isValid = currentDescription.trim().length > 0 &&
+            currentDescription.trim().length <= descriptionMaxLength;
+        $descriptionInput
+            .toggleClass('is-invalid', !isValid)
+            .toggleClass('is-valid', isValid);
+        return isValid;
+    }
+    $descriptionControl.on('valueChanged.processi-edit-required', updateDescriptionValidity);
+    $descriptionInput.on('input.processi-edit-required change.processi-edit-required', updateDescriptionValidity);
+    $descriptionEditorModal.on('input.processi-edit-required', '.lang-input', function () {
+        updateDescriptionValidity();
+    });
+    updateDescriptionValidity();
+    $processEditModal.find('#processi-edit-parent').on(
+        'change.processi-edit-required',
+        function () {
+            if (this.checkValidity()) {
+                $(this).removeClass('is-invalid');
+            }
+        }
+    );
 
     var $customActionsModal = $('#processi-custom-actions-modal');
     var $customActionsList = $customActionsModal.find('.processi-custom-actions-list');
@@ -268,6 +294,8 @@ $(function () {
                 var process = processResponse.data;
                 $processEditModal.data('processId', process.IDProcesso);
                 var $parentSelect = $processEditModal.find('#processi-edit-parent');
+                $parentSelect.prop('required', false).removeClass('is-invalid');
+                $processEditModal.find('.processi-edit-parent-label').removeClass('processi-required-label');
                 $parentSelect.prop('disabled', false).empty().append($('<option>', {
                     value: '',
                     text: contextMenus[languageContext].noParent
@@ -300,6 +328,7 @@ $(function () {
                     ES: process.Text_ES || '',
                     CN: process.Text_CN || ''
                 });
+                updateDescriptionValidity();
                 $processEditModal.find('.processi-edit-description-title').text(
                     process['Text_' + languageContext] || process.Descrizione
                 );
@@ -318,6 +347,8 @@ $(function () {
     function createProcessForParent(parentId, parentDescription, parentParentDescription) {
         var $parentSelect = $processEditModal.find('#processi-edit-parent');
         $processEditModal.data('mode', 'create').removeData('processId');
+        $parentSelect.prop('required', true).removeClass('is-invalid');
+        $processEditModal.find('.processi-edit-parent-label').addClass('processi-required-label');
         $processEditModal.find('.processi-edit-title-label')
             .text(contextMenus[languageContext].newProcessIn);
         $processEditModal.find('.processi-edit-description-title').text(
@@ -334,6 +365,7 @@ $(function () {
             ES: '',
             CN: ''
         });
+        updateDescriptionValidity();
         $processEditModal.find(
             '#processi-edit-page-url, #processi-edit-page-url-vendor, #processi-edit-parameters,' +
             ' #processi-edit-image-url, #processi-edit-order, #processi-edit-linked-object,' +
@@ -373,13 +405,30 @@ $(function () {
         loadProcessForEdit($editButton.data('idprocesso'));
     });
 
-    $processEditModal.find('.processi-edit-save').on('click', function () {
-        var $saveButton = $(this);
+    $processEditForm.on('submit', function (event) {
+        event.preventDefault();
+        var $saveButton = $processEditModal.find('.processi-edit-save');
         var descriptionInstance = $descriptionControl.data('mltextbox');
         descriptionInstance.refreshValues();
         var descriptions = descriptionInstance.getValues();
-        if (!descriptions.IT || !descriptions.IT.trim() || descriptions.IT.trim().length > 30) {
-            ShowError(contextMenus[languageContext].invalidDescription, 'processi-gestione.saveProcess');
+        if (!updateDescriptionValidity()) {
+            bootstrap.Tab.getOrCreateInstance(
+                $descriptionEditorModal.find(
+                    '#tabs_ProcessiDescription_' + languageContext
+                )[0]
+            ).show();
+            return;
+        }
+
+        var $parentSelect = $processEditModal.find('#processi-edit-parent');
+        if ($processEditModal.data('mode') === 'create' && !$parentSelect.val()) {
+            $parentSelect.addClass('is-invalid');
+            $parentSelect.trigger('focus');
+            return;
+        }
+
+        if (!this.checkValidity()) {
+            $(this).find(':invalid').first().addClass('is-invalid').trigger('focus');
             return;
         }
 

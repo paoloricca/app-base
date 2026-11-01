@@ -117,6 +117,7 @@
     <div class="modal fade" id="processi-edit-modal" tabindex="-1" aria-labelledby="processi-edit-title" aria-hidden="true" data-bs-focus="false">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
+                <form id="processi-edit-form" novalidate>
                 <div class="modal-header">
                     <h5 class="modal-title f-roboto b" id="processi-edit-title">
                         <span class="processi-edit-title-label">
@@ -134,8 +135,10 @@
                         <span class="spinner-border text-info" role="status"></span>
                     </div>
                     <div class="row g-3 processi-edit-fields">
-                        <div class="col-md-4">
-                            <label for="processi-edit-parent" class="form-label">
+                        <div class="col-lg-8 processi-edit-details">
+                            <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="processi-edit-parent" class="form-label processi-edit-parent-label">
                                 <% if (user.LanguageContext == "IT") { %>ID processo padre<% } %>
                                 <% if (user.LanguageContext == "GB") { %>Parent process ID<% } %>
                                 <% if (user.LanguageContext == "ES") { %>ID del proceso padre<% } %>
@@ -149,8 +152,14 @@
                                     <% if (user.LanguageContext == "CN") { %>无父流程<% } %>
                                 </option>
                             </select>
+                            <div class="invalid-feedback processi-edit-parent-feedback">
+                                <% if (user.LanguageContext == "IT") { %>Seleziona il processo padre.<% } %>
+                                <% if (user.LanguageContext == "GB") { %>Select the parent process.<% } %>
+                                <% if (user.LanguageContext == "ES") { %>Seleccione el proceso padre.<% } %>
+                                <% if (user.LanguageContext == "CN") { %>请选择父流程。<% } %>
+                            </div>
                         </div>
-                        <div class="col-md-8 processi-edit-description-control">
+                        <div class="col-md-6 processi-edit-description-control">
                         </div>
                         <div class="col-md-6">
                             <label for="processi-edit-page-url" class="form-label">
@@ -188,7 +197,7 @@
                             </label>
                             <textarea class="form-control" rows="2" id="processi-edit-image-url"></textarea>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="processi-edit-order" class="form-label">
                                 <% if (user.LanguageContext == "IT") { %>Ordine<% } %>
                                 <% if (user.LanguageContext == "GB") { %>Order<% } %>
@@ -196,73 +205,6 @@
                                 <% if (user.LanguageContext == "CN") { %>顺序<% } %>
                             </label>
                             <input type="number" step="1" class="form-control" id="processi-edit-order">
-                        </div>
-                        <div class="col-12">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label">
-                                        <% if (user.LanguageContext == "IT") { %>Pubblico<% } %>
-                                        <% if (user.LanguageContext == "GB") { %>Public<% } %>
-                                        <% if (user.LanguageContext == "ES") { %>Público<% } %>
-                                        <% if (user.LanguageContext == "CN") { %>公开<% } %>
-                                    </label>
-                                    <div class="form-check form-switch"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsPublic" data-field="IsPublic"></div>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">
-                                        <% if (user.LanguageContext == "IT") { %>Voce di menu<% } %>
-                                        <% if (user.LanguageContext == "GB") { %>Menu item<% } %>
-                                        <% if (user.LanguageContext == "ES") { %>Elemento de menú<% } %>
-                                        <% if (user.LanguageContext == "CN") { %>菜单项<% } %>
-                                    </label>
-                                    <div class="form-check form-switch"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsMenu" data-field="IsMenu"></div>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">
-                                        <% if (user.LanguageContext == "IT") { %>Configurazione di sistema<% } %>
-                                        <% if (user.LanguageContext == "GB") { %>System configuration<% } %>
-                                        <% if (user.LanguageContext == "ES") { %>Configuración del sistema<% } %>
-                                        <% if (user.LanguageContext == "CN") { %>系统配置<% } %>
-                                    </label>
-                                    <div class="form-check form-switch"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsSystemConfiguration" data-field="IsSystemConfiguration"></div>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">
-                                        <% if (user.LanguageContext == "IT") { %>Canale<% } %>
-                                        <% if (user.LanguageContext == "GB") { %>Channel<% } %>
-                                        <% if (user.LanguageContext == "ES") { %>Canal<% } %>
-                                        <% if (user.LanguageContext == "CN") { %>渠道<% } %>
-                                    </label>
-                                    <div class="form-check form-switch"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsChannel" data-field="IsChannel"></div>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">
-                                        <% if (user.LanguageContext == "IT") { %>Fornitore<% } %>
-                                        <% if (user.LanguageContext == "GB") { %>Vendor<% } %>
-                                        <% if (user.LanguageContext == "ES") { %>Proveedor<% } %>
-                                        <% if (user.LanguageContext == "CN") { %>供应商<% } %>
-                                    </label>
-                                    <div class="form-check form-switch"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsVendor" data-field="IsVendor"></div>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">
-                                        <% if (user.LanguageContext == "IT") { %>Processo<% } %>
-                                        <% if (user.LanguageContext == "GB") { %>Process<% } %>
-                                        <% if (user.LanguageContext == "ES") { %>Proceso<% } %>
-                                        <% if (user.LanguageContext == "CN") { %>流程<% } %>
-                                    </label>
-                                    <div class="form-check form-switch"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsProcess" data-field="IsProcess"></div>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">
-                                        <% if (user.LanguageContext == "IT") { %>Ha workflow<% } %>
-                                        <% if (user.LanguageContext == "GB") { %>Has workflow<% } %>
-                                        <% if (user.LanguageContext == "ES") { %>Tiene workflow<% } %>
-                                        <% if (user.LanguageContext == "CN") { %>启用工作流<% } %>
-                                    </label>
-                                    <div class="form-check form-switch"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-HasWorkflow" data-field="HasWorkflow"></div>
-                                </div>
-                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="processi-edit-linked-object" class="form-label">
@@ -300,6 +242,75 @@
                             </label>
                             <input type="text" class="form-control" id="processi-edit-object-fk">
                         </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 processi-edit-taps">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <label class="form-label" for="processi-edit-IsPublic">
+                                        <% if (user.LanguageContext == "IT") { %>Pubblico<% } %>
+                                        <% if (user.LanguageContext == "GB") { %>Public<% } %>
+                                        <% if (user.LanguageContext == "ES") { %>Público<% } %>
+                                        <% if (user.LanguageContext == "CN") { %>公开<% } %>
+                                    </label>
+                                    <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsPublic" data-field="IsPublic"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="processi-edit-IsMenu">
+                                        <% if (user.LanguageContext == "IT") { %>Voce di menu<% } %>
+                                        <% if (user.LanguageContext == "GB") { %>Menu item<% } %>
+                                        <% if (user.LanguageContext == "ES") { %>Elemento de menú<% } %>
+                                        <% if (user.LanguageContext == "CN") { %>菜单项<% } %>
+                                    </label>
+                                    <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsMenu" data-field="IsMenu"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="processi-edit-IsProcess">
+                                        <% if (user.LanguageContext == "IT") { %>Processo<% } %>
+                                        <% if (user.LanguageContext == "GB") { %>Process<% } %>
+                                        <% if (user.LanguageContext == "ES") { %>Proceso<% } %>
+                                        <% if (user.LanguageContext == "CN") { %>流程<% } %>
+                                    </label>
+                                    <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsProcess" data-field="IsProcess"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="processi-edit-IsSystemConfiguration">
+                                        <% if (user.LanguageContext == "IT") { %>Configurazione di sistema<% } %>
+                                        <% if (user.LanguageContext == "GB") { %>System configuration<% } %>
+                                        <% if (user.LanguageContext == "ES") { %>Configuración del sistema<% } %>
+                                        <% if (user.LanguageContext == "CN") { %>系统配置<% } %>
+                                    </label>
+                                    <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsSystemConfiguration" data-field="IsSystemConfiguration"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="processi-edit-IsChannel">
+                                        <% if (user.LanguageContext == "IT") { %>Canale<% } %>
+                                        <% if (user.LanguageContext == "GB") { %>Channel<% } %>
+                                        <% if (user.LanguageContext == "ES") { %>Canal<% } %>
+                                        <% if (user.LanguageContext == "CN") { %>渠道<% } %>
+                                    </label>
+                                    <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsChannel" data-field="IsChannel"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="processi-edit-IsVendor">
+                                        <% if (user.LanguageContext == "IT") { %>Fornitore<% } %>
+                                        <% if (user.LanguageContext == "GB") { %>Vendor<% } %>
+                                        <% if (user.LanguageContext == "ES") { %>Proveedor<% } %>
+                                        <% if (user.LanguageContext == "CN") { %>供应商<% } %>
+                                    </label>
+                                    <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsVendor" data-field="IsVendor"></div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="processi-edit-HasWorkflow">
+                                        <% if (user.LanguageContext == "IT") { %>Ha workflow<% } %>
+                                        <% if (user.LanguageContext == "GB") { %>Has workflow<% } %>
+                                        <% if (user.LanguageContext == "ES") { %>Tiene workflow<% } %>
+                                        <% if (user.LanguageContext == "CN") { %>启用工作流<% } %>
+                                    </label>
+                                    <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-HasWorkflow" data-field="HasWorkflow"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -309,13 +320,14 @@
                         <% if (user.LanguageContext == "ES") { %>Cancelar<% } %>
                         <% if (user.LanguageContext == "CN") { %>取消<% } %>
                     </button>
-                    <button type="button" class="btn btn-primary processi-edit-save">
+                    <button type="submit" class="btn btn-primary processi-edit-save">
                         <% if (user.LanguageContext == "IT") { %>Salva<% } %>
                         <% if (user.LanguageContext == "GB") { %>Save<% } %>
                         <% if (user.LanguageContext == "ES") { %>Guardar<% } %>
                         <% if (user.LanguageContext == "CN") { %>保存<% } %>
                     </button>
                 </div>
+                </form>
             </div>
         </div>
     </div>

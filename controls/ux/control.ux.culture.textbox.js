@@ -117,6 +117,7 @@
         this.$tabs = this.$input;
 
         this.$tabs.append(templateString);
+        this.$proxyInput = this.$tabs.find('#txt-culture-edit-' + this.options.Id);
 
         this.$cultureModal = this.$tabs.find('.container-culture-textbox-edit');
         this.$cultureModal.find('.tab-language').append(nav).append(content);
@@ -226,9 +227,15 @@
             self.show();
             
         })
-        this.$tabs.find('#txt-culture-edit-' + this.options.Id).change(function () {
-            self.values[self.options.LanguageContext] = $(this).val();
-            self.$cultureModal.find('#text-' + self.options.Id + '_' + self.options.LanguageContext).val($(this).val());
+        this.$tabs.find('#txt-culture-edit-' + this.options.Id).on('input change', function () {
+            var language = self.options.LanguageContext;
+            var value = $(this).val();
+            self.values[language] = value;
+            self.options.values[language] = value;
+            self.initialValues[language] = value;
+            self.$cultureModal.find('#text-' + self.options.Id + '_' + language).val(value);
+            self.$input.trigger("languageChanged", [language, value]);
+            self.$input.trigger("valueChanged", [self.values]);
 
         })
         this.$cultureModal.on("input", ".lang-input", function () {
@@ -236,8 +243,6 @@
             let lang = $(this).data("lang");
 
             self.values[lang] = $(this).val();
-
-            self.$input.val(self.values.it || "");
 
             self.$input.trigger("languageChanged", [lang, self.values[lang]]);
 
@@ -259,6 +264,11 @@
             this.values[lang.code] = self.$cultureModal.find('#text-' + self.options.Id + '_' + lang.code).val();
 
         });
+
+        this.options.values = $.extend(true, {}, this.values);
+        this.initialValues = $.extend(true, {}, this.values);
+        this.$proxyInput.val(this.values[this.options.LanguageContext] || "");
+        this.$input.trigger("valueChanged", [this.values]);
     }
     MultiLanguageTextBox.prototype.refresh = function () {
 

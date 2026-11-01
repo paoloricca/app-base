@@ -80,6 +80,29 @@
 .processi-custom-action-translation .bi {
     font-size: 13px;
 }
+.processi-edit-details {
+    min-width: 0;
+}
+.processi-edit-taps {
+    border-left: 1px solid #dee2e6;
+}
+.processi-edit-taps .form-label {
+    margin-bottom: 0.25rem;
+}
+.processi-edit-taps .form-switch {
+    padding-left: 0;
+}
+.processi-required-label::after {
+    content: " *";
+    color: #dc3545;
+}
+@media (max-width: 991.98px) {
+    .processi-edit-taps {
+        border-top: 1px solid #dee2e6;
+        border-left: 0;
+        padding-top: 1rem;
+    }
+}
 .processi-custom-action-switch {
     display: flex;
     align-items: center;
