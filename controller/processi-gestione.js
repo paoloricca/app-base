@@ -123,6 +123,210 @@ $(function () {
             }
         }
     );
+    var $processSwitch = $processEditModal.find('#processi-edit-IsProcess');
+    var $modelFields = $processEditModal.find('.processi-edit-model-fields');
+    var $modelSelect = $processEditModal.find('#processi-edit-model');
+    var $versionSelect = $processEditModal.find('#processi-edit-version');
+    var processModelsLoaded = false;
+    var processModelsLoading = false;
+    var processVersionRequestId = 0;
+    var processSelectorText = {
+        IT: {
+            selectVersion: 'Seleziona una versione',
+            loading: 'Caricamento...',
+            noVersions: 'Nessuna versione disponibile',
+            emptyVersionDate: 'Vuota',
+            versionWithoutFields: 'La versione selezionata non contiene campi collegati. Seleziona una versione con campi collegati prima di salvare.'
+        },
+        GB: {
+            selectVersion: 'Select a version',
+            loading: 'Loading...',
+            noVersions: 'No versions available',
+            emptyVersionDate: 'Empty',
+            versionWithoutFields: 'The selected version has no linked fields. Select a version with linked fields before saving.'
+        },
+        ES: {
+            selectVersion: 'Seleccione una versión',
+            loading: 'Cargando...',
+            noVersions: 'No hay versiones disponibles',
+            emptyVersionDate: 'Vacía',
+            versionWithoutFields: 'La versión seleccionada no tiene campos vinculados. Seleccione una versión con campos vinculados antes de guardar.'
+        },
+        CN: {
+            selectVersion: '选择版本',
+            loading: '正在加载...',
+            noVersions: '没有可用版本',
+            emptyVersionDate: '空',
+            versionWithoutFields: '所选版本没有关联字段。请先选择包含关联字段的版本，然后再保存。'
+        }
+    }[languageContext];
+
+    function updateProcessModelValidity() {
+        var isRequired = $processSwitch.prop('checked');
+        var hasModel = !!$modelSelect.val();
+        var hasVersion = !!$versionSelect.val() && !$versionSelect.prop('disabled');
+
+        $modelSelect.prop('required', isRequired)
+            .toggleClass('is-invalid', isRequired && !hasModel)
+            .toggleClass('is-valid', isRequired && hasModel);
+        $versionSelect.prop('required', isRequired)
+            .toggleClass('is-invalid', isRequired && !hasVersion)
+            .toggleClass('is-valid', isRequired && hasVersion);
+        $modelFields.find('label[for="processi-edit-model"], label[for="processi-edit-version"]')
+            .toggleClass('processi-required-label', isRequired);
+
+        return !isRequired || (hasModel && hasVersion);
+    }
+
+    function setVersionPlaceholder(text) {
+        $versionSelect.empty().append($('<option>', {
+            value: '',
+            text: text || processSelectorText.selectVersion
+        }));
+    }
+
+    function loadProcessVersions(modelId, selectedVersionId) {
+        var requestId = ++processVersionRequestId;
+        setVersionPlaceholder(processSelectorText.loading);
+        $versionSelect.prop('disabled', true);
+        updateProcessModelValidity();
+        if (!modelId) {
+            setVersionPlaceholder();
+            updateProcessModelValidity();
+            return;
+        }
+
+        $.get('/processi-gestione/modelli/' + encodeURIComponent(modelId) + '/versioni')
+            .done(function (response) {
+                if (requestId !== processVersionRequestId ||
+                    String($modelSelect.val() || '') !== String(modelId)) {
+                    return;
+                }
+                if (!response || response.status !== 'OK') {
+                    showCustomActionError(
+                        response && response.error ? response.error : 'Invalid versions response',
+                        'processi-gestione.loadModelVersions'
+                    );
+                    setVersionPlaceholder();
+                    updateProcessModelValidity();
+                    return;
+                }
+
+                setVersionPlaceholder(
+                    response.data.length ? processSelectorText.selectVersion : processSelectorText.noVersions
+                );
+                response.data.forEach(function (version) {
+                    var dateLabel = processSelectorText.emptyVersionDate;
+                    var $option;
+                    if (version.DataIstanza) {
+                        var date = new Date(version.DataIstanza);
+                        if (!isNaN(date.getTime())) {
+                            var locales = { IT: 'it-IT', GB: 'en-GB', ES: 'es-ES', CN: 'zh-CN' };
+                            dateLabel = ' (' + new Intl.DateTimeFormat(
+                                locales[languageContext],
+                                { dateStyle: 'short', timeStyle: 'short' }
+                            ).format(date) + ')';
+                        } else {
+                            dateLabel = ' (' + processSelectorText.emptyVersionDate + ')';
+                        }
+                    } else {
+                        dateLabel = ' (' + processSelectorText.emptyVersionDate + ')';
+                    }
+                    $option = $('<option>', {
+                        value: version.IDVersione,
+                        text: version.Numero + dateLabel
+                    }).data('dataIstanza', version.DataIstanza);
+                    $versionSelect.append($option);
+                });
+                $versionSelect.prop('disabled', !response.data.length);
+                if (selectedVersionId != null) {
+                    $versionSelect.val(String(selectedVersionId));
+                }
+                updateProcessModelValidity();
+            })
+            .fail(function (xhr, status, errorThrown) {
+                if (requestId !== processVersionRequestId) {
+                    return;
+                }
+                showCustomActionError(errorThrown || status, 'processi-gestione.loadModelVersions');
+                setVersionPlaceholder();
+                updateProcessModelValidity();
+            });
+    }
+
+    function loadProcessModels(selectedModelId, selectedVersionId) {
+        if (selectedModelId !== undefined) {
+            $modelSelect.data('selectedModel', selectedModelId);
+        }
+        if (selectedVersionId !== undefined) {
+            $versionSelect.data('selectedVersion', selectedVersionId);
+        }
+
+        if (processModelsLoaded) {
+            var modelId = $modelSelect.data('selectedModel');
+            var versionId = $versionSelect.data('selectedVersion');
+            $modelSelect.val(modelId == null ? '' : String(modelId));
+            loadProcessVersions(modelId, versionId);
+            return;
+        }
+        if (processModelsLoading) {
+            return;
+        }
+
+        processModelsLoading = true;
+        $modelSelect.prop('disabled', true);
+        $.get('/processi-gestione/modelli')
+            .done(function (response) {
+                if (!response || response.status !== 'OK') {
+                    showCustomActionError(
+                        response && response.error ? response.error : 'Invalid models response',
+                        'processi-gestione.loadModels'
+                    );
+                    return;
+                }
+
+                response.data.forEach(function (model) {
+                    $modelSelect.append($('<option>', {
+                        value: model.IDModello,
+                        text: model.IDModello + ' - ' + (model.Description || '')
+                    }));
+                });
+                processModelsLoaded = true;
+                var modelId = $modelSelect.data('selectedModel');
+                var versionId = $versionSelect.data('selectedVersion');
+                $modelSelect.val(modelId == null ? '' : String(modelId));
+                loadProcessVersions(modelId, versionId);
+                updateProcessModelValidity();
+            })
+            .fail(function (xhr, status, errorThrown) {
+                showCustomActionError(errorThrown || status, 'processi-gestione.loadModels');
+            })
+            .always(function () {
+                processModelsLoading = false;
+                $modelSelect.prop('disabled', false);
+                updateProcessModelValidity();
+            });
+    }
+
+    $processSwitch.on('change.processi-models', function () {
+        $modelFields.toggle(this.checked);
+        updateProcessModelValidity();
+        if (this.checked) {
+            loadProcessModels();
+        } else {
+            $modelSelect.prop('required', false).removeClass('is-valid is-invalid');
+            $versionSelect.prop('required', false).removeClass('is-valid is-invalid');
+            $modelFields.find('label').removeClass('processi-required-label');
+        }
+    });
+    $modelSelect.on('change.processi-models', function () {
+        $modelSelect.data('selectedModel', this.value || null);
+        $versionSelect.removeData('selectedVersion');
+        updateProcessModelValidity();
+        loadProcessVersions(this.value, null);
+    });
+    $versionSelect.on('change.processi-models', updateProcessModelValidity);
+    updateProcessModelValidity();
 
     var $customActionsModal = $('#processi-custom-actions-modal');
     var $customActionsList = $customActionsModal.find('.processi-custom-actions-list');
@@ -322,6 +526,22 @@ $(function () {
                     var value = process[$(this).data('field')];
                     $(this).prop('checked', value === true || value === 1 || value === '1');
                 });
+                var processIsEnabled = process.IsProcess === true ||
+                    process.IsProcess === 1 || process.IsProcess === '1';
+                processVersionRequestId++;
+                $modelSelect.data('selectedModel', process.IDModello);
+                $versionSelect.data('selectedVersion', process.IDVersione);
+                $modelSelect.val(
+                    processModelsLoaded && process.IDModello != null
+                        ? String(process.IDModello)
+                        : ''
+                );
+                setVersionPlaceholder();
+                $versionSelect.prop('disabled', true);
+                $processSwitch.trigger('change');
+                if (!processIsEnabled && process.IDModello != null) {
+                    loadProcessModels(process.IDModello, process.IDVersione);
+                }
                 $descriptionControl.multiLanguageTextBox('load', {
                     IT: process.Text_IT || process.Descrizione || '',
                     GB: process.Text_GB || '',
@@ -372,6 +592,13 @@ $(function () {
             ' #processi-edit-object-name, #processi-edit-object-pk, #processi-edit-object-fk'
         ).val('');
         $processEditModal.find('.processi-edit-bit').prop('checked', false);
+        processVersionRequestId++;
+        $modelSelect.removeData('selectedModel').val('');
+        $versionSelect.removeData('selectedVersion');
+        setVersionPlaceholder();
+        $versionSelect.prop('disabled', true);
+        $modelFields.hide();
+        $processSwitch.trigger('change');
         $processEditModal.find('.processi-edit-fields').show();
         $processEditLoading.hide();
         bootstrap.Modal.getOrCreateInstance($processEditModal[0]).show();
@@ -420,6 +647,22 @@ $(function () {
             return;
         }
 
+        if (!updateProcessModelValidity()) {
+            $modelFields.find('.is-invalid:enabled').first().trigger('focus');
+            return;
+        }
+
+        if ($processSwitch.prop('checked') && $versionSelect.val()) {
+            var selectedVersionHasFields = $versionSelect.find(':selected').data('dataIstanza');
+            if (selectedVersionHasFields == null || selectedVersionHasFields === '') {
+                ShowError(
+                    processSelectorText.versionWithoutFields,
+                    'processi-gestione.saveProcess'
+                );
+                return;
+            }
+        }
+
         var $parentSelect = $processEditModal.find('#processi-edit-parent');
         if ($processEditModal.data('mode') === 'create' && !$parentSelect.val()) {
             $parentSelect.addClass('is-invalid');
@@ -434,6 +677,8 @@ $(function () {
 
         var process = {
             IDProcessoParent: $processEditModal.find('#processi-edit-parent').val(),
+            IDModello: $modelSelect.val() || null,
+            IDVersione: $versionSelect.val() || null,
             Descriptions: descriptions,
             PageUrl: $processEditModal.find('#processi-edit-page-url').val(),
             PageUrlVendor: $processEditModal.find('#processi-edit-page-url-vendor').val(),

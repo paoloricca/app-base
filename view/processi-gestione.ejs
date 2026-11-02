@@ -272,6 +272,49 @@
                                         <% if (user.LanguageContext == "CN") { %>流程<% } %>
                                     </label>
                                     <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsProcess" data-field="IsProcess"></div>
+                                    <div class="processi-edit-model-fields mt-2" style="display:none;">
+                                        <div class="mb-2">
+                                            <label class="form-label" for="processi-edit-model">
+                                                <% if (user.LanguageContext == "IT") { %>Form<% } %>
+                                                <% if (user.LanguageContext == "GB") { %>Form<% } %>
+                                                <% if (user.LanguageContext == "ES") { %>Formulario<% } %>
+                                                <% if (user.LanguageContext == "CN") { %>表单<% } %>
+                                            </label>
+                                            <select class="form-select" id="processi-edit-model">
+                                                <option value="">
+                                                    <% if (user.LanguageContext == "IT") { %>Seleziona un form<% } %>
+                                                    <% if (user.LanguageContext == "GB") { %>Select a form<% } %>
+                                                    <% if (user.LanguageContext == "ES") { %>Seleccione un formulario<% } %>
+                                                    <% if (user.LanguageContext == "CN") { %>选择表单<% } %>
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label" for="processi-edit-version">
+                                                <% if (user.LanguageContext == "IT") { %>Versioni<% } %>
+                                                <% if (user.LanguageContext == "GB") { %>Versions<% } %>
+                                                <% if (user.LanguageContext == "ES") { %>Versiones<% } %>
+                                                <% if (user.LanguageContext == "CN") { %>版本<% } %>
+                                            </label>
+                                            <select class="form-select" id="processi-edit-version" disabled>
+                                                <option value="">
+                                                    <% if (user.LanguageContext == "IT") { %>Seleziona una versione<% } %>
+                                                    <% if (user.LanguageContext == "GB") { %>Select a version<% } %>
+                                                    <% if (user.LanguageContext == "ES") { %>Seleccione una versión<% } %>
+                                                    <% if (user.LanguageContext == "CN") { %>选择版本<% } %>
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="processi-edit-HasWorkflow">
+                                        <% if (user.LanguageContext == "IT") { %>Ha workflow<% } %>
+                                        <% if (user.LanguageContext == "GB") { %>Has workflow<% } %>
+                                        <% if (user.LanguageContext == "ES") { %>Tiene workflow<% } %>
+                                        <% if (user.LanguageContext == "CN") { %>启用工作流<% } %>
+                                    </label>
+                                    <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-HasWorkflow" data-field="HasWorkflow"></div>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label" for="processi-edit-IsSystemConfiguration">
@@ -299,15 +342,6 @@
                                         <% if (user.LanguageContext == "CN") { %>供应商<% } %>
                                     </label>
                                     <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-IsVendor" data-field="IsVendor"></div>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label" for="processi-edit-HasWorkflow">
-                                        <% if (user.LanguageContext == "IT") { %>Ha workflow<% } %>
-                                        <% if (user.LanguageContext == "GB") { %>Has workflow<% } %>
-                                        <% if (user.LanguageContext == "ES") { %>Tiene workflow<% } %>
-                                        <% if (user.LanguageContext == "CN") { %>启用工作流<% } %>
-                                    </label>
-                                    <div class="form-check form-switch d-flex align-items-center gap-2"><input class="form-check-input processi-edit-bit" type="checkbox" id="processi-edit-HasWorkflow" data-field="HasWorkflow"></div>
                                 </div>
                             </div>
                         </div>

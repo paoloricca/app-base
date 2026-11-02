@@ -224,7 +224,16 @@ function GetForms(myRequest) {
     var myLanguageContext = myRequest.LanguageContext;
     var myOffsetRows = myRequest.OffsetRows;
     var myNextRows = myRequest.NextRows;
-    var myFilter = myRequest.Filter;
+    var myFilter = myRequest.Filter || '';
+    myIdAttore = Number(myIdAttore);
+
+    if (!Number.isInteger(myIdAttore) || myIdAttore <= 0) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid actor ID', 'ValidationError', '')
+        ));
+    }
+
+    myFilter += ' AND IDAttore = ' + myIdAttore;
 
     const customPromise = new Promise((resolve, reject) => {
         try {

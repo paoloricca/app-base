@@ -72,6 +72,45 @@ processi.post('/processi-gestione', function (req, res) {
         });
     }
 });
+processi.get('/processi-gestione/modelli', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        crud.GetProcessiModelOptions({
+            IdAttore: req.session.user.IdAttore,
+            LanguageContext: req.session.user.LanguageContext
+        }).then(models => {
+            res.status(200).json(
+                new response('OK', JSON.parse(models), null)
+            );
+        }).catch(err => {
+            let error = err;
+            try {
+                error = JSON.parse(err);
+            } catch (parseError) {
+            }
+            res.status(200).json(new response('ERR', null, error));
+        });
+    }
+});
+processi.get('/processi-gestione/modelli/:IdModello/versioni', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        crud.GetProcessiModelVersions({
+            IdModello: req.params.IdModello
+        }).then(versions => {
+            res.status(200).json(
+                new response('OK', JSON.parse(versions), null)
+            );
+        }).catch(err => {
+            let error = err;
+            try {
+                error = JSON.parse(err);
+            } catch (parseError) {
+            }
+            res.status(200).json(new response('ERR', null, error));
+        });
+    }
+});
 processi.get('/processi-gestione/:IdProcesso', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {
         res.set('Access-Control-Allow-Origin', '*');

@@ -186,7 +186,8 @@ function GetProcessiManagementDetails(myRequest) {
                 const request = new sql.Request();
                 request.input('IdProcesso', sql.Int, processId);
                 request.query(
-                    `SELECT P.IDProcesso, P.IDProcessoParent, P.Descrizione,
+                    `SELECT P.IDProcesso, P.IDProcessoParent, P.IDModello, P.IDVersione,
+                            P.Descrizione,
                             P.PageUrl, P.PageUrlVendor, P.Parameters, P.ImageUrl,
                             P.Ordine, P.IsPublic, P.IsMenu, P.IsSystemConfiguration,
                             P.IsChannel, P.IsVendor, P.IsProcess, P.HasWorkflow,
@@ -298,6 +299,108 @@ function GetProcessiParentOptions(myRequest) {
         }
     });
 }
+function GetProcessiModelOptions(myRequest) {
+    const sender = arguments.callee.name;
+    const actorId = Number(myRequest.IdAttore);
+    const descriptionColumns = {
+        IT: 'Description_IT',
+        GB: 'Description_GB',
+        ES: 'Description_ES',
+        CN: 'Description_CN'
+    };
+    const descriptionColumn = descriptionColumns[myRequest.LanguageContext];
+
+    if (!Number.isInteger(actorId) || actorId <= 0 || !descriptionColumn) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid actor ID or language context', 'ValidationError', '')
+        ));
+    }
+
+    return new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                    return;
+                }
+
+                const request = new sql.Request();
+                request.input('IdAttore', sql.Int, actorId);
+                request.query(
+                    `SELECT IDModello,
+                            COALESCE(NULLIF([${descriptionColumn}], N''),
+                                     NULLIF(Description_IT, N'')) AS Description
+                     FROM dbo.TModelli
+                     WHERE IDAttore = @IdAttore
+                       AND IsVisible = 1
+                     ORDER BY IDModello`,
+                    function (queryError, result) {
+                        if (queryError) {
+                            reject(JSON.stringify(
+                                new exception(sender, queryError.message, queryError.name, queryError.stack))
+                            );
+                            return;
+                        }
+
+                        resolve(JSON.stringify(result.recordset));
+                    }
+                );
+            });
+        } catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+}
+function GetProcessiModelVersions(myRequest) {
+    const sender = arguments.callee.name;
+    const modelId = Number(myRequest.IdModello);
+
+    if (!Number.isInteger(modelId) || modelId <= 0) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid model ID', 'ValidationError', '')
+        ));
+    }
+
+    return new Promise((resolve, reject) => {
+        try {
+            sql.connect(connection, function (err) {
+                if (err) {
+                    reject(JSON.stringify(
+                        new exception(sender, err.message, err.name, err.stack))
+                    );
+                    return;
+                }
+
+                const request = new sql.Request();
+                request.input('IdModello', sql.Int, modelId);
+                request.query(
+                    `SELECT IDVersione, IDModello, Numero, DataIstanza
+                     FROM dbo.TModelliVersioni
+                     WHERE IDModello = @IdModello
+                     ORDER BY Numero DESC, IDVersione DESC`,
+                    function (queryError, result) {
+                        if (queryError) {
+                            reject(JSON.stringify(
+                                new exception(sender, queryError.message, queryError.name, queryError.stack))
+                            );
+                            return;
+                        }
+
+                        resolve(JSON.stringify(result.recordset));
+                    }
+                );
+            });
+        } catch (err) {
+            reject(JSON.stringify(
+                new exception(sender, err.message, err.name, err.stack))
+            );
+        }
+    });
+}
 function UpdateProcessiManagement(myRequest) {
     const sender = arguments.callee.name;
     const processId = Number(myRequest.IdProcesso);
@@ -324,13 +427,22 @@ function UpdateProcessiManagement(myRequest) {
     const parentId = process.IDProcessoParent == null || process.IDProcessoParent === ''
         ? null
         : Number(process.IDProcessoParent);
+    const modelId = process.IDModello == null || process.IDModello === ''
+        ? null
+        : Number(process.IDModello);
+    const versionId = process.IDVersione == null || process.IDVersione === ''
+        ? null
+        : Number(process.IDVersione);
     const order = process.Ordine == null || process.Ordine === ''
         ? null
         : Number(process.Ordine);
     if ((parentId !== null && (!Number.isInteger(parentId) || parentId <= 0)) ||
+        (modelId !== null && (!Number.isInteger(modelId) || modelId <= 0)) ||
+        (versionId !== null && (!Number.isInteger(versionId) || versionId <= 0)) ||
+        (versionId !== null && modelId === null) ||
         (order !== null && !Number.isInteger(order))) {
         return Promise.reject(JSON.stringify(
-            new exception(sender, 'Invalid parent process or order', 'ValidationError', '')
+            new exception(sender, 'Invalid parent process, model, version, or order', 'ValidationError', '')
         ));
     }
 
@@ -397,6 +509,8 @@ function UpdateProcessiManagement(myRequest) {
                 const request = new sql.Request();
                 request.input('IdProcesso', sql.Int, processId);
                 request.input('IdProcessoParent', sql.Int, parentId);
+                request.input('IdModello', sql.Int, modelId);
+                request.input('IdVersione', sql.Int, versionId);
                 request.input('Descrizione', sql.VarChar(30), descriptions.IT);
                 request.input('PageUrl', sql.VarChar(50), fields.PageUrl);
                 request.input('PageUrlVendor', sql.VarChar(50), fields.PageUrlVendor);
@@ -428,6 +542,15 @@ function UpdateProcessiManagement(myRequest) {
                      IF @IdProcessoParent IS NOT NULL AND
                         NOT EXISTS (SELECT 1 FROM dbo.TProcessi WHERE IDProcesso = @IdProcessoParent)
                          THROW 50002, 'Parent process was not found.', 1;
+                     IF @IdModello IS NOT NULL AND
+                        NOT EXISTS (SELECT 1 FROM dbo.TModelli WHERE IDModello = @IdModello)
+                         THROW 50004, 'Selected model was not found.', 1;
+                     IF @IdVersione IS NOT NULL AND
+                        NOT EXISTS (
+                            SELECT 1 FROM dbo.TModelliVersioni
+                            WHERE IDVersione = @IdVersione AND IDModello = @IdModello
+                        )
+                         THROW 50005, 'Selected version does not belong to the selected model.', 1;
 
                      DECLARE @InvalidParent BIT = 0;
                      ;WITH Descendants AS (
@@ -449,6 +572,8 @@ function UpdateProcessiManagement(myRequest) {
 
                      UPDATE dbo.TProcessi
                      SET IDProcessoParent = @IdProcessoParent,
+                         IDModello = @IdModello,
+                         IDVersione = @IdVersione,
                          Descrizione = @Descrizione,
                          PageUrl = @PageUrl,
                          PageUrlVendor = @PageUrlVendor,
@@ -528,13 +653,22 @@ function CreateProcessiManagement(myRequest) {
     }
 
     const parentId = Number(process.IDProcessoParent);
+    const modelId = process.IDModello == null || process.IDModello === ''
+        ? null
+        : Number(process.IDModello);
+    const versionId = process.IDVersione == null || process.IDVersione === ''
+        ? null
+        : Number(process.IDVersione);
     const order = process.Ordine == null || process.Ordine === ''
         ? null
         : Number(process.Ordine);
     if (!Number.isInteger(parentId) || parentId <= 0 ||
+        (modelId !== null && (!Number.isInteger(modelId) || modelId <= 0)) ||
+        (versionId !== null && (!Number.isInteger(versionId) || versionId <= 0)) ||
+        (versionId !== null && modelId === null) ||
         (order !== null && !Number.isInteger(order))) {
         return Promise.reject(JSON.stringify(
-            new exception(sender, 'A valid parent process and order are required', 'ValidationError', '')
+            new exception(sender, 'A valid parent process, model, version, and order are required', 'ValidationError', '')
         ));
     }
 
@@ -600,6 +734,8 @@ function CreateProcessiManagement(myRequest) {
 
                 const request = new sql.Request();
                 request.input('IdProcessoParent', sql.Int, parentId);
+                request.input('IdModello', sql.Int, modelId);
+                request.input('IdVersione', sql.Int, versionId);
                 request.input('Descrizione', sql.VarChar(30), descriptions.IT);
                 request.input('PageUrl', sql.VarChar(50), fields.PageUrl);
                 request.input('PageUrlVendor', sql.VarChar(50), fields.PageUrlVendor);
@@ -631,15 +767,24 @@ function CreateProcessiManagement(myRequest) {
                          WHERE IDProcesso = @IdProcessoParent
                      )
                          THROW 50002, 'Parent process was not found.', 1;
+                     IF @IdModello IS NOT NULL AND
+                        NOT EXISTS (SELECT 1 FROM dbo.TModelli WHERE IDModello = @IdModello)
+                         THROW 50004, 'Selected model was not found.', 1;
+                     IF @IdVersione IS NOT NULL AND
+                        NOT EXISTS (
+                            SELECT 1 FROM dbo.TModelliVersioni
+                            WHERE IDVersione = @IdVersione AND IDModello = @IdModello
+                        )
+                         THROW 50005, 'Selected version does not belong to the selected model.', 1;
 
                      INSERT INTO dbo.TProcessi (
-                         IDProcessoParent, Descrizione, PageUrl, PageUrlVendor,
+                         IDProcessoParent, IDModello, IDVersione, Descrizione, PageUrl, PageUrlVendor,
                          Parameters, ImageUrl, Ordine, IsPublic, IsMenu,
                          IsSystemConfiguration, IsChannel, IsVendor, IsProcess,
                          HasWorkflow, LinkedObject, ObjectName, ObjectPk, ObjectFk
                      )
                      VALUES (
-                         @IdProcessoParent, @Descrizione, @PageUrl, @PageUrlVendor,
+                         @IdProcessoParent, @IdModello, @IdVersione, @Descrizione, @PageUrl, @PageUrlVendor,
                          @Parameters, @ImageUrl, @Ordine, @IsPublic, @IsMenu,
                          @IsSystemConfiguration, @IsChannel, @IsVendor, @IsProcess,
                          @HasWorkflow, @LinkedObject, @ObjectName, @ObjectPk, @ObjectFk
@@ -1147,6 +1292,8 @@ module.exports = {
     GetProcessiManagement,
     GetProcessiManagementDetails,
     GetProcessiParentOptions,
+    GetProcessiModelOptions,
+    GetProcessiModelVersions,
     UpdateProcessiManagement,
     CreateProcessiManagement,
     DeleteProcessiManagement,
