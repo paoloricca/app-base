@@ -881,6 +881,9 @@
                 /* Valorizza il campo <Obbligatorio> */
                 plugin.find("#Obbligatorio").prop("checked", campo.Obbligatorio);
 
+                plugin.find("#IsFilter").prop("checked", campo.IsFilter === true || campo.IsFilter === 1);
+                plugin.find("#IsSummary").prop("checked", campo.IsSummary === true || campo.IsSummary === 1);
+
                 plugin.find("#Lunghezza").val(campo.Lunghezza);
 
                 plugin.find("#NumeroRighe").val(campo.NumeroRighe);
@@ -982,6 +985,8 @@
                         ValoreMinimo: plugin.find('#ValoreMinimo').val(),
                         Visibile: plugin.find('#Visibile').prop('checked'),
                         Obbligatorio: plugin.find('#Obbligatorio').prop('checked'),
+                        IsFilter: plugin.find('#IsFilter').prop('checked'),
+                        IsSummary: plugin.find('#IsSummary').prop('checked'),
                         Description_IT: CtlTxtDescrizione.value.IT,
                         Description_GB: CtlTxtDescrizione.value.GB,
                         Description_ES: CtlTxtDescrizione.value.ES,
@@ -1289,6 +1294,8 @@
                                 "IDClasse": $(this).data('idclasse'),
                                 "Visibile": true,
                                 "Obbligatorio": false,
+                                "IsFilter": false,
+                                "IsSummary": false,
                                 "IDTipoDati": null,
                                 "ValoreMinimo": null,
                                 "Peso": null,

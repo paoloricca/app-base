@@ -64,6 +64,28 @@
                         <input id="Obbligatorio" name="Obbligatorio" class="form-check-input btn-toggle-" type="checkbox">
                     </div>
                 </div>
+                <div class="col-1 p-0">
+                    <h5 class="f-roboto-b text-primary">
+                        <% if (user.LanguageContext == "IT") { %>Filtro<% } %>
+                        <% if (user.LanguageContext == "GB") { %>Filter<% } %>
+                        <% if (user.LanguageContext == "ES") { %>Filtro<% } %>
+                        <% if (user.LanguageContext == "CN") { %>筛选<% } %>
+                    </h5>
+                    <div class="col-12 p-0 form-switch">
+                        <input id="IsFilter" name="IsFilter" class="form-check-input btn-toggle-" type="checkbox">
+                    </div>
+                </div>
+                <div class="col-1 p-0">
+                    <h5 class="f-roboto-b text-primary">
+                        <% if (user.LanguageContext == "IT") { %>Riepilogo<% } %>
+                        <% if (user.LanguageContext == "GB") { %>Summary<% } %>
+                        <% if (user.LanguageContext == "ES") { %>Resumen<% } %>
+                        <% if (user.LanguageContext == "CN") { %>汇总<% } %>
+                    </h5>
+                    <div class="col-12 p-0 form-switch">
+                        <input id="IsSummary" name="IsSummary" class="form-check-input btn-toggle-" type="checkbox">
+                    </div>
+                </div>
                 <div class="col-12 p-0 mb-2">
                     <h5 class="f-roboto-b text-primary">
                         <% if (user.LanguageContext == "IT") { %>
