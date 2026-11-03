@@ -23,56 +23,47 @@
         };
         $.fn.workflowhistory.loadHistory = function (plugin) {
 
-            //console.log(plugin);
             var optionsWorkflowHistory = JSON.parse(plugin.attr('data-options'));
+            var ready = plugin.data('workflowhistoryReady');
+            if (!ready) {
+                return $.Deferred().reject(new Error('Workflow history control is not initialized.')).promise();
+            }
 
-            /* Carica la lista di azioni disponibili */
-            $.ajax({
-                url: "/workflow-history/" + optionsWorkflowHistory.IdRecord,
-                type: "POST",
-                data: {
-                    IdProcesso: optionsWorkflowHistory.IdProcesso,
-                },
-            }).done(function (response) {
-                if (response.status == "ERR") {
-                    ShowError(
-                        response.error.message,
-                        response.error.sender
-                    );
-                } else if (response.status == "OK") {
-
-                    plugin.find('.container-workflow-history-' + optionsWorkflowHistory.IdRecord).empty();
-
-                    $.when(
-                        $.get("/controls/ui/control.ui.workflow.history.flow.ejs?" + Date.now(),
-                            function (templateString) {
-                            })
-                    ).then(function (templateString, textStatus, jqXHR) {
-                        if (response.data) {
-                            $.each(response.data, function (key, flowhistory) {
-
-                                var optionsWorkflowHistory = JSON.parse(plugin.attr('data-options'));
-                                var LanguageContext = optionsWorkflowHistory.LanguageContext;
-
-                                var partialToRender = ejs.render(templateString, { flowhistory, LanguageContext });
-
-                                plugin.find('.container-workflow-history-' + optionsWorkflowHistory.IdRecord).append(partialToRender);
-
-                                //plugin.find('.container-workflow-actions-' + optionsWorkflowHistory.IdRecord).find('.btn-action-workflow-' + action.IDProcessoAzione).click(function () {
-
-                                //    plugin.workflow[$(this).data('actionname')](plugin);
-
-                                //});
-
-                            });
-                        }
-                    });
+            return ready.then(function () {
+                return $.ajax({
+                    url: "/workflow-history/" + optionsWorkflowHistory.IdRecord,
+                    type: "POST",
+                    data: {
+                        IdProcesso: optionsWorkflowHistory.IdProcesso,
+                    },
+                });
+            }).then(function (response) {
+                if (response.status !== "OK") {
+                    var error = response.error || {};
+                    ShowError(error.message || 'Unable to load workflow history.', error.sender || 'loadHistory');
+                    return $.Deferred().reject(error).promise();
                 }
-            }).fail(function (xhr, status, error) {
-                ShowError(
-                    xhr.responseText,
-                    'loadHistory'
-                );
+
+                var $history = plugin.find('.container-workflow-history-' + optionsWorkflowHistory.IdRecord).empty();
+                if (!response.data || response.data.length === 0) {
+                    return plugin;
+                }
+
+                return $.get("/controls/ui/control.ui.workflow.history.flow.ejs?" + Date.now())
+                    .then(function (templateString) {
+                        $.each(response.data, function (key, flowhistory) {
+                            var partialToRender = ejs.render(templateString, {
+                                flowhistory: flowhistory,
+                                LanguageContext: optionsWorkflowHistory.LanguageContext
+                            });
+                            $history.append(partialToRender);
+                        });
+                        return plugin;
+                    });
+            }).fail(function (xhr) {
+                if (xhr && xhr.statusText) {
+                    ShowError(xhr.responseText || xhr.statusText, 'loadHistory');
+                }
             });
         };
 
@@ -83,15 +74,11 @@
 
 
         /* load plugin template */
-        $.when(
-            $.get("/controls/ui/control.ui.workflow.history.ejs?" + Date.now(),
-                function (templateString) {
-                })
-        ).then(function (templateString, textStatus, jqXHR) {
-
-            /* render plugin template */
+        var ready = $.get("/controls/ui/control.ui.workflow.history.ejs?" + Date.now())
+            .then(function (templateString) {
             renderTemplate(templateString);
         });
+        plugin.data('workflowhistoryReady', ready);
 
         function renderTemplate(templateString) {
 

@@ -306,9 +306,26 @@ processi.get('/menu-child/:IdProcesso', function (req, res) {
             req.body
         );
         crud.GetMenuChild(myRequest).then(listOf => {
-            res.status(200).json(
-                new response('OK', JSON.parse(listOf), null)
-            );
+            var childProcesses = JSON.parse(listOf);
+            if (!Array.isArray(childProcesses)) {
+                childProcesses = [];
+            }
+            return crud.GetMenuChildProcessMetadata(req.params.IdProcesso).then(metadata => {
+                var metadataByProcessId = new Map(
+                    JSON.parse(metadata).map(function (process) {
+                        return [Number(process.IDProcesso), process];
+                    })
+                );
+                childProcesses.forEach(function (child) {
+                    var processMetadata = metadataByProcessId.get(Number(child.IDProcesso));
+                    if (processMetadata) {
+                        child.IsProcess = processMetadata.IsProcess;
+                        child.IDModello = processMetadata.IDModello;
+                        child.IDVersione = processMetadata.IDVersione;
+                    }
+                });
+                res.status(200).json(new response('OK', childProcesses, null));
+            });
         }).catch(err => {
             res.status(200).json(new response('ERR', null, err));
         }).finally(() => {

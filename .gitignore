@@ -7,3 +7,9 @@ node_modules/
 .env
 .env.*
 !.env.example
+
+# Ignora tutto il contenuto della cartella
+files/*
+
+# Non ignorare il file .gitkeep (permette di salvare la cartella)
+!files/.gitkeep

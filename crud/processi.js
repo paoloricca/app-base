@@ -1287,6 +1287,48 @@ function GetMenuChild(myRequest) {
     return customPromise
 }
 
+function GetMenuChildProcessMetadata(IdProcessoParent) {
+    const sender = arguments.callee.name;
+    return new Promise((resolve, reject) => {
+        sql.connect(connection, function (connectionError) {
+            if (connectionError) {
+                reject(JSON.stringify(new exception(
+                    sender,
+                    connectionError.message,
+                    connectionError.name,
+                    connectionError.stack
+                )));
+                return;
+            }
+
+            const request = new sql.Request();
+            request.input('IdProcessoParent', sql.Int, Number(IdProcessoParent));
+            request.output('Status', sql.NVarChar(500));
+            request.execute('SP_GET_MENU_CHILD_PROCESS_METADATA', function (queryError, result) {
+                if (queryError) {
+                    reject(JSON.stringify(new exception(
+                        sender,
+                        queryError.message,
+                        queryError.name,
+                        queryError.stack
+                    )));
+                    return;
+                }
+                if (!result.output || result.output.Status !== 'OK') {
+                    reject(JSON.stringify(new exception(
+                        sender,
+                        result.output ? result.output.Status : 'Stored procedure returned no status.',
+                        'StoredProcedureError',
+                        ''
+                    )));
+                    return;
+                }
+                resolve(JSON.stringify(result.recordset || []));
+            });
+        });
+    });
+}
+
 module.exports = {
     GetProcessi,
     GetProcessiManagement,
@@ -1301,5 +1343,6 @@ module.exports = {
     SetProcessiCustomActionMapping,
     UpdateProcessiCustomActionTranslations,
     GetMenu,
-    GetMenuChild
+    GetMenuChild,
+    GetMenuChildProcessMetadata
 }

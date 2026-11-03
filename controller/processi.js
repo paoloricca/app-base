@@ -1,4 +1,19 @@
 $(function () {
+    function getMenuErrorMessage(error) {
+        if (error && typeof error === 'object') {
+            return error.message || JSON.stringify(error);
+        }
+        if (typeof error === 'string') {
+            try {
+                var parsedError = JSON.parse(error);
+                return parsedError.message || error;
+            } catch (parseError) {
+                return error;
+            }
+        }
+        return 'Impossibile caricare il menu.';
+    }
+
     laodMenuChild = function (IdProcesso, templateMenuParentString, templateMenuChildString) {
         try {
             return $.ajax({
@@ -8,18 +23,20 @@ $(function () {
             }).done(function (response) {
                 if (response.status == "ERR") {
                     ShowError(
-                        response.error.message,
+                        getMenuErrorMessage(response.error),
                         response.error.sender
                     );
-                } else if (response.status == "OK") {
-                    response.data;
+                    response.data = [];
+                } else if (response.status != "OK" || !Array.isArray(response.data)) {
+                    ShowError('Risposta non valida durante il caricamento del menu.', 'laodMenuChild');
+                    response.data = [];
                 }
             }).fail(function (xhr, status, errorThrown) {
+                ShowError(xhr.responseText || errorThrown || 'Impossibile caricare il menu.', 'laodMenuChild');
             }).always(function (xhr, status) {
-
             });
         } catch (err) {
-            ShowError(err);
+            ShowError(getMenuErrorMessage(err), 'laodMenuChild');
         }
     }
     loadMenuEach = function (childmenu, templateMenu, templateMenuParentString, templateMenuChildString, firstInit) {
@@ -39,11 +56,27 @@ $(function () {
         $.when(
             laodMenuChild(IDProcesso, templateMenuParentString, templateMenuChildString)
         ).then(function (response, textStatus, jqXHR) {
+            var childProcesses = response && Array.isArray(response.data)
+                ? response.data
+                : [];
+            if (childProcesses.length === 0) {
+                if (firstInit) {
+                    $('.menu').append($('.tempMenu').html());
+                }
+                $('.tempMenu').empty();
+                return;
+            }
 
-            if (response.data.length == 1) {
-                var childmenu = response.data[0];
+            if (childProcesses.length == 1) {
+                var childmenu = childProcesses[0];
                 $('#dropdown-' + IDProcesso).append('<ul class="dropdown-menu dropdown-menu-' + IDProcesso + '"></ul>');
-                if (eval(childmenu.CountChildProcess) > 0) {
+                if (childmenu.IsProcess && childmenu.IDModello != null && childmenu.IDVersione != null) {
+                    childmenu.PageUrl = 'dynamic-forms/' + childmenu.IDProcesso;
+                    templateMenu = templateMenuChildString;
+                    $('.dropdown-menu-' + IDProcesso).append(
+                        ejs.render(templateMenuChildString, { childmenu })
+                    );
+                } else if (eval(childmenu.CountChildProcess) > 0) {
                     templateMenu = templateMenuParentString;
                     $('.dropdown-menu-' + IDProcesso).append(
                         ejs.render(templateMenuParentString, { childmenu })
@@ -66,8 +99,14 @@ $(function () {
                 
             } else {
                 $('#dropdown-' + IDProcesso).append('<ul class="dropdown-menu dropdown-menu-' + IDProcesso + '"></ul>');
-                $.each(response.data, function (key, childmenu) {
-                    if (eval(childmenu.CountChildProcess) > 0) {
+                $.each(childProcesses, function (key, childmenu) {
+                    if (childmenu.IsProcess && childmenu.IDModello != null && childmenu.IDVersione != null) {
+                        childmenu.PageUrl = 'dynamic-forms/' + childmenu.IDProcesso;
+                        templateMenu = templateMenuChildString;
+                        $('.dropdown-menu-' + IDProcesso).append(
+                            ejs.render(templateMenuChildString, { childmenu })
+                        );
+                    } else if (eval(childmenu.CountChildProcess) > 0) {
                         templateMenu = templateMenuParentString;
                         $('.dropdown-menu-' + IDProcesso).append(
                             ejs.render(templateMenuParentString, { childmenu })
@@ -102,7 +141,7 @@ $(function () {
             }).done(function (response) {
                 if (response.status == "ERR") {
                     ShowError(
-                        response.error.message,
+                        getMenuErrorMessage(response.error),
                         response.error.sender
                     );
                 } else if (response.status == "OK") {

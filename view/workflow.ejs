@@ -25,6 +25,8 @@
     <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= user.LanguageContext %>" />
     <input type="hidden" name="IDOwner" id="IDOwner" value="<%= user.IdAttore %>" />
     <input type="hidden" name="OffsetRows" id="OffsetRows" value="0" />
+    <input type="hidden" name="IDVersioneWorkflow" id="IDVersioneWorkflow" value="<%= versionId || '' %>" />
+    <input type="hidden" name="IDProcessoWorkflow" id="IDProcessoWorkflow" value="<%= processId || '' %>" />
     <%- include('partials/header'); %>
     <div class="container-fluid p-0 px-4">
 
@@ -63,7 +65,7 @@
 </div-->
 
 
-        <div class="col-6 p-0 h-100">
+        <div class="col-6 p-0 h-100 <%= versionId ? 'd-none' : '' %>">
             <div class="card h-100 p-0">
                 <div class="card-header p-3 f-roboto">
                     <b>Processi</b>
@@ -80,7 +82,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h4 class="modal-title f-roboto b">
-                            Workflow
+                            <%= editorTitle || 'Workflow' %>
                         </h4>
                         <button type="button" class="btn-close btn-cancel-container-workflow" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -115,6 +117,7 @@
                                     設定所有者
                                 <% } %>
                             </span>
+                            <% if (!versionId || processId) { %>
                             <span class="col-12 p-0 px-2 workflow-set-auth app-context-menu-item">
                                 <i class="bi bi-person-lock"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
@@ -130,6 +133,7 @@
                                     設定權限
                                 <% } %>
                             </span>
+                            <% } %>
                             <span class="col-12 p-0 px-2 workflow-set-rel app-context-menu-item">
                                 <i class="bi bi-link-45deg"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
@@ -531,8 +535,8 @@
         </div>
 
         <div class="modal" id="container-workflow-node-link" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
-            <div class="modal-dialog modal-dialog-centered h-50" role="document">
-                <div class="modal-content h-50">
+            <div class="modal-dialog modal-dialog-centered workflow-node-link-dialog" role="document">
+                <div class="modal-content workflow-node-link-content">
                     <div class="modal-header">
                         <h5 class="modal-title text-primary">
                             <i class="bi bi-link-45deg"></i>
@@ -552,7 +556,7 @@
                         <span class="text-dark">&nbsp;(<span class="container-workflow-node-link-header f-roboto b"></span>)</span>
                         <button type="button" class="btn-close btn-cancel-container-workflow-node-link" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body workflow-node-link-body">
                         <h6 class="f-roboto text-secondary p-0 m-0"><i class="bi bi-question-circle"></i>&nbsp; 
 		                    <% if (user.LanguageContext == "IT") { %>
                                 Collega allo stato selezionato
@@ -568,14 +572,14 @@
                             <% } %>
                         </h6>
                         <div class="divider mt-3 mb-3"></div>
-                        <div class="control-workflow-node-link h-75" style="width:96%; overflow-y:scroll; position:absolute;"></div>
+                        <div class="control-workflow-node-link"></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="modal" id="container-workflow-node-states" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
-            <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-dialog modal-dialog-centered workflow-node-states-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title text-primary">
@@ -595,7 +599,7 @@
                         </h5>
                         <button type="button" class="btn-close btn-cancel-container-workflow-node-states" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body workflow-node-states-body">
                         <div class="control-workflow-node-states"></div>
                     </div>
                 </div>

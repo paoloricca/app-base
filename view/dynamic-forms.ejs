@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web APP DC - <%= process.Description %></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%- include('partials/head'); %>
+    <script type="text/javascript" src="/processi-script"></script>
+    <script type="text/javascript" src="/model-script"></script>
+    <script type="text/javascript" src="/control-model-script"></script>
+    <script type="text/javascript" src="/control-fileupload-script"></script>
+    <script type="text/javascript" src="/control-culture-textbox-script"></script>
+    <script type="text/javascript" src="/control-confirm-delete-script"></script>
+    <script type="text/javascript" src="/control-pager-script"></script>
+    <script type="text/javascript" src="/utility-script"></script>
+    <script type="text/javascript" src="/control-workflow-history-script"></script>
+    <script type="text/javascript" src="/dynamic-forms-script"></script>
+    <script type="text/javascript" src="/logout-script"></script>
+</head>
+<body class="forms-page">
+    <%- include('partials/header'); %>
+    <input type="hidden" id="LanguageContext" value="<%= user.LanguageContext %>">
+    <input type="hidden" id="user" value="<%= JSON.stringify(user) %>">
+    <input type="hidden" id="dynamic-process-id" value="<%= process.IDProcesso %>">
+    <input type="hidden" id="dynamic-model-id" value="<%= process.IDModello %>">
+    <input type="hidden" id="dynamic-version-id" value="<%= process.IDVersione %>">
+    <div class="container-fluid p-0 px-4 forms-heading">
+        <span class="bi bi-compass dynamic-process-compass" aria-hidden="true"></span>
+        <div class="dynamic-process-path">
+            <% if (user.LanguageContext == 'IT') { %>Sei in:<% } %>
+            <% if (user.LanguageContext == 'GB') { %>You are in:<% } %>
+            <% if (user.LanguageContext == 'ES') { %>Estás en:<% } %>
+            <% if (user.LanguageContext == 'CN') { %>您位于：<% } %>
+            <strong>
+                <% process.ProcessPath.split(' / ').forEach(function (processName, index, processNames) { %>
+                    <% if (index > 0) { %> / <% } %>
+                    <% if (index === processNames.length - 1) { %>
+                        <span class="dynamic-process-path-current"><%= processName %></span>
+                    <% } else { %>
+                        <span><%= processName %></span>
+                    <% } %>
+                <% }); %>
+            </strong>
+        </div>
+    </div>
+    <div class="container-fluid forms-layout dynamic-forms-layout">
+        <div class="filtro-container forms-filter">
+            <div class="card h-100 p-0">
+                <div class="card-header p-2 f-roboto">
+                    <button type="button" class="btn btn-light bi bi-arrow-left float-end btn-filter-close"
+                        data-bs-toggle="tooltip"
+                        data-bs-title="<% if (user.LanguageContext == 'IT') { %>Nascondi filtro<% } %><% if (user.LanguageContext == 'GB') { %>Hide filter<% } %><% if (user.LanguageContext == 'ES') { %>Ocultar filtro<% } %><% if (user.LanguageContext == 'CN') { %>隐藏筛选器<% } %>"></button>
+                    <b>
+                        <% if (user.LanguageContext == 'IT') { %>Filtro di ricerca<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Search filter<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Filtro de búsqueda<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>搜索筛选器<% } %>
+                    </b>
+                </div>
+                <div class="card-body p-2 forms-filter-body">
+                    <div class="dynamic-form-filters"></div>
+                    <div class="forms-filter-actions p-3 pt-4">
+                        <button type="button" class="btn btn-secondary text-white w-100 dynamic-form-search">
+                            <% if (user.LanguageContext == 'IT') { %>Cerca<% } %>
+                            <% if (user.LanguageContext == 'GB') { %>Search<% } %>
+                            <% if (user.LanguageContext == 'ES') { %>Buscar<% } %>
+                            <% if (user.LanguageContext == 'CN') { %>搜索<% } %>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="result-container forms-results">
+            <div class="card h-100 p-0">
+                <div class="card-header p-2 f-roboto">
+                    <b>
+                        <% if (user.LanguageContext == 'IT') { %>Riepilogo<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Summary<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Resumen<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>摘要<% } %>
+                    </b>
+                    <span class="dynamic-form-insert-action"></span>
+                    <button type="button" class="btn btn-light bi bi-sliders float-end btn-filter-open"
+                        data-bs-toggle="tooltip"
+                        data-bs-title="<% if (user.LanguageContext == 'IT') { %>Visualizza filtro<% } %><% if (user.LanguageContext == 'GB') { %>Show filter<% } %><% if (user.LanguageContext == 'ES') { %>Mostrar filtro<% } %><% if (user.LanguageContext == 'CN') { %>显示筛选器<% } %>"></button>
+                </div>
+                <div class="card-body p-2 f-roboto">
+                    <div class="forms-results-content">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-xs dynamic-form-records-table">
+                                <thead><tr class="dynamic-form-records-heading"></tr></thead>
+                                <tbody class="dynamic-form-records"></tbody>
+                            </table>
+                        </div>
+                        <div class="text-center py-3 dynamic-form-empty d-none">
+                            <% if (user.LanguageContext == 'IT') { %>Nessun record trovato<% } %>
+                            <% if (user.LanguageContext == 'GB') { %>No records found<% } %>
+                            <% if (user.LanguageContext == 'ES') { %>No se encontraron registros<% } %>
+                            <% if (user.LanguageContext == 'CN') { %>未找到记录<% } %>
+                        </div>
+                    </div>
+                    <div class="forms-pager pager p-2 dynamic-form-pager"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="dynamic-form-editor" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <span class="dynamic-form-editor-title"></span> / <%= process.Description %>
+                        <span class="dynamic-form-editor-record-id"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container-dynamic-form-edit"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="dynamic-form-delete-confirm" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <% if (user.LanguageContext == 'IT') { %>Conferma eliminazione<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Confirm deletion<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Confirmar eliminación<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>确认删除<% } %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <% if (user.LanguageContext == 'IT') { %>Eliminare il record selezionato?<% } %>
+                    <% if (user.LanguageContext == 'GB') { %>Delete the selected record?<% } %>
+                    <% if (user.LanguageContext == 'ES') { %>¿Eliminar el registro seleccionado?<% } %>
+                    <% if (user.LanguageContext == 'CN') { %>确定删除所选记录吗？<% } %>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <% if (user.LanguageContext == 'IT') { %>Annulla<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Cancel<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Cancelar<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>取消<% } %>
+                    </button>
+                    <button type="button" class="btn btn-danger dynamic-form-delete-confirm">
+                        <% if (user.LanguageContext == 'IT') { %>Elimina<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Delete<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Eliminar<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>删除<% } %>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="dynamic-form-loading" class="dynamic-form-loading-overlay d-none" role="status" aria-live="polite">
+        <div class="dynamic-form-loading-content">
+            <span class="spinner-border text-primary" aria-hidden="true"></span>
+            <span>
+                <% if (user.LanguageContext == 'IT') { %>Caricamento in corso...<% } %>
+                <% if (user.LanguageContext == 'GB') { %>Loading...<% } %>
+                <% if (user.LanguageContext == 'ES') { %>Cargando...<% } %>
+                <% if (user.LanguageContext == 'CN') { %>加载中...<% } %>
+            </span>
+        </div>
+    </div>
+    <div class="modal fade" id="dynamic-form-workflow-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <% if (user.LanguageContext == 'IT') { %>Imposta Workflow<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Set workflow<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Establecer flujo de trabajo<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>设置工作流<% } %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="dynamic-form-workflow-transitions"></div>
+                    <div class="dynamic-form-workflow-note d-none mt-3">
+                        <label class="form-label" for="dynamic-form-workflow-note">
+                            <% if (user.LanguageContext == 'IT') { %>Nota<% } %>
+                            <% if (user.LanguageContext == 'GB') { %>Note<% } %>
+                            <% if (user.LanguageContext == 'ES') { %>Nota<% } %>
+                            <% if (user.LanguageContext == 'CN') { %>备注<% } %>
+                        </label>
+                        <textarea id="dynamic-form-workflow-note" class="form-control dynamic-form-workflow-note-input" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <% if (user.LanguageContext == 'IT') { %>Annulla<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Cancel<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Cancelar<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>取消<% } %>
+                    </button>
+                    <button type="button" class="btn btn-primary dynamic-form-workflow-apply" disabled>
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="dynamic-form-history-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered workflow-history-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title f-roboto b">
+                        <% if (user.LanguageContext == 'IT') { %>Visualizza storia<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>View history<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Ver historial<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>查看历史记录<% } %>
+                        &nbsp;(<span class="dynamic-form-history-record-id"></span>)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body workflow-history-modal-body">
+                    <div data-user="<%= JSON.stringify(user) %>" class="history dynamic-form-history"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web APP DC - Workflow</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%- include('partials/head'); %>
+    <script type="text/javascript" src="/processi-script"></script>
+    <script type="text/javascript" src="/control-culture-textbox-script"></script>
+    <script type="text/javascript" src="/utility-script"></script>
+    <script type="text/javascript" src="/workflow-catalog-script?<%= Date.now() %>"></script>
+    <script type="text/javascript" src="/logout-script"></script>
+</head>
+<body class="forms-page workflow-catalog-page">
+    <%- include('partials/header'); %>
+    <input type="hidden" id="LanguageContext" value="<%= user.LanguageContext %>">
+    <input type="hidden" id="workflow-catalog-user" value="<%= JSON.stringify(user) %>">
+    <div class="container-fluid p-0 px-4 forms-heading">
+        <span class="bi bi-compass dynamic-process-compass" aria-hidden="true"></span>
+        <div class="dynamic-process-path">
+            <% if (user.LanguageContext == 'IT') { %>Sei in:<% } %>
+            <% if (user.LanguageContext == 'GB') { %>You are in:<% } %>
+            <% if (user.LanguageContext == 'ES') { %>Estás en:<% } %>
+            <% if (user.LanguageContext == 'CN') { %>您位于：<% } %>
+            <strong>
+                <% processPath.split(' / ').forEach(function (processName, index, processNames) { %>
+                    <% if (index > 0) { %> / <% } %>
+                    <% if (index === processNames.length - 1) { %>
+                        <span class="dynamic-process-path-current"><%= processName %></span>
+                    <% } else { %>
+                        <span><%= processName %></span>
+                    <% } %>
+                <% }); %>
+            </strong>
+        </div>
+    </div>
+    <div class="container-fluid forms-layout dynamic-forms-layout">
+        <div class="filtro-container forms-filter">
+            <div class="card h-100 p-0">
+                <div class="card-header p-2 f-roboto">
+                    <b>
+                        <% if (user.LanguageContext == 'IT') { %>Filtro di ricerca<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Search filter<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Filtro de búsqueda<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>搜索筛选器<% } %>
+                    </b>
+                    <button type="button" class="btn btn-light bi bi-arrow-left btn-filter-close"
+                        data-bs-toggle="tooltip"
+                        data-bs-title="<% if (user.LanguageContext == 'IT') { %>Nascondi filtro<% } %><% if (user.LanguageContext == 'GB') { %>Hide filter<% } %><% if (user.LanguageContext == 'ES') { %>Ocultar filtro<% } %><% if (user.LanguageContext == 'CN') { %>隐藏筛选器<% } %>"></button>
+                </div>
+                <div class="card-body p-2 forms-filter-body">
+                    <div class="workflow-catalog-filters">
+                        <div class="mb-3">
+                            <label class="form-label" for="workflow-search">
+                                <% if (user.LanguageContext == 'IT') { %>Descrizione<% } %>
+                                <% if (user.LanguageContext == 'GB') { %>Description<% } %>
+                                <% if (user.LanguageContext == 'ES') { %>Descripción<% } %>
+                                <% if (user.LanguageContext == 'CN') { %>描述<% } %>
+                            </label>
+                            <input type="search" class="form-control" id="workflow-search" maxlength="1000" autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="workflow-visibility-filter">
+                                <% if (user.LanguageContext == 'IT') { %>Visibilità<% } %>
+                                <% if (user.LanguageContext == 'GB') { %>Visibility<% } %>
+                                <% if (user.LanguageContext == 'ES') { %>Visibilidad<% } %>
+                                <% if (user.LanguageContext == 'CN') { %>可见性<% } %>
+                            </label>
+                            <select class="form-select" id="workflow-visibility-filter">
+                                <option value="">
+                                    <% if (user.LanguageContext == 'IT') { %>Tutte<% } %>
+                                    <% if (user.LanguageContext == 'GB') { %>All<% } %>
+                                    <% if (user.LanguageContext == 'ES') { %>Todas<% } %>
+                                    <% if (user.LanguageContext == 'CN') { %>全部<% } %>
+                                </option>
+                                <option value="1">
+                                    <% if (user.LanguageContext == 'IT') { %>Visibili<% } %>
+                                    <% if (user.LanguageContext == 'GB') { %>Visible<% } %>
+                                    <% if (user.LanguageContext == 'ES') { %>Visibles<% } %>
+                                    <% if (user.LanguageContext == 'CN') { %>可见<% } %>
+                                </option>
+                                <option value="0">
+                                    <% if (user.LanguageContext == 'IT') { %>Nascosti<% } %>
+                                    <% if (user.LanguageContext == 'GB') { %>Hidden<% } %>
+                                    <% if (user.LanguageContext == 'ES') { %>Ocultos<% } %>
+                                    <% if (user.LanguageContext == 'CN') { %>隐藏<% } %>
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="forms-filter-actions p-3 pt-4">
+                        <button type="button" class="btn btn-secondary text-white w-100 workflow-catalog-search">
+                            <% if (user.LanguageContext == 'IT') { %>Cerca<% } %>
+                            <% if (user.LanguageContext == 'GB') { %>Search<% } %>
+                            <% if (user.LanguageContext == 'ES') { %>Buscar<% } %>
+                            <% if (user.LanguageContext == 'CN') { %>搜索<% } %>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="result-container forms-results">
+            <div class="card h-100 p-0">
+                <div class="card-header p-2 f-roboto">
+                    <b>
+                        <% if (user.LanguageContext == 'IT') { %>Riepilogo<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Summary<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Resumen<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>摘要<% } %>
+                    </b>
+                    <button type="button" class="btn btn-primary workflow-catalog-create">
+                        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                        <% if (user.LanguageContext == 'IT') { %>Nuovo<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>New<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Nuevo<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>新增<% } %>
+                    </button>
+                    <button type="button" class="btn btn-light bi bi-sliders btn-filter-open"
+                        data-bs-toggle="tooltip"
+                        data-bs-title="<% if (user.LanguageContext == 'IT') { %>Visualizza filtro<% } %><% if (user.LanguageContext == 'GB') { %>Show filter<% } %><% if (user.LanguageContext == 'ES') { %>Mostrar filtro<% } %><% if (user.LanguageContext == 'CN') { %>显示筛选器<% } %>"></button>
+                </div>
+                <div class="card-body p-2 f-roboto">
+                    <div class="forms-results-content">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-xs workflow-catalog-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>
+                                            <% if (user.LanguageContext == 'IT') { %>Descrizione<% } %>
+                                            <% if (user.LanguageContext == 'GB') { %>Description<% } %>
+                                            <% if (user.LanguageContext == 'ES') { %>Descripción<% } %>
+                                            <% if (user.LanguageContext == 'CN') { %>描述<% } %>
+                                        </th>
+                                        <th>
+                                            <% if (user.LanguageContext == 'IT') { %>Data Registrazione<% } %>
+                                            <% if (user.LanguageContext == 'GB') { %>Registration Date<% } %>
+                                            <% if (user.LanguageContext == 'ES') { %>Fecha de registro<% } %>
+                                            <% if (user.LanguageContext == 'CN') { %>登记日期<% } %>
+                                        </th>
+                                        <th>
+                                            <% if (user.LanguageContext == 'IT') { %>Visibilità<% } %>
+                                            <% if (user.LanguageContext == 'GB') { %>Visibility<% } %>
+                                            <% if (user.LanguageContext == 'ES') { %>Visibilidad<% } %>
+                                            <% if (user.LanguageContext == 'CN') { %>可见性<% } %>
+                                        </th>
+                                        <th class="text-end">
+                                            <% if (user.LanguageContext == 'IT') { %>Azioni<% } %>
+                                            <% if (user.LanguageContext == 'GB') { %>Actions<% } %>
+                                            <% if (user.LanguageContext == 'ES') { %>Acciones<% } %>
+                                            <% if (user.LanguageContext == 'CN') { %>操作<% } %>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="workflow-catalog-rows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="text-center py-3 workflow-catalog-empty d-none">
+                        <% if (user.LanguageContext == 'IT') { %>Nessun record trovato<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>No records found<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>No se encontraron registros<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>未找到记录<% } %>
+                    </div>
+                    <div class="forms-pager workflow-catalog-pager p-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="workflow-catalog-editor" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title workflow-editor-title"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="workflow-editor-id">
+                    <div class="workflow-description-control"></div>
+                    <div class="row g-3 mt-2">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="workflow-editor-visible" checked>
+                                <label class="form-check-label" for="workflow-editor-visible">
+                                    <% if (user.LanguageContext == 'IT') { %>Visibile<% } %>
+                                    <% if (user.LanguageContext == 'GB') { %>Visible<% } %>
+                                    <% if (user.LanguageContext == 'ES') { %>Visible<% } %>
+                                    <% if (user.LanguageContext == 'CN') { %>可见<% } %>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <% if (user.LanguageContext == 'IT') { %>Annulla<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Cancel<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Cancelar<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>取消<% } %>
+                    </button>
+                    <button type="button" class="btn btn-primary workflow-editor-save">
+                        <% if (user.LanguageContext == 'IT') { %>Salva<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Save<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Guardar<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>保存<% } %>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="workflow-versions-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <% if (user.LanguageContext == 'IT') { %>Versioni workflow<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Workflow versions<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Versiones del workflow<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>工作流版本<% } %>
+                        <span class="workflow-version-workflow-name"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-end mb-2">
+                        <button type="button" class="btn btn-primary workflow-version-create">
+                            <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                            <% if (user.LanguageContext == 'IT') { %>Nuova versione<% } %>
+                            <% if (user.LanguageContext == 'GB') { %>New version<% } %>
+                            <% if (user.LanguageContext == 'ES') { %>Nueva versión<% } %>
+                            <% if (user.LanguageContext == 'CN') { %>新增版本<% } %>
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-xs">
+                            <thead>
+                                <tr>
+                                    <th><% if (user.LanguageContext == 'IT') { %>Versione<% } %><% if (user.LanguageContext == 'GB') { %>Version<% } %><% if (user.LanguageContext == 'ES') { %>Versión<% } %><% if (user.LanguageContext == 'CN') { %>版本<% } %></th>
+                                    <th class="d-none d-md-table-cell"><% if (user.LanguageContext == 'IT') { %>Data Registrazione<% } %><% if (user.LanguageContext == 'GB') { %>Registration date<% } %><% if (user.LanguageContext == 'ES') { %>Fecha de registro<% } %><% if (user.LanguageContext == 'CN') { %>注册日期<% } %></th>
+                                    <th class="d-none d-md-table-cell"><% if (user.LanguageContext == 'IT') { %>Ultima modifica<% } %><% if (user.LanguageContext == 'GB') { %>Last modified<% } %><% if (user.LanguageContext == 'ES') { %>Última modificación<% } %><% if (user.LanguageContext == 'CN') { %>最后修改<% } %></th>
+                                    <th><% if (user.LanguageContext == 'IT') { %>Visibilità<% } %><% if (user.LanguageContext == 'GB') { %>Visibility<% } %><% if (user.LanguageContext == 'ES') { %>Visibilidad<% } %><% if (user.LanguageContext == 'CN') { %>可见性<% } %></th>
+                                    <th class="text-end"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="workflow-version-rows"></tbody>
+                        </table>
+                    </div>
+                    <div class="text-center py-3 workflow-version-empty d-none">
+                        <% if (user.LanguageContext == 'IT') { %>Nessuna versione disponibile<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>No versions available<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>No hay versiones disponibles<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>暂无版本<% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="workflow-version-editor-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-body p-0">
+                    <iframe class="workflow-version-editor-frame" title="Workflow editor" src="about:blank"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="workflow-catalog-loading" class="dynamic-form-loading-overlay d-none" role="status" aria-live="polite">
+        <div class="dynamic-form-loading-content">
+            <span class="spinner-border text-primary" aria-hidden="true"></span>
+            <span>
+                <% if (user.LanguageContext == 'IT') { %>Caricamento in corso...<% } %>
+                <% if (user.LanguageContext == 'GB') { %>Loading...<% } %>
+                <% if (user.LanguageContext == 'ES') { %>Cargando...<% } %>
+                <% if (user.LanguageContext == 'CN') { %>加载中...<% } %>
+            </span>
+        </div>
+    </div>
+</body>
+</html>

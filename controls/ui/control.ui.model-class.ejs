@@ -17,10 +17,10 @@
                 <% } %>
 			</div>
 		</div>
-		<div class="col-12 text-start p-0 f-roboto b p-2 mb-2 mt-2 ps-3 process-bg">
-            <a class="btn fs-3 bi bi-folder-minus btn-minus-plus-<%= row.IDClasse %> p-0 ps-1 pe-1 me-1">
-	        </a>
-            <a style="display: none;" class="btn btn-light bi bi-three-dots-vertical btn-actions btn-circle-xs m-0 float-end btn-edit-class-<%= row.IDClasse %> model-editor-menu-trigger"
+		<div class="col-12 text-start p-0 f-roboto b p-2 mb-2 mt-2 ps-3 process-bg model-section-header"
+            role="button" tabindex="0" aria-controls="model-class-attributes-<%= row.IDClasse %>" aria-expanded="true">
+            <span class="model-section-title"><%= row.Description %></span>
+            <a style="display: none;" class="btn btn-light bi bi-three-dots-vertical btn-actions workflow-context-menu-trigger m-0 ms-2 btn-edit-class-<%= row.IDClasse %> model-editor-menu-trigger"
 		        data-bs-toggle="dropdown"
 		        data-bs-placement="right">
 	        </a>
@@ -71,11 +71,9 @@
 			        </span>
 		        </li>
 	        </ul>
-
-            <%= row.Description %>
-
+            <span class="model-section-toggle btn btn-light btn-minus-plus-<%= row.IDClasse %>" aria-hidden="true"><i class="bi bi-folder-minus"></i></span>
 		</div>
-        <div class="model-class-<%= row.IDClasse %>-attributes"></div>
+        <div id="model-class-attributes-<%= row.IDClasse %>" class="model-class-<%= row.IDClasse %>-attributes"></div>
 	</div>
 
 </form>

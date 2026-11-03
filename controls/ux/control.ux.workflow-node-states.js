@@ -3,6 +3,7 @@
 
         let optionsWorkflow = $.extend({
             IdProcesso: null,
+            IDVersioneWorkflow: null,
             IdEventoTransizione: null,
             LanguageContext: null,
             Sender: null,
@@ -41,9 +42,12 @@
             var optionsWorkflow = JSON.parse(plugin.attr('data-options'));
             try {
                 $.ajax({
-                    url: "/workflow-node-states/" + optionsWorkflow.IdProcesso,
+                    url: optionsWorkflow.IDVersioneWorkflow
+                        ? "/workflow/api/versions/" + encodeURIComponent(optionsWorkflow.IDVersioneWorkflow) + "/states"
+                        : "/workflow-node-states/" + optionsWorkflow.IdProcesso,
                     type: "GET",
                     data: {},
+                    timeout: 15000,
                 }).done(function (response) {
                     plugin.find('.btn-confirm-container-workflow-node-states').prop('disabled', true);
 
@@ -60,16 +64,27 @@
                     }
 
                     plugin.find('.container-workflow-node-states').empty();
+                    var states = response.data;
+                    if (!Array.isArray(states)) {
+                        plugin.find('.spinner-workflow-node-states').hide();
+                        ShowError("Workflow states response is not a list", "workflowNodeStates.loadStates");
+                        return;
+                    }
 
                     var optionsWorkflow = JSON.parse(plugin.attr('data-options'));
                     $.get("/controls/ui/control.ui.workflow.node.state.ejs?" + Date.now())
                         .done(function (templateString) {
                             try {
-                                if (response.data && !Array.isArray(response.data)) {
-                                    throw new Error("Workflow states response is not a list");
-                                }
-
-                                $.each(response.data || [], function (key, state) {
+                                $.each(states, function (key, state) {
+                                    if (state.IdEventoTransizione == null) {
+                                        state.IdEventoTransizione = state.IDEventoTransizione;
+                                    }
+                                    if (state.Descrizione == null) {
+                                        state.Descrizione = state.desc || state.Text_IT || state.Text_GB || '';
+                                    }
+                                    if (state.HexColor == null) {
+                                        state.HexColor = '#3498db';
+                                    }
                                     var partialToRender = ejs.render(templateString, { state, optionsWorkflow });
                                     if (optionsWorkflow.SelectedState != null) {
                                         plugin.find('.btn-confirm-container-workflow-node-states').prop('disabled', false);
@@ -103,7 +118,10 @@
                         });
                 }).fail(function (xhr, status, errorThrown) {
                     plugin.find('.spinner-workflow-node-states').hide();
-                    ShowError(errorThrown || status, "workflowNodeStates.loadStates");
+                    ShowError(
+                        status === 'timeout' ? 'Timed out while loading workflow states' : (errorThrown || status),
+                        "workflowNodeStates.loadStates"
+                    );
                 });
             }
             catch (err) {

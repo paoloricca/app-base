@@ -7,6 +7,7 @@
             filenumber: null,
             filetypes: null,
             fileweight: null,
+            readOnly: false,
             onupload: null,
             ondelete: null,
             filetodelete: null
@@ -23,6 +24,9 @@
 
             /* get plugin attribute option */
             var options = JSON.parse(plugin.attr('data-options'));
+            if (options.readOnly) {
+                return;
+            }
 
             var filelist = "";
 
@@ -68,17 +72,34 @@
                 plugin.html($(response).html());
 
                 var options = JSON.parse(plugin.attr('data-options'));
+                if (options.readOnly) {
+                    plugin.find('.fileupload-add-control').hide();
+                }
 
                 /* Precaricamento file */
                 if (options.filelist != "") {
                     jQuery.each(options.filelist.substring(1).split('@'), function (i, fileString) {
                         var file = JSON.parse(fileString)
-                        plugin.find('.file-container').append(
-                            '<div id="' + file.newFilename + '" class="col-12 p-0 mb-0"><i data-id="' + file.newFilename + '" data-file="' + file.newFilename + '" class="btn px-3 bi bi-trash delete-file-' + file.newFilename + '"></i><a target="_blank" href="/files/' + file.newFilename + '.' + file.fileExtension + '">' + file.originalFilename + '</a></div>'
-                        );
-                        plugin.find('.delete-file-' + file.newFilename).click(function () {
-                            plugin.fileupload.DeleteFile($(this))
+                        var $file = $('<div>', {
+                            id: file.newFilename,
+                            class: 'col-12 p-0 mb-0'
                         });
+                        if (!options.readOnly) {
+                            var $delete = $('<i>', {
+                                'data-id': file.newFilename,
+                                'data-file': file.newFilename,
+                                class: 'btn px-3 bi bi-trash delete-file-' + file.newFilename
+                            }).on('click', function () {
+                                plugin.fileupload.DeleteFile($(this));
+                            });
+                            $file.append($delete);
+                        }
+                        $file.append($('<a>', {
+                            target: '_blank',
+                            href: '/files/' + file.newFilename + '.' + file.fileExtension,
+                            text: file.originalFilename
+                        }));
+                        plugin.find('.file-container').append($file);
                     });
                 }
 
@@ -86,12 +107,14 @@
 
                 /* raise plugin event */
                 plugin.find('#filetoupload').change(function (e) {
+                    var options = JSON.parse(plugin.attr('data-options'));
+                    if (options.readOnly) {
+                        return;
+                    }
 
                     if (this.files[0] != undefined) {
 
                         /* get plugin attribute option */
-                        var options = JSON.parse(plugin.attr('data-options'));
-
                         switch (user.LanguageContext) {
                             case "IT":
                                 strError = "File non valido";

@@ -22,7 +22,62 @@
         }, options);
 
         var plugin = $(this);
+        function toggleModelSection($header) {
+            var isExpanded = $header.attr('aria-expanded') === 'true';
+            var attributesId = $header.attr('aria-controls');
+            var $attributes = attributesId ? plugin.find('#' + attributesId) : $();
+            if (!$attributes.length) {
+                return;
+            }
+            $attributes.toggle(!isExpanded);
+            $header.attr('aria-expanded', String(!isExpanded))
+                .find('.model-section-toggle')
+                .html(isExpanded
+                    ? '<i class="bi bi-folder-plus"></i>'
+                    : '<i class="bi bi-folder-minus"></i>');
+        }
+        plugin.off('.modelSectionToggle');
+        plugin.on('click.modelSectionToggle', '.model-section-header', function (event) {
+            if ($(event.target).closest('.model-editor-menu-trigger, .model-editor-context-menu').length) {
+                return;
+            }
+            toggleModelSection($(this));
+        });
+        plugin.on('keydown.modelSectionToggle', '.model-section-header', function (event) {
+            if ((event.key === 'Enter' || event.key === ' ') &&
+                !$(event.target).closest('.model-editor-menu-trigger, .model-editor-context-menu').length) {
+                event.preventDefault();
+                toggleModelSection($(this));
+            }
+        });
         var attributesValuesList = [];
+        function modelApiUrl(options, endpoint) {
+            var apiBase = options && options.ApiBase
+                ? String(options.ApiBase).replace(/\/$/, '')
+                : '';
+            return apiBase + '/' + endpoint;
+        }
+        function modelApiRequest(options, endpoint, method, data) {
+            var request = $.ajax({
+                type: method,
+                url: modelApiUrl(options, endpoint),
+                data: data,
+                async: false
+            });
+            var response = request.responseJSON;
+
+            if (request.status < 200 || request.status >= 300 ||
+                (response && response.status === "ERR")) {
+                var error = response && response.error;
+                var message = error && (error.message || error);
+                throw new Error(typeof message === 'string'
+                    ? message
+                    : (request.responseText || request.statusText || "The process form request failed."));
+            }
+
+            return request.responseText;
+        }
+
         $.fn.model.draw = function () {
             var options = JSON.parse(plugin.attr('data-options'));
 
@@ -36,7 +91,7 @@
             labelNuovo.Description = labelNuovo['Description_' + options.user.LanguageContext];
 
             $.ajax({
-                url: "/model-class/" + options.IDVersione,
+                url: modelApiUrl(options, "model-class/" + options.IDVersione),
                 type: "GET",
                 data: {},
             }).done(function (response) {
@@ -65,14 +120,16 @@
 
                             if (options.Mode == 'edit') {
 
-                                /* Per ogni IDClasse, verifica l'esistenza di un record esistente */
-                                $.when(
-                                    plugin.model.getIDModelloIstanzaRecord(options.IDModelloIstanza, row.IDClasse)
-                                ).then(function (IDRecord, textStatus, jqXHR) {
-
-                                    plugin.model.loadAttributes(row.IDClasse, IDRecord)
-
-                                });
+                                if (options.IDModelloIstanza == null) {
+                                    plugin.model.loadAttributes(row.IDClasse, null);
+                                } else {
+                                    /* Per ogni IDClasse, verifica l'esistenza di un record esistente */
+                                    $.when(
+                                        plugin.model.getIDModelloIstanzaRecord(options.IDModelloIstanza, row.IDClasse)
+                                    ).then(function (IDRecord, textStatus, jqXHR) {
+                                        plugin.model.loadAttributes(row.IDClasse, IDRecord)
+                                    });
+                                }
                             } else {
 
                                 plugin.find('.btn-edit-class-' + row.IDClasse).show();
@@ -403,91 +460,80 @@
             }
         };
         $.fn.model.loadAttributeValues = function (IDAttributo) {
-            return $.ajax({
-                type: "GET",
-                url: "/model-class-attribute-values/" + IDAttributo,
-                async: false
-            }).responseText
+            return modelApiRequest(
+                JSON.parse(plugin.attr('data-options')),
+                "model-class-attribute-values/" + IDAttributo,
+                "GET"
+            );
         };
         $.fn.model.postIDModelloIstanza = function () {
             var options = JSON.parse(plugin.attr('data-options'));
-            return $.ajax({
-                type: "POST",
-                url: "/post-idmodello-istanza",
-                data: {
-                    IDCliente: options.user.IdAttore,
-                    IDVersione: options.IDVersione,
-                },
-                async: false
-            }).responseText
+            var instanceId = Number(modelApiRequest(options, "post-idmodello-istanza", "POST", {
+                IDCliente: options.user.IdAttore,
+                IDVersione: options.IDVersione
+            }));
+            if (!Number.isSafeInteger(instanceId) || instanceId <= 0) {
+                throw new Error("The server returned an invalid instance ID.");
+            }
+            return instanceId;
         };
         $.fn.model.postIDModelloIstanzaRecord = function (IdRecord, IdAttributo, RecordValue) {
             var options = JSON.parse(plugin.attr('data-options'));
-            return $.ajax({
-                type: "POST",
-                url: "/post-idmodello-istanza-record",
-                data: {
-                    IdRecord: IdRecord,
-                    IdAttributo: IdAttributo,
-                    RecordValue: RecordValue
-                },
-                async: false
-            }).responseText
+            var status = modelApiRequest(options, "post-idmodello-istanza-record", "POST", {
+                IdRecord: IdRecord,
+                IdAttributo: IdAttributo,
+                RecordValue: RecordValue
+            });
+            if (status !== "OK") {
+                throw new Error(status || "Unable to save the process form value.");
+            }
+            return status;
         };
         $.fn.model.postIDModelloIstanzaRecordMedia = function (IdRecord, IdAttributo, fileString) {
             var options = JSON.parse(plugin.attr('data-options'));
-            var file = JSON.parse(fileString)
-            //console.log("file JSON: " + file);
-            //console.log(file.originalFilename);
-            return $.ajax({
-                type: "POST",
-                url: "/post-idmodello-istanza-record-media",
-                data: {
-                    IdRecord: IdRecord,
-                    IdAttributo: IdAttributo,
-                    originalFilename: file.originalFilename,
-                    newFilename: file.newFilename,
-                    mimetype: file.mimetype
-                },
-                async: false
-            }).responseText
+            var file = JSON.parse(fileString);
+            var status = modelApiRequest(options, "post-idmodello-istanza-record-media", "POST", {
+                IdRecord: IdRecord,
+                IdAttributo: IdAttributo,
+                originalFilename: file.originalFilename,
+                newFilename: file.newFilename,
+                mimetype: file.mimetype
+            });
+            if (status !== "OK") {
+                throw new Error(status || "Unable to save the process form attachment.");
+            }
+            return status;
         };
         $.fn.model.deleteIDModelloIstanzaRecordMedia = function (IdRecord, IdAttributo, filelisttodelete) {
-            if (filelisttodelete != null) {
-                $.each(filelisttodelete.substring(1).split('@'), function (key, filetodelete) {
-                    return $.ajax({
-                        type: "DELETE",
-                        url: "/delete-idmodello-istanza-record-media",
-                        data: {
-                            filetodelete: filetodelete,
-                        },
-                    }).responseText
+            if (filelisttodelete) {
+                var options = JSON.parse(plugin.attr('data-options'));
+                filelisttodelete.substring(1).split('@').filter(Boolean).forEach(function (fileToDelete) {
+                    var status = modelApiRequest(options, "delete-idmodello-istanza-record-media", "DELETE", {
+                        filetodelete: fileToDelete
+                    });
+                    if (status !== "OK") {
+                        throw new Error(status || "Unable to delete the process form attachment.");
+                    }
                 });
             }
         };
         $.fn.model.getIDModelloIstanzaRecord = function (IDModelloIstanza, IDClasse) {
             var options = JSON.parse(plugin.attr('data-options'));
-            return $.ajax({
-                type: "POST",
-                url: "/get-idmodello-istanza-record",
-                data: {
-                    IDModelloIstanza: IDModelloIstanza,
-                    IDClasse: IDClasse,
-                },
-                async: false
-            }).responseText
+            var recordId = Number(modelApiRequest(options, "get-idmodello-istanza-record", "POST", {
+                IDModelloIstanza: IDModelloIstanza,
+                IDClasse: IDClasse
+            }));
+            if (!Number.isSafeInteger(recordId) || recordId <= 0) {
+                throw new Error("The server returned an invalid class record ID.");
+            }
+            return recordId;
         };
         $.fn.model.getIDModelloIstanzaRecordValue = function (IDRecord, IDAttributo) {
             var options = JSON.parse(plugin.attr('data-options'));
-            return $.ajax({
-                type: "POST",
-                url: "/get-idmodello-istanza-record-value",
-                data: {
-                    IdRecord: IDRecord,
-                    IdAttributo: IDAttributo,
-                },
-                async: false
-            }).responseText
+            return modelApiRequest(options, "get-idmodello-istanza-record-value", "POST", {
+                IdRecord: IDRecord,
+                IdAttributo: IDAttributo
+            });
         };
         $.fn.model.laodTipoDati = function () {
 
@@ -1030,7 +1076,7 @@
 
             $.when(
                 $.ajax({
-                    url: "/model-class-attribute/" + IdClasse,
+                    url: modelApiUrl(JSON.parse(plugin.attr('data-options')), "model-class-attribute/" + IdClasse),
                     type: "GET",
                     data: {},
                 }).done(function (response) {
@@ -1050,8 +1096,9 @@
 
                             if (options.Mode == 'edit') {
 
-                                $.when(
-                                    plugin.model.getIDModelloIstanzaRecordValue(IDRecord, row.IDAttributo)
+                                $.when(IDRecord == null
+                                    ? ''
+                                    : plugin.model.getIDModelloIstanzaRecordValue(IDRecord, row.IDAttributo)
                                 ).then(function (RecordValue, textStatus, jqXHR) {
 
                                     $.when(
@@ -1128,7 +1175,8 @@
                                                 filelist: RecordValue,
                                                 filenumber: row.FileNumber,
                                                 filetypes: row.FileTypes,
-                                                fileweight: row.FileWeight
+                                                fileweight: row.FileWeight,
+                                                readOnly: options.ReadOnly === true
                                             });
 
                                             /* Registra l'evento {onupload} */
@@ -1324,18 +1372,6 @@
 
                 }
 
-                plugin.find('.btn-minus-plus-' + IdClasse).click(function () {
-                    if ($(this).attr('class').indexOf('bi-folder-minus') > -1) {
-                        plugin.find('.model-class-' + IdClasse + '-attributes').hide();
-                        $(this).removeClass('bi bi-folder-minus');
-                        $(this).addClass('bi bi-folder-plus');
-                    } else {
-                        plugin.find('.model-class-' + IdClasse + '-attributes').show();
-                        $(this).removeClass('bi bi-folder-plus');
-                        $(this).addClass('bi bi-folder-minus');
-                    }
-                });
-
                 /* Valorizza la lista degli IDAttributo, utilizzata per la registrazione dei valori */
                 $.each(response.data, function (key, row) {
                     fieldlist += '@' + row.IDAttributo;
@@ -1384,6 +1420,14 @@
 
                 var options = JSON.parse(plugin.attr('data-options'));
 
+                if (!isvalidform) {
+                    var form = document.getElementById('frm-class-' + IdClasse);
+                    if (form && typeof form.reportValidity === 'function') {
+                        form.reportValidity();
+                    }
+                    return false;
+                }
+
                 /* Se i dati immessi sono validi */
                 if (isvalidform) {
 
@@ -1394,7 +1438,7 @@
                     if (options.IDModelloIstanza == null) {
                         $.when(
                             plugin.model.postIDModelloIstanza()
-                        ).then(function (IDModelloIstanza, textStatus, jqXHR) {
+                        ).done(function (IDModelloIstanza, textStatus, jqXHR) {
 
                             /* set plugin attribute option */
                             options.IDModelloIstanza = IDModelloIstanza;
@@ -1405,7 +1449,7 @@
                             /* Verifico l'esistenza di un record associato alla Classe, se non esiste lo inserisco ed estraggo l'ID */
                             $.when(
                                 plugin.model.getIDModelloIstanzaRecord(IDModelloIstanza, IdClasse)
-                            ).then(function (IDRecord, textStatus, jqXHR) {
+                            ).done(function (IDRecord, textStatus, jqXHR) {
 
                                 $.each(FieldList.split('@'), function (key, IDAttributo) {
 
@@ -1431,32 +1475,24 @@
                                             //console.log(recordValue);
                                             break;
                                     }
+                                    recordValue = recordValue == null ? '' : String(recordValue);
 
                                     /* Salva il valore dell'attributo */
                                     $.when(
                                         plugin.model.postIDModelloIstanzaRecord(IDRecord, IDAttributo, recordValue)
-                                    ).then(function (status, textStatus, jqXHR) {
+                                    ).done(function (status, textStatus, jqXHR) {
                                         //console.log("postIDModelloIstanzaRecord status: " + status)
                                         if (IdTipoDati == 7) {
-                                            /* Salva il riferimento dei file caricati */
-                                            if (recordValue.substring(1).indexOf('@') > -1) {
-                                                $.each(recordValue.substring(1).split('@'), function (key, file) {
-                                                    //console.log("file stringify each: " + file);
-                                                    $.when(
-                                                        plugin.model.postIDModelloIstanzaRecordMedia(IDRecord, IDAttributo, file)
-                                                    ).then(function (status, textStatus, jqXHR) {
-                                                        //console.log("postIDModelloIstanzaRecordMedia status: " + status)
-                                                    })
-                                                });
-                                            } else {
-                                                var file = recordValue.substring(1);
-                                                //console.log("file stringify alone: " + file);
-                                                $.when(
-                                                    plugin.model.postIDModelloIstanzaRecordMedia(IDRecord, IDAttributo, file)
-                                                ).then(function (status, textStatus, jqXHR) {
-                                                    //console.log("postIDModelloIstanzaRecordMedia status: " + status)
-                                                })
-                                            }
+                                            var fileList = recordValue.charAt(0) === '@'
+                                                ? recordValue.substring(1)
+                                                : recordValue;
+                                            fileList.split('@').filter(Boolean).forEach(function (file) {
+                                                plugin.model.postIDModelloIstanzaRecordMedia(
+                                                    IDRecord,
+                                                    IDAttributo,
+                                                    file
+                                                );
+                                            });
                                             var ControlFileUpload = plugin.find(".control_" + IDAttributo)
                                             /* Elimina i file rimossi dalla lista */
                                             plugin.model.deleteIDModelloIstanzaRecordMedia(
@@ -1484,7 +1520,7 @@
                         /* Verifico l'esistenza di un record associato alla Classe, se non esiste lo inserisco ed estraggo l'ID */
                         $.when(
                             plugin.model.getIDModelloIstanzaRecord(IDModelloIstanza, IdClasse)
-                        ).then(function (IDRecord, textStatus, jqXHR) {
+                        ).done(function (IDRecord, textStatus, jqXHR) {
 
                             $.each(FieldList.split('@'), function (key, IDAttributo) {
 
@@ -1509,35 +1545,27 @@
                                         recordValue = control.val();
                                         //console.log(recordValue);
                                         break;
-                                }
+                                    }
+                                    recordValue = recordValue == null ? '' : String(recordValue);
 
-                                /* Salva il valore dell'attributo */
-                                $.when(
-                                    plugin.model.postIDModelloIstanzaRecord(IDRecord, IDAttributo, recordValue)
-                                ).then(function (status, textStatus, jqXHR) {
-                                    //console.log("postIDModelloIstanzaRecord status: " + status)
-                                    if (IdTipoDati == 7) {
-                                        /* Salva il riferimento dei file caricati */
-                                        if (recordValue.substring(1).indexOf('@') > -1) {
-                                            $.each(recordValue.substring(1).split('@'), function (key, file) {
-                                                //console.log("file stringify each: " + file);
-                                                $.when(
-                                                    plugin.model.postIDModelloIstanzaRecordMedia(IDRecord, IDAttributo, file)
-                                                ).then(function (status, textStatus, jqXHR) {
-                                                    //console.log("postIDModelloIstanzaRecordMedia status: " + status)
-                                                })
+                                    /* Salva il valore dell'attributo */
+                                    $.when(
+                                        plugin.model.postIDModelloIstanzaRecord(IDRecord, IDAttributo, recordValue)
+                                    ).done(function (status, textStatus, jqXHR) {
+                                        //console.log("postIDModelloIstanzaRecord status: " + status)
+                                        if (IdTipoDati == 7) {
+                                            var fileList = recordValue.charAt(0) === '@'
+                                                ? recordValue.substring(1)
+                                                : recordValue;
+                                            fileList.split('@').filter(Boolean).forEach(function (file) {
+                                                plugin.model.postIDModelloIstanzaRecordMedia(
+                                                    IDRecord,
+                                                    IDAttributo,
+                                                    file
+                                                );
                                             });
-                                        } else {
-                                            var file = recordValue.substring(1);
-                                            //console.log("file stringify alone: " + file);
-                                            $.when(
-                                                plugin.model.postIDModelloIstanzaRecordMedia(IDRecord, IDAttributo, file)
-                                            ).then(function (status, textStatus, jqXHR) {
-                                                //console.log("postIDModelloIstanzaRecordMedia status: " + status)
-                                            })
-                                        }
-                                        /* Elimina i file rimossi dalla lista */
-                                        var ControlFileUpload = plugin.find(".control_" + IDAttributo)
+                                            /* Elimina i file rimossi dalla lista */
+                                            var ControlFileUpload = plugin.find(".control_" + IDAttributo)
                                         plugin.model.deleteIDModelloIstanzaRecordMedia(
                                             IDRecord,
                                             IDAttributo,

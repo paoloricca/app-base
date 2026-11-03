@@ -8,10 +8,7 @@ $(function () {
                 var err = JSON.parse(response.error);
                 $('#errorContainer').append(err.sender + ': ' + err.message);
             } else {
-                //$.each(JSON.parse(response.data), function (key, item) {
-                //    $('#container').append(item.Title + '<br>');
-                //});
-                document.location.href = "/login";
+                window.top.location.href = "/login";
             }
         }).fail(function (xhr, status, errorThrown) {
             //console.log( "Error: " + errorThrown );

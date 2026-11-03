@@ -1,6 +1,8 @@
 $(function () {
 
     let cy;
+    const versionId = Number($('#IDVersioneWorkflow').val()) || null;
+    const isVersionEditor = versionId !== null;
 
     $("#toolbar .btn").on("click", function () {
 
@@ -15,36 +17,44 @@ $(function () {
     /* inizializza il controllo processi */
     var ControlProcessi = $('#processi-container');
 
-    /* Imposta le propriet� di default del plug-in <Pager> */
-    ControlProcessi.processi({
-    });
+    function getCurrentProcessId() {
+        if (isVersionEditor) {
+            return Number($('#IDProcessoWorkflow').val()) || null;
+        }
+        return ControlProcessi.length && ControlProcessi.attr('data-options')
+            ? JSON.parse(ControlProcessi.attr('data-options')).IDProcesso
+            : null;
+    }
 
-    ControlProcessi.bind(
-        "onselect", function () {
+    function reloadWorkflow() {
+        initializeWorkflow(versionId || getCurrentProcessId());
+    }
 
-            /* Imposta le propriet� di default del plug-in */
-            ControlWorkflowNodeStates.workflowNodeStates({
-                IdProcesso: JSON.parse(ControlProcessi.attr('data-options')).IDProcesso,
-                IdEventoTransizione: null,
-                LanguageContext: $('#LanguageContext').val()
+    if (!isVersionEditor) {
+        /* Imposta le propriet� di default del plug-in <Pager> */
+        ControlProcessi.processi({});
+
+        ControlProcessi.bind(
+            "onselect", function () {
+                ControlWorkflowNodeStates.workflowNodeStates({
+                    IdProcesso: getCurrentProcessId(),
+                    IdEventoTransizione: null,
+                    LanguageContext: $('#LanguageContext').val()
+                });
             });
-    });
 
-    /* Registra l'evento {onselect} per caricare la lista delle autorizzazioni */
-    ControlProcessi.bind(
-        "onworkflow", function () {
-
-            $.when(
-                initializeWorkflow(
-                    JSON.parse(ControlProcessi.attr('data-options')).IDProcesso
-                )
-            ).then(function () {
+        /* Registra l'evento {onselect} per caricare la lista delle autorizzazioni */
+        ControlProcessi.bind(
+            "onworkflow", function () {
+                initializeWorkflow(getCurrentProcessId());
                 $('#container-workflow').modal('show');
             });
-    });
 
-    /* Renderizza il plug-in <processi> */
-    ControlProcessi.processi.load();
+        /* Renderizza il plug-in <processi> */
+        ControlProcessi.processi.load();
+    } else {
+        ControlProcessi.closest('.col-6').addClass('d-none');
+    }
 
 
     $('.btn-cancel-context-menu-node').click(function () {
@@ -184,13 +194,11 @@ $(function () {
     });
     /* Imposta l'owner dello stato selezionato */
     $('.workflow-set-owner').click(function () {
-
-        loadNodeWorkflowOwner(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso)
+        loadNodeWorkflowOwner(getCurrentProcessId());
     });
 
     $('.btn-workflow-states-new').click(function () {
-
-        newNodeWorkflow(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso);
+        newNodeWorkflow(getCurrentProcessId());
 
         var ControlWorkflowNodeLink = $('.control-workflow-node-link');
         ControlWorkflowNodeLink.workflowNodeStates.clear(ControlWorkflowNodeLink);
@@ -214,7 +222,8 @@ $(function () {
     $('.workflow-set-rel').click(function () {
         var ControlWorkflowNodeLink = $('.control-workflow-node-link');
         var optionsWorkflowNodeLink = JSON.parse(ControlWorkflowNodeLink.attr('data-options'));
-        optionsWorkflowNodeLink.IdProcesso = JSON.parse(ControlProcessi.attr('data-options')).IDProcesso;
+        optionsWorkflowNodeLink.IdProcesso = getCurrentProcessId();
+        optionsWorkflowNodeLink.IDVersioneWorkflow = versionId;
         ControlWorkflowNodeLink.attr('data-options', JSON.stringify(optionsWorkflowNodeLink));
         ControlWorkflowNodeLink.workflowNodeStates.clear(ControlWorkflowNodeLink);
         ControlWorkflowNodeLink.workflowNodeStates.loadStates(ControlWorkflowNodeLink);
@@ -500,6 +509,23 @@ $(function () {
         try {
             $('#context-menu-link').hide();
             $('.spinner-workflow').show();
+            if (isVersionEditor) {
+                $.ajax({
+                    url: '/workflow/api/versions/' + versionId + '/graph/transitions/' + encodeURIComponent(IdEventoDirezione),
+                    type: 'DELETE'
+                }).done(function (response) {
+                    if (response.status === 'ERR') {
+                        ShowError(response.error.message, response.error.sender);
+                    } else {
+                        reloadWorkflow();
+                    }
+                    $('.spinner-workflow').hide();
+                }).fail(function (xhr, status, errorThrown) {
+                    $('.spinner-workflow').hide();
+                    ShowError(errorThrown || status, 'deleteWorkflowLink');
+                });
+                return;
+            }
             $.ajax({
                 url: "/workflow-del-link/" + IdEventoDirezione,
                 type: "DELETE",
@@ -508,7 +534,7 @@ $(function () {
                 if (response.status == "ERR") {
                     ShowError(response.error.message, response.error.sender);
                 } else if (response.status == "OK") {
-                    initializeWorkflow(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso)
+                    reloadWorkflow();
                 }
                 $('.spinner-workflow').hide();
             }).fail(function (xhr, status, errorThrown) {
@@ -523,6 +549,23 @@ $(function () {
     deleteWorkflowState = function (IdEventoTransizione) {
         try {
             $('.spinner-workflow').show();
+            if (isVersionEditor) {
+                $.ajax({
+                    url: '/workflow/api/versions/' + versionId + '/graph/nodes/' + encodeURIComponent(IdEventoTransizione),
+                    type: 'DELETE'
+                }).done(function (response) {
+                    if (response.status === 'ERR') {
+                        ShowError(response.error.message, response.error.sender);
+                    } else {
+                        reloadWorkflow();
+                    }
+                    $('.spinner-workflow').hide();
+                }).fail(function (xhr, status, errorThrown) {
+                    $('.spinner-workflow').hide();
+                    ShowError(errorThrown || status, 'deleteWorkflowState');
+                });
+                return;
+            }
             $.ajax({
                 url: "/workflow-del-state/" + IdEventoTransizione,
                 type: "DELETE",
@@ -532,7 +575,7 @@ $(function () {
                     ShowError(response.error.message, response.error.sender);
                 } else if (response.status == "OK") {
 
-                    initializeWorkflow(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso)
+                    reloadWorkflow();
                 }
                 $('.spinner-workflow').hide();
             }).fail(function (xhr, status, errorThrown) {
@@ -577,6 +620,26 @@ $(function () {
     newNodeWorkflow = function (IdProcesso) {
         try {
             $('.spinner-workflow').show();
+            if (isVersionEditor) {
+                $.ajax({
+                    url: '/workflow/api/versions/' + versionId + '/graph/nodes',
+                    type: 'POST'
+                }).done(function (response) {
+                    if (response.status === 'ERR') {
+                        ShowError(response.error.message, response.error.sender);
+                    } else {
+                        reloadWorkflow();
+                        const nodePicker = $('.control-workflow-node-link');
+                        nodePicker.workflowNodeStates.clear(nodePicker);
+                        nodePicker.workflowNodeStates.loadStates(nodePicker);
+                    }
+                    $('.spinner-workflow').hide();
+                }).fail(function (xhr, status, errorThrown) {
+                    $('.spinner-workflow').hide();
+                    ShowError(errorThrown || status, 'newNodeWorkflow');
+                });
+                return;
+            }
             $.ajax({
                 url: "/workflow-new-node/" + IdProcesso,
                 type: "POST",
@@ -586,7 +649,7 @@ $(function () {
                     ShowError(response.error.message, response.error.sender);
                 } else if (response.status == "OK") {
 
-                    initializeWorkflow(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso)
+                    reloadWorkflow();
                 }
                 $('.spinner-workflow').hide();
             }).fail(function (xhr, status, errorThrown) {
@@ -601,6 +664,30 @@ $(function () {
     linkNodeWorkflow = function (IdTransizioneEnd) {
         try {
             $('.spinner-workflow').show();
+            if (isVersionEditor) {
+                $.ajax({
+                    url: '/workflow/api/versions/' + versionId + '/graph/transitions',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        startNodeId: Number($('#context-menu-node').find('#IdEventoTransizione').val()),
+                        endNodeId: Number(IdTransizioneEnd)
+                    })
+                }).done(function (response) {
+                    if (response.status === 'ERR') {
+                        ShowError(response.error.message, response.error.sender);
+                    } else {
+                        $('#container-workflow-node-link').modal('hide');
+                        $('#context-menu-node').hide();
+                        reloadWorkflow();
+                    }
+                    $('.spinner-workflow').hide();
+                }).fail(function (xhr, status, errorThrown) {
+                    $('.spinner-workflow').hide();
+                    ShowError(errorThrown || status, 'linkNodeWorkflow');
+                });
+                return;
+            }
             $.ajax({
                 url: "/workflow-link-node",
                 type: "POST",
@@ -614,7 +701,7 @@ $(function () {
                 } else if (response.status == "OK") {
                     $('#container-workflow-node-link').modal('hide');
                     $('#context-menu-node').hide();
-                    initializeWorkflow(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso);
+                    reloadWorkflow();
                 }
                 $('.spinner-workflow').hide();
             }).fail(function (xhr, status, errorThrown) {
@@ -630,6 +717,30 @@ $(function () {
         try {
             $('.spinner-workflow-set-node').show();
 
+            if (isVersionEditor) {
+                $.ajax({
+                    url: '/workflow/api/versions/' + versionId + '/graph/nodes/' + encodeURIComponent(IdEventoTransizione),
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        Code_IT: Code_IT, Code_GB: Code_GB, Code_ES: Code_ES, Code_CN: Code_CN,
+                        Text_IT: Text_IT, Text_GB: Text_GB, Text_ES: Text_ES, Text_CN: Text_CN
+                    })
+                }).done(function (response) {
+                    $('.spinner-workflow-set-node').hide();
+                    if (response.status === 'ERR') {
+                        ShowError(response.error.message, response.error.sender);
+                        return;
+                    }
+                    $('#container-workflow-set-node').modal('hide');
+                    $('#context-menu-node').hide();
+                    reloadWorkflow();
+                }).fail(function (xhr, status, errorThrown) {
+                    $('.spinner-workflow-set-node').hide();
+                    ShowError(errorThrown || status, 'setNodeWorkflowState');
+                });
+                return;
+            }
             $.ajax({
                 url: "/workflow-node-set/" + IdEventoTransizione,
                 type: "PUT",
@@ -655,7 +766,7 @@ $(function () {
                     $('#context-menu-node').hide();
                     ControlWorkflowNodeLink.workflowNodeStates.clear(ControlWorkflowNodeLink);
                     ControlWorkflowNodeLink.workflowNodeStates.loadStates(ControlWorkflowNodeLink);
-                    initializeWorkflow(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso);
+                    reloadWorkflow();
                 }
             }).fail(function (xhr, status, errorThrown) {
                 $('.spinner-workflow-set-node').hide();
@@ -670,6 +781,30 @@ $(function () {
         try {
             $('.spinner-node-workflow-link').show();
 
+            if (isVersionEditor) {
+                $.ajax({
+                    url: '/workflow/api/versions/' + versionId + '/graph/transitions/' + encodeURIComponent(IdEventoDirezione),
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        Code_IT: Code_IT, Code_GB: Code_GB, Code_ES: Code_ES, Code_CN: Code_CN,
+                        Text_IT: Text_IT, Text_GB: Text_GB, Text_ES: Text_ES, Text_CN: Text_CN
+                    })
+                }).done(function (response) {
+                    $('.spinner-node-workflow-link').hide();
+                    if (response.status === 'ERR') {
+                        ShowError(response.error.message, response.error.sender);
+                        return;
+                    }
+                    $('#container-workflow-set-link').modal('hide');
+                    $('#context-menu-link').hide();
+                    reloadWorkflow();
+                }).fail(function (xhr, status, errorThrown) {
+                    $('.spinner-node-workflow-link').hide();
+                    ShowError(errorThrown || status, 'setNodeWorkflowLink');
+                });
+                return;
+            }
             $.ajax({
                 url: "/workflow-node-link/" + IdEventoDirezione,
                 type: "POST",
@@ -696,7 +831,7 @@ $(function () {
                     $('#container-workflow-set-link').modal('hide');
                     $('#context-menu-link').hide();
 
-                    initializeWorkflow(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso);
+                    reloadWorkflow();
                 }
             }).fail(function (xhr, status, errorThrown) {
                 $('.spinner-node-workflow-link').hide();
@@ -744,7 +879,7 @@ $(function () {
                     $('#container-workflow-set-owner').modal('hide');
                     $('#context-menu-node').hide();
 
-                    initializeWorkflow(JSON.parse(ControlProcessi.attr('data-options')).IDProcesso);
+                    reloadWorkflow();
                 }
             }).fail(function (xhr, status, errorThrown) {
                 $('.spinner-node-workflow-owner').hide();
@@ -896,6 +1031,24 @@ $(function () {
     updateNodePosition = function (IdEventoTransizione, XPos, YPos) {
         try {
             $('.spinner-workflow').show();
+            if (isVersionEditor) {
+                $.ajax({
+                    url: '/workflow/api/versions/' + versionId + '/graph/nodes/' +
+                        encodeURIComponent(IdEventoTransizione) + '/position',
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ x: XPos, y: YPos })
+                }).done(function (response) {
+                    $('.spinner-workflow').hide();
+                    if (response.status === 'ERR') {
+                        ShowError(response.error.message, response.error.sender);
+                    }
+                }).fail(function (xhr, status, errorThrown) {
+                    $('.spinner-workflow').hide();
+                    ShowError(errorThrown || status, 'updateNodePosition');
+                });
+                return;
+            }
             $.ajax({
                 url: "/workflow-update-node-position/" + IdEventoTransizione,
                 type: "PUT",
@@ -925,8 +1078,10 @@ $(function () {
         $('.spinner-workflow').show();
         try {
             $.ajax({
-                url: "/workflow/" + IdProcesso,
-                type: "POST",
+                url: isVersionEditor
+                    ? '/workflow/api/versions/' + versionId + '/graph'
+                    : "/workflow/" + IdProcesso,
+                type: isVersionEditor ? 'GET' : 'POST',
                 data: {},
             }).done(function (response) {
 
@@ -936,8 +1091,13 @@ $(function () {
 
                 } else if (response.status == "OK") {
 
-                    var states = JSON.parse(JSON.parse(JSON.parse(JSON.stringify(response)).data).states);
-                    var transitions = JSON.parse(JSON.parse(JSON.parse(JSON.stringify(response)).data).transitions);
+                    var graphData = response.data;
+                    var states = isVersionEditor
+                        ? graphData.states
+                        : JSON.parse(JSON.parse(JSON.parse(JSON.stringify(response)).data).states);
+                    var transitions = isVersionEditor
+                        ? graphData.transitions
+                        : JSON.parse(JSON.parse(JSON.parse(JSON.stringify(response)).data).transitions);
                     //console.log(states);
                     //console.log(transitions);
 
@@ -1000,6 +1160,9 @@ $(function () {
                     // Cytoscape
                     //=========================
 
+                    if (cy) {
+                        cy.destroy();
+                    }
                     cy = cytoscape({
 
                         container: document.getElementById('cy'),
@@ -1291,7 +1454,7 @@ $(function () {
         /* read plugin attribute option */
         var ControlAuthProcessiAzioni = $('#auth-autorizzazioni-container');
         var optionAuthProcessiAzioni = JSON.parse(ControlAuthProcessiAzioni.attr('data-options'));
-        optionAuthProcessiAzioni.IDProcesso = JSON.parse(ControlProcessi.attr('data-options')).IDProcesso;
+        optionAuthProcessiAzioni.IDProcesso = getCurrentProcessId();
         optionAuthProcessiAzioni.IdProfiloUtente = option.IDProfiloUtente;
         optionAuthProcessiAzioni.IdEventoTransizione = $('#context-menu-node #IdEventoTransizione').val();
         
@@ -1394,7 +1557,8 @@ $(function () {
 
     /* Imposta le propriet� di default del plug-in */
     ControlWorkflowNodeLink.workflowNodeStates({
-        IdProcesso: JSON.parse(ControlProcessi.attr('data-options')).IDProcesso,
+        IdProcesso: getCurrentProcessId(),
+        IDVersioneWorkflow: versionId,
         IdEventoTransizione: null,
         LanguageContext: $('#LanguageContext').val()
     });
@@ -1442,5 +1606,16 @@ $(function () {
         $('#container-workflow-node-states').modal('hide');
 
     });
+
+    if (isVersionEditor) {
+        ControlWorkflowNodeStates.workflowNodeStates({
+            IdProcesso: getCurrentProcessId(),
+            IDVersioneWorkflow: versionId,
+            IdEventoTransizione: null,
+            LanguageContext: $('#LanguageContext').val()
+        });
+        $('#container-workflow').modal('show');
+        initializeWorkflow(versionId);
+    }
 
 });
