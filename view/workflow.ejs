@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html>
+<html class="<%= versionId ? 'workflow-version-editor-html' : '' %>">
 <head>
     <title>Web APP DC - Workflow</title>
     <meta charset="utf-8">
@@ -18,15 +18,25 @@
     <script type="text/javascript" src="/control-gruppi-operativi-script"></script>
     <script type="text/javascript" src="/utility-script"></script>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape/dist/cytoscape.min.js"></script>
-    <script type="text/javascript" src="/workflow-script"></script>
+    <script type="text/javascript" src="/workflow-script?<%= Date.now() %>"></script>
+    <% if (versionId) { %>
+    <style>
+        html.workflow-version-editor-html,
+        body.workflow-version-editor-body {
+            background: transparent !important;
+            background-color: transparent !important;
+        }
+    </style>
+    <% } %>
     <script type="text/javascript" src="/logout-script"></script>
 </head>
-<body>
+<body class="<%= versionId ? 'workflow-version-editor-body' : '' %>">
     <input type="hidden" name="LanguageContext" id="LanguageContext" value="<%= user.LanguageContext %>" />
     <input type="hidden" name="IDOwner" id="IDOwner" value="<%= user.IdAttore %>" />
     <input type="hidden" name="OffsetRows" id="OffsetRows" value="0" />
     <input type="hidden" name="IDVersioneWorkflow" id="IDVersioneWorkflow" value="<%= versionId || '' %>" />
     <input type="hidden" name="IDProcessoWorkflow" id="IDProcessoWorkflow" value="<%= processId || '' %>" />
+    <% if (!versionId) { %>
     <%- include('partials/header'); %>
     <div class="container-fluid p-0 px-4">
 
@@ -36,36 +46,7 @@
             <span class="badge" style="background-color:orange;"></span>
         </h4>
 
-
-
-<!--div id="toolbar" class="d-flex flex-column align-items-center pt-2">
-
-    <button class="btn btn-dark" title="Nuovo stato">
-        <i class="bi bi-circle fs-4"></i>
-    </button>
-
-    <button class="btn btn-dark" title="Nuova transizione">
-        <i class="bi bi-arrow-right fs-4"></i>
-    </button>
-
-    <button class="btn btn-dark" title="Elimina">
-        <i class="bi bi-trash fs-4"></i>
-    </button>
-
-    <hr class="text-secondary w-75">
-
-    <button class="btn btn-dark">
-        <i class="bi bi-download fs-4"></i>
-    </button>
-
-    <button class="btn btn-dark">
-        <i class="bi bi-upload fs-4"></i>
-    </button>
-
-</div-->
-
-
-        <div class="col-6 p-0 h-100 <%= versionId ? 'd-none' : '' %>">
+        <div class="col-6 p-0 h-100">
             <div class="card h-100 p-0">
                 <div class="card-header p-3 f-roboto">
                     <b>Processi</b>
@@ -76,6 +57,8 @@
                 </div>
             </div>
         </div>
+    </div>
+    <% } %>
 
         <div class="modal" id="container-workflow" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered modal-xl" role="document">

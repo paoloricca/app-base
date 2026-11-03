@@ -92,7 +92,8 @@
 .processi-edit-taps .form-switch {
     padding-left: 0;
 }
-.processi-required-label::after {
+.processi-required-label::after,
+.workflow-required-label::after {
     content: " *";
     color: #dc3545;
 }
@@ -1217,12 +1218,32 @@ a, btn {
 .workflow-version-workflow-name {
     font-weight: 400;
 }
+#workflow-version-editor-modal {
+    z-index: 1060;
+}
+#workflow-version-editor-modal .modal-dialog {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+#workflow-version-editor-modal .modal-content,
+#workflow-version-editor-modal .modal-body {
+    width: 100vw;
+    height: 100vh;
+    background: transparent !important;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: hidden;
+}
 .workflow-version-editor-frame {
     display: block;
-    width: 100%;
-    height: calc(100vh - 60px);
-    min-height: 70vh;
+    width: 100vw;
+    height: 100vh;
     border: 0;
+    background: transparent !important;
 }
 
 .workflow-node-link-dialog {

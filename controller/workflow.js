@@ -1614,6 +1614,11 @@ $(function () {
             IdEventoTransizione: null,
             LanguageContext: $('#LanguageContext').val()
         });
+        $('#container-workflow').on('hidden.bs.modal', function () {
+            if (isVersionEditor && window.parent && window.parent !== window) {
+                window.parent.postMessage({ type: 'workflow-version-editor-closed' }, '*');
+            }
+        });
         $('#container-workflow').modal('show');
         initializeWorkflow(versionId);
     }

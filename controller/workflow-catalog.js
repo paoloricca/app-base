@@ -7,6 +7,28 @@ $(function () {
     let recordsById = {};
     let versionsById = {};
     let selectedWorkflow = null;
+
+    /* initialize il controllo <confirm-delete-workflow-record> */
+    var $CtlDeleteRecord = $('#container-confirm-delete-workflow-record');
+    $CtlDeleteRecord.confirmDelete({ LanguageContext: user.LanguageContext });
+    $CtlDeleteRecord.bind('onconfirm', function () {
+        const id = $CtlDeleteRecord.data('pendingDeleteId');
+        if (!id) { return; }
+        api({ url: '/workflow/api/records/' + encodeURIComponent(id), type: 'DELETE' })
+            .done(loadRecords).fail(showError);
+        $CtlDeleteRecord.confirmDelete.hide($CtlDeleteRecord);
+    });
+
+    /* initialize il controllo <confirm-delete-workflow-version> */
+    var $CtlDeleteVersion = $('#container-confirm-delete-workflow-version');
+    $CtlDeleteVersion.confirmDelete({ LanguageContext: user.LanguageContext });
+    $CtlDeleteVersion.bind('onconfirm', function () {
+        const versionId = $CtlDeleteVersion.data('pendingDeleteId');
+        if (!versionId) { return; }
+        api({ url: '/workflow/api/versions/' + encodeURIComponent(versionId), type: 'DELETE' })
+            .done(loadVersions).fail(showError);
+        $CtlDeleteVersion.confirmDelete.hide($CtlDeleteVersion);
+    });
     const $descriptionControl = $('.workflow-description-control');
     $descriptionControl.multiLanguageTextBox({
         Title: null,
@@ -21,10 +43,41 @@ $(function () {
         ],
         modalToBody: true
     });
+    const $descriptionEditorModal = $descriptionControl.data('mltextbox').$cultureModal;
+    const $descriptionInput = $descriptionControl.find('#txt-culture-edit-WorkflowDescription');
+    const descriptionMaxLength = 1000;
+    $descriptionInput.prop('required', false);
+    $descriptionEditorModal.find('.lang-input').removeAttr('required');
+    $descriptionInput.attr('maxlength', descriptionMaxLength);
+    $descriptionControl.find('.label-title-WorkflowDescription')
+        .addClass('processi-required-label workflow-required-label');
+
+    function updateDescriptionValidity() {
+        const currentDescription = (
+            $descriptionEditorModal.find('#text-WorkflowDescription_' + user.LanguageContext).val() ||
+            $descriptionInput.val() ||
+            ''
+        ).trim();
+        const anyDescription = $descriptionEditorModal.find('.lang-input').filter(function () {
+            return ($(this).val() || '').trim().length > 0;
+        }).length > 0;
+        const isValid = (currentDescription.length > 0 || anyDescription) && currentDescription.length <= descriptionMaxLength;
+        $descriptionInput
+            .toggleClass('is-invalid', !isValid)
+            .toggleClass('is-valid', isValid);
+        return isValid;
+    }
+
+    $descriptionControl.on('valueChanged.workflow-edit-required', updateDescriptionValidity);
+    $descriptionInput.on('input.workflow-edit-required change.workflow-edit-required', updateDescriptionValidity);
+    $descriptionEditorModal.on('input.workflow-edit-required change.workflow-edit-required', '.lang-input', function () {
+        updateDescriptionValidity();
+    });
+    updateDescriptionValidity();
     function text(key) {
         const labels = {
             IT: {
-                edit: 'Modifica', versions: 'Gestisci versioni', delete: 'Elimina', visible: 'Visibile', hidden: 'Nascosto',
+                edit: 'Modifica', versions: 'Versioni', delete: 'Elimina', visible: 'Visibile', hidden: 'Nascosto',
                 deleteWorkflow: 'Eliminare il workflow e tutte le versioni collegate?', confirmDeleteVersion: 'Eliminare questa versione?',
                 descriptionRequired: 'Inserisci almeno una descrizione.', error: 'Errore durante il caricamento dei dati.',
                 previous: 'Precedente', next: 'Successiva', page: 'Pagina', of: 'di', total: 'Record totali',
@@ -33,7 +86,7 @@ $(function () {
                 hideVersion: 'Nascondi versione', showVersion: 'Rendi visibile', delete: 'Elimina',
             },
             GB: {
-                edit: 'Edit', versions: 'Manage versions', delete: 'Delete', visible: 'Visible', hidden: 'Hidden',
+                edit: 'Edit', versions: 'Versions', delete: 'Delete', visible: 'Visible', hidden: 'Hidden',
                 deleteWorkflow: 'Delete this workflow and all its linked versions?', confirmDeleteVersion: 'Delete this version?',
                 descriptionRequired: 'Enter at least one description.', error: 'An error occurred while loading the data.',
                 previous: 'Previous', next: 'Next', page: 'Page', of: 'of', total: 'Total records',
@@ -42,7 +95,7 @@ $(function () {
                 hideVersion: 'Hide version', showVersion: 'Make visible', delete: 'Delete',
             },
             ES: {
-                edit: 'Modificar', versions: 'Gestionar versiones', delete: 'Eliminar', visible: 'Visible', hidden: 'Oculto',
+                edit: 'Modificar', versions: 'Versiones', delete: 'Eliminar', visible: 'Visible', hidden: 'Oculto',
                 deleteWorkflow: '¿Eliminar este workflow y todas sus versiones?', confirmDeleteVersion: '¿Eliminar esta versión?',
                 descriptionRequired: 'Introduce al menos una descripción.', error: 'Se produjo un error al cargar los datos.',
                 previous: 'Anterior', next: 'Siguiente', page: 'Página', of: 'de', total: 'Registros totales',
@@ -127,31 +180,30 @@ $(function () {
             const $actions = $('<td>', { class: 'text-end text-nowrap' });
             $('<button>', {
                 type: 'button',
-                class: 'btn btn-light bi bi-three-dots-vertical processi-context-trigger',
+                class: 'btn btn-light bi bi-three-dots-vertical rounded-circle forms-context-menu-trigger',
                 'data-bs-toggle': 'dropdown',
                 'aria-expanded': 'false',
                 'aria-label': text('actions')
             }).appendTo($actions);
             const $menuItems = $('<ul>', {
-                class: 'dropdown-menu dropdown-menu-end app-context-menu processi-context-menu'
+                class: 'dropdown-menu dropdown-menu-end forms-context-menu app-context-menu'
             });
             $('<li>').append(
-                $('<div>', { class: 'app-context-menu-heading' }).append(
+                $('<div>', { class: 'forms-context-menu-heading app-context-menu-heading' }).append(
                     $('<b>').text(text('id') + ': ' + id)
                 )
             ).appendTo($menuItems);
             $('<li>').append($('<hr>', { class: 'dropdown-divider' })).appendTo($menuItems);
             [
-                { className: 'workflow-record-versions', icon: 'bi-files', label: text('versions') },
+                { className: 'workflow-record-versions', icon: 'bi-stickies', label: text('versions') },
                 { className: 'workflow-record-edit', icon: 'bi-pencil', label: text('edit') },
                 { className: 'workflow-record-delete', icon: 'bi-trash', label: text('delete') }
             ].forEach(function (action) {
-                const $action = $('<button>', {
-                    type: 'button',
-                    class: 'dropdown-item p-2 app-context-menu-item ' + action.className
+                const $action = $('<span>', {
+                    class: 'dropdown-item forms-context-menu-action ' + action.className
                 }).attr('data-workflow-id', id).append(
                     $('<i>', { class: 'bi ' + action.icon, 'aria-hidden': 'true' }),
-                    document.createTextNode('  ' + action.label)
+                    document.createTextNode(' ' + action.label)
                 );
                 $('<li>').append($action).appendTo($menuItems);
             });
@@ -219,6 +271,7 @@ $(function () {
             IT: '', GB: '', ES: '', CN: ''
         });
         $('#workflow-editor-visible').prop('checked', true);
+        updateDescriptionValidity();
     }
 
     function openEditor(record) {
@@ -233,8 +286,10 @@ $(function () {
             });
             $('#workflow-editor-visible').prop('checked', record.IsVisible === true || record.IsVisible === 1);
             $('.workflow-editor-title').text(text('editWorkflow'));
+            updateDescriptionValidity();
         } else {
             $('.workflow-editor-title').text(text('newWorkflow'));
+            updateDescriptionValidity();
         }
         $('#workflow-catalog-editor').modal('show');
     }
@@ -258,9 +313,14 @@ $(function () {
     }
 
     function saveWorkflow() {
+        if (!updateDescriptionValidity()) {
+            $descriptionInput.trigger('focus');
+            return;
+        }
         const descriptions = readDescriptions();
         if (!Object.keys(descriptions).some(function (language) { return descriptions[language]; })) {
             ShowError(text('descriptionRequired'), 'workflow-catalog');
+            $descriptionInput.trigger('focus');
             return;
         }
 
@@ -396,11 +456,8 @@ $(function () {
     });
     $('.workflow-catalog-rows').on('click', '.workflow-record-delete', function () {
         const id = Number($(this).attr('data-workflow-id'));
-        if (!window.confirm(text('deleteWorkflow'))) {
-            return;
-        }
-        api({ url: '/workflow/api/records/' + encodeURIComponent(id), type: 'DELETE' })
-            .done(loadRecords).fail(showError);
+        $CtlDeleteRecord.data('pendingDeleteId', id);
+        $CtlDeleteRecord.confirmDelete.show($CtlDeleteRecord);
     });
     $('.workflow-catalog-pager').on('click', '.workflow-page-previous', function () {
         if (pageIndex > 1) {
@@ -437,28 +494,28 @@ $(function () {
             ShowError(text('error'), 'workflow-catalog');
             return;
         }
-        $('#workflow-versions-modal')
-            .one('hidden.bs.modal', function () {
-                $('.workflow-version-editor-title').text(
-                    workflowTitle(selectedWorkflow) + ' (' + text('version') + ' ' + version.Numero + ')'
-                );
-                $('.workflow-version-editor-frame')
-                    .attr('src', '/workflow-editor?versionId=' + encodeURIComponent(version.IDVersioneWorkflow));
-                $('#workflow-version-editor-modal').modal('show');
-            })
-            .modal('hide');
+        $('.workflow-version-editor-frame')
+            .attr('src', '/workflow-editor?versionId=' + encodeURIComponent(version.IDVersioneWorkflow));
+        $('#workflow-version-editor-modal').modal('show');
     });
     $('#workflow-version-editor-modal').on('hidden.bs.modal', function () {
         $('.workflow-version-editor-frame').attr('src', 'about:blank');
+        if ($('#workflow-versions-modal').hasClass('show')) {
+            $('body').addClass('modal-open');
+        }
+    });
+    $('#workflow-versions-modal').on('hidden.bs.modal', function () {
+        $('#workflow-version-editor-modal').modal('hide');
+    });
+    window.addEventListener('message', function (event) {
+        if (event.data && event.data.type === 'workflow-version-editor-closed') {
+            $('#workflow-version-editor-modal').modal('hide');
+            loadVersions();
+        }
     });
     $('.workflow-version-rows').on('click', '.workflow-version-delete', function () {
-        if (!window.confirm(text('confirmDeleteVersion'))) {
-            return;
-        }
-        api({
-            url: '/workflow/api/versions/' + encodeURIComponent($(this).attr('data-version-id')),
-            type: 'DELETE'
-        }).done(loadVersions).fail(showError);
+        $CtlDeleteVersion.data('pendingDeleteId', $(this).attr('data-version-id'));
+        $CtlDeleteVersion.confirmDelete.show($CtlDeleteVersion);
     });
 
     loadRecords();

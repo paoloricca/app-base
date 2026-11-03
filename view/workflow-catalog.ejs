@@ -7,6 +7,7 @@
     <%- include('partials/head'); %>
     <script type="text/javascript" src="/processi-script"></script>
     <script type="text/javascript" src="/control-culture-textbox-script"></script>
+    <script type="text/javascript" src="/control-confirm-delete-script"></script>
     <script type="text/javascript" src="/utility-script"></script>
     <script type="text/javascript" src="/workflow-catalog-script?<%= Date.now() %>"></script>
     <script type="text/javascript" src="/logout-script"></script>
@@ -179,9 +180,9 @@
                     <div class="workflow-description-control"></div>
                     <div class="row g-3 mt-2">
                         <div class="col-12">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="workflow-editor-visible" checked>
-                                <label class="form-check-label" for="workflow-editor-visible">
+                            <div class="form-check form-switch d-flex align-items-center gap-2">
+                                <input class="form-check-input m-0" type="checkbox" id="workflow-editor-visible" checked>
+                                <label class="form-check-label text-dark" for="workflow-editor-visible">
                                     <% if (user.LanguageContext == 'IT') { %>Visibile<% } %>
                                     <% if (user.LanguageContext == 'GB') { %>Visible<% } %>
                                     <% if (user.LanguageContext == 'ES') { %>Visible<% } %>
@@ -255,11 +256,11 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="workflow-version-editor-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="workflow-version-editor-modal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="false">
         <div class="modal-dialog modal-fullscreen">
             <div class="modal-content">
                 <div class="modal-body p-0">
-                    <iframe class="workflow-version-editor-frame" title="Workflow editor" src="about:blank"></iframe>
+                    <iframe class="workflow-version-editor-frame" title="Workflow editor" src="about:blank" allowtransparency="true"></iframe>
                 </div>
             </div>
         </div>
@@ -275,5 +276,8 @@
             </span>
         </div>
     </div>
+    <div id="container-confirm-delete-workflow-record"></div>
+    <div id="container-confirm-delete-workflow-version"></div>
+    <%- include('partials/confirm-delete'); %>
 </body>
 </html>
