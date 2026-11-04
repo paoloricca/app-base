@@ -799,15 +799,26 @@ $(function () {
         }
     });
 
-    /* inizializza il controllo action-button-nuovo */
-    var ControlActionButtonInserimento = $('.action-button-inserimento');
-    ControlActionButtonInserimento.actionbutton({
-        ActionType: 'primary',
-        ActionName: 'Inserimento',
-        IDProfiloUtente: user.IDProfiloUtenteDefault,
-        IDProcesso: 19,
-        LanguageContext: $('#LanguageContext').val()
-    }).bind("onclick", function (e, sender) {
+    /* pulsante Nuovo: visibile solo se il profilo ha l'azione "Inserimento" sul processo */
+    $.ajax({
+        url: '/processiazioniprimary',
+        type: "POST",
+        data: {
+            IdProfiloUtente: user.IDProfiloUtenteDefault,
+            IdProcesso: 19,
+            ActionName: 'Inserimento',
+            LanguageContext: $('#LanguageContext').val()
+        },
+    }).done(function (response) {
+        if (response.status == "ERR") {
+            ShowError(response.error.message, response.error.sender);
+        } else if (response.status == "OK" && response.data != "" && response.data[0].IdProcesso != null) {
+            $('.forms-create').removeClass('d-none');
+        }
+    }).fail(function (xhr) {
+        ShowError(xhr.responseText, 'loadFormsCreateAuthorization');
+    });
+    $('.forms-create').on("click", function (e) {
 
         let fnName = getFnName();
 

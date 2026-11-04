@@ -124,10 +124,11 @@ workflow.get('/workflow', function (req, res) {
         return;
     }
     res.set('Access-Control-Allow-Origin', '*');
-    breadcrumb.getBreadcrumb(req.session.user.LanguageContext, 'workflow').then(function (processPath) {
+    breadcrumb.getBreadcrumbInfo(req.session.user.LanguageContext, 'workflow').then(function (info) {
         res.status(200).render('workflow-catalog', {
             user: req.session.user,
-            processPath: processPath
+            processPath: info.processPath,
+            processId: info.processId
         });
     }).catch(function (error) {
         res.status(500).send(error.message || 'Unable to load the Workflow page.');

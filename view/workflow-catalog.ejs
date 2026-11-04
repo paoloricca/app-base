@@ -16,6 +16,7 @@
     <%- include('partials/header'); %>
     <input type="hidden" id="LanguageContext" value="<%= user.LanguageContext %>">
     <input type="hidden" id="workflow-catalog-user" value="<%= JSON.stringify(user) %>">
+    <input type="hidden" id="workflow-catalog-process-id" value="<%= processId %>">
     <div class="container-fluid p-0 px-4 forms-heading">
         <span class="bi bi-compass dynamic-process-compass" aria-hidden="true"></span>
         <div class="dynamic-process-path">
@@ -109,7 +110,7 @@
                         <% if (user.LanguageContext == 'ES') { %>Resumen<% } %>
                         <% if (user.LanguageContext == 'CN') { %>摘要<% } %>
                     </b>
-                    <button type="button" class="btn btn-primary workflow-catalog-create">
+                    <button type="button" class="btn btn-primary workflow-catalog-create d-none">
                         <i class="bi bi-plus-lg" aria-hidden="true"></i>
                         <% if (user.LanguageContext == 'IT') { %>Nuovo<% } %>
                         <% if (user.LanguageContext == 'GB') { %>New<% } %>

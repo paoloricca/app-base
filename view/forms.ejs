@@ -163,7 +163,13 @@
                     <button type="button" class="btn btn-light bi bi-sliders rounded-circle float-end btn-30 btn-filter-open"
                         data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<% if (user.LanguageContext == "IT") { %>Visualizza Filtro<% } %><% if (user.LanguageContext == "GB") { %>View Filter<% } %><% if (user.LanguageContext == "ES") { %>Ver filtro<% } %><% if (user.LanguageContext == "CN") { %>查看過濾器<% } %>">
                     </button>
-                    <span class="action-button-inserimento"></span>&nbsp;
+                    <button type="button" class="btn btn-primary forms-create d-none">
+                        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                        <% if (user.LanguageContext == 'IT') { %>Nuovo<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>New<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Nuevo<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>新增<% } %>
+                    </button>
                 </div>
                 <div class="card-body p-2 f-roboto">
                     <div class="forms-results-content">

@@ -446,6 +446,24 @@ $(function () {
     $('.workflow-catalog-create').on('click', function () {
         openEditor(null);
     });
+    $.ajax({
+        url: '/processiazioniprimary',
+        type: 'POST',
+        data: {
+            IdProfiloUtente: user.IDProfiloUtenteDefault,
+            IdProcesso: $('#workflow-catalog-process-id').val(),
+            ActionName: 'Inserimento',
+            LanguageContext: user.LanguageContext
+        }
+    }).done(function (response) {
+        if (response.status == 'ERR') {
+            ShowError(response.error.message, response.error.sender);
+        } else if (response.status == 'OK' && response.data != '' && response.data[0].IdProcesso != null) {
+            $('.workflow-catalog-create').removeClass('d-none');
+        }
+    }).fail(function (xhr) {
+        ShowError(xhr.responseText, 'loadWorkflowCreateAuthorization');
+    });
     $('.workflow-editor-save').on('click', saveWorkflow);
 
     $('.workflow-catalog-rows').on('click', '.workflow-record-edit', function () {
