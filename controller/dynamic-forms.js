@@ -311,7 +311,7 @@ $(function () {
         });
     }
 
-    function openHistory(workflowRecordId) {
+    function openHistory(workflowRecordId, instanceId) {
         if (!workflowRecordId) {
             return;
         }
@@ -324,7 +324,7 @@ $(function () {
                 LanguageContext: user.LanguageContext,
                 user: user
             });
-            $('.dynamic-form-history-record-id').text(workflowRecordId);
+            $('.dynamic-form-history-record-id').text(instanceId || workflowRecordId);
 
             $history.workflowhistory.loadHistory($history).done(function () {
                 finishActionLoading('#dynamic-form-history-modal');
@@ -706,7 +706,7 @@ $(function () {
                 break;
             case 'visualizzastoria':
                 if (isAuthorizedForState(actionName, workflowRecordId, authorizedActionIds)) {
-                    openHistory(workflowRecordId);
+                    openHistory(workflowRecordId, instanceId);
                 }
                 break;
             default:
