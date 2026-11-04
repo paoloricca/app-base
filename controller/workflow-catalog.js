@@ -142,8 +142,11 @@ $(function () {
         if (Number.isNaN(date.getTime())) {
             return '';
         }
-        const locale = { IT: 'it-IT', GB: 'en-GB', ES: 'es-ES', CN: 'zh-CN' }[user.LanguageContext] || 'en-GB';
-        return new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short' }).format(date);
+        const pad = function (part) {
+            return String(part).padStart(2, '0');
+        };
+        return pad(date.getDate()) + '/' + pad(date.getMonth() + 1) + '/' + date.getFullYear() +
+            ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes());
     }
 
     function versionDateText(value) {
@@ -158,7 +161,7 @@ $(function () {
             return String(part).padStart(2, '0');
         };
         return pad(date.getDate()) + '/' + pad(date.getMonth() + 1) + '/' + date.getFullYear() +
-            ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds());
+            ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes());
     }
 
     function visibilityText(isVisible) {
@@ -359,7 +362,6 @@ $(function () {
             $('<td>').text(version.Numero).appendTo($row);
             $('<td>', { class: 'd-none d-md-table-cell' }).text(versionDateText(version.DataRegistrazione)).appendTo($row);
             $('<td>', { class: 'd-none d-md-table-cell' }).text(versionDateText(version.DataUltimaModifica)).appendTo($row);
-            $('<td>').text(visibilityText(version.IsVisible)).appendTo($row);
 
             const $actions = $('<td>', { class: 'text-end text-nowrap' });
             $('<button>', {
