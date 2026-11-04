@@ -88,32 +88,19 @@
         </h4>
         <% } %>
     </div>
-    <div class="container-fluid forms-layout">
+    <div class="container-fluid forms-layout dynamic-forms-layout">
         <div class="filtro-container forms-filter">
             <div class="card h-100 p-0">
                 <div class="card-header p-2 f-roboto">
-                    <button type="button" class="btn btn-light bi bi-arrow-left rounded-circle float-end btn-30 btn-filter-close"
-                        data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<% if (user.LanguageContext == "IT") { %>Nascondi Filtro<% } %><% if (user.LanguageContext == "GB") { %>Hide Filter<% } %><% if (user.LanguageContext == "ES") { %>Ocultar filtro<% } %><% if (user.LanguageContext == "CN") { %>隱藏過濾器<% } %>">
-                    </button>
-                    <ul class="nav nav-tabs" id="stepTab" role="tablist">
-                        <li class="nav-item">
-                            <button class="nav-link active" id="2step-tab" data-bs-toggle="tab" data-bs-target="#2step">
-						        <% if (user.LanguageContext == "IT") { %>
-                                    Filtro di ricerca
-                                <% } %>
-                                <% if (user.LanguageContext == "GB") { %>
-                                    Search filter
-                                <% } %>
-                                <% if (user.LanguageContext == "ES") { %>
-                                    Filtro de investigaci&oacute;n
-						        <% } %>
-                                <% if (user.LanguageContext == "CN") { %>
-                                    搜尋過濾器
-                                <% } %>
-                            </button>
-                        </li>
-                        <li>
-                    </ul>
+                    <b>
+                        <% if (user.LanguageContext == 'IT') { %>Filtro di ricerca<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Search filter<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Filtro de búsqueda<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>搜索筛选器<% } %>
+                    </b>
+                    <button type="button" class="btn btn-light bi bi-arrow-left btn-filter-close"
+                        data-bs-toggle="tooltip"
+                        data-bs-title="<% if (user.LanguageContext == 'IT') { %>Nascondi filtro<% } %><% if (user.LanguageContext == 'GB') { %>Hide filter<% } %><% if (user.LanguageContext == 'ES') { %>Ocultar filtro<% } %><% if (user.LanguageContext == 'CN') { %>隐藏筛选器<% } %>"></button>
                 </div>
                 <div class="card-body p-2 forms-filter-body">
 
@@ -145,24 +132,13 @@
         </div>
         <div class="result-container forms-results">
             <div class="card h-100 p-0">
-                <div class="card-header p-3 f-roboto">
+                <div class="card-header p-2 f-roboto">
                     <b>
-		                <% if (user.LanguageContext == "IT") { %>
-                            Forms
-                        <% } %>
-                        <% if (user.LanguageContext == "GB") { %>
-                            Forms
-                        <% } %>
-                        <% if (user.LanguageContext == "ES") { %>
-                            Forms
-		                <% } %>
-                        <% if (user.LanguageContext == "CN") { %>
-                            Forms
-                        <% } %>
+                        <% if (user.LanguageContext == "IT") { %>Riepilogo<% } %>
+                        <% if (user.LanguageContext == "GB") { %>Summary<% } %>
+                        <% if (user.LanguageContext == "ES") { %>Resumen<% } %>
+                        <% if (user.LanguageContext == "CN") { %>摘要<% } %>
                     </b>
-                    <button type="button" class="btn btn-light bi bi-sliders rounded-circle float-end btn-30 btn-filter-open"
-                        data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<% if (user.LanguageContext == "IT") { %>Visualizza Filtro<% } %><% if (user.LanguageContext == "GB") { %>View Filter<% } %><% if (user.LanguageContext == "ES") { %>Ver filtro<% } %><% if (user.LanguageContext == "CN") { %>查看過濾器<% } %>">
-                    </button>
                     <button type="button" class="btn btn-primary forms-create d-none">
                         <i class="bi bi-plus-lg" aria-hidden="true"></i>
                         <% if (user.LanguageContext == 'IT') { %>Nuovo<% } %>
@@ -170,6 +146,9 @@
                         <% if (user.LanguageContext == 'ES') { %>Nuevo<% } %>
                         <% if (user.LanguageContext == 'CN') { %>新增<% } %>
                     </button>
+                    <button type="button" class="btn btn-light bi bi-sliders btn-filter-open"
+                        data-bs-toggle="tooltip"
+                        data-bs-title="<% if (user.LanguageContext == 'IT') { %>Visualizza filtro<% } %><% if (user.LanguageContext == 'GB') { %>Show filter<% } %><% if (user.LanguageContext == 'ES') { %>Mostrar filtro<% } %><% if (user.LanguageContext == 'CN') { %>显示筛选器<% } %>"></button>
                 </div>
                 <div class="card-body p-2 f-roboto">
                     <div class="forms-results-content">
@@ -371,7 +350,7 @@
                         <% } %>
                         <% if (user.LanguageContext == "CN") { %>
                         編輯
-                        <% } %></b> / <span class="form-header"></span>
+                        <% } %></b> / <span class="form-header"></span><span class="form-header-version"></span>
                     </h5>
                     <button type="button" class="btn-close btn-cancel-container-form-edit" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>

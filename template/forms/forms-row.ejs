@@ -1,6 +1,6 @@
 <tr>
     <td scope="col">
-        <i class="bi bi-circle-fill" style="" />
+        <i class="bi bi-circle-fill <%= row.IsComplete ? 'text-success' : 'text-danger' %>"></i>
     </td>
     <td scope="col">
         <%= row.IDModello %>

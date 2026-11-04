@@ -76,7 +76,7 @@ $(function () {
     updateForm = function () {
 
     }
-    loadForm = function (IDModello, IDVersione) {
+    loadForm = function (IDModello, IDVersione, Numero) {
 
         let fnName = getFnName();
 
@@ -86,6 +86,7 @@ $(function () {
             var formEdit = $('.container-form-edit');
 
             $('.form-header').html($('.model-header').text());
+            $('.form-header-version').text(Numero ? ' (' + Numero + ')' : '');
 
             /* Imposta le proprietà di default del plug-in <Model> */
             formEdit.model({
@@ -359,7 +360,7 @@ $(function () {
                                     var user = JSON.parse($('#user').val());
 
                                     $('.result-forms-version-container').find('.btn-model-edit-' + row.IDVersione).click(function () {
-                                        loadForm($(this).data('idmodello'), $(this).data('idversione'));
+                                        loadForm($(this).data('idmodello'), $(this).data('idversione'), $(this).data('numero'));
                                     });
                                     $('.result-forms-version-container').find('.btn-model-del-' + row.IDVersione).click(function () {
                                         var option = JSON.parse(CtlDeleteVersion.attr('data-options'));
@@ -466,6 +467,7 @@ $(function () {
             showDeleteVersionError(xhr.responseText || xhr.statusText, fnName);
         });
     }
+    var lastFormsFilter = '';
     loadForms = function (pageSize, pageIndex, filter) {
 
         let fnName = getFnName();
@@ -486,6 +488,7 @@ $(function () {
                 }
                 else if (JSON.parse(JSON.stringify(res)).status == "OK") {
                     if (filter == null) { filter = ""; }
+                    lastFormsFilter = filter;
 
                     $('.result-forms-container').empty();
 
@@ -883,6 +886,7 @@ $(function () {
 
     $("#container-model-versions").on("hidden.bs.modal", function () {
         $('div.modal-backdrop').removeClass('modal-backdrop');
+        reloadFormsList();
     });
 
     /* alla chiusura della gestione sezioni e campi aggiorna la popup Versioni */
@@ -893,6 +897,12 @@ $(function () {
             $('body').addClass('modal-open');
             loadFormsVersion(model);
         }
+        reloadFormsList();
     });
+
+    function reloadFormsList() {
+        var options = JSON.parse(ControlPagerArtworkOrdine.attr('data-options'));
+        loadForms(options.pageSize, options.pageIndex, lastFormsFilter);
+    }
 
 });
