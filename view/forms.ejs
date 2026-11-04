@@ -47,6 +47,28 @@
     <input type="hidden" name="user" id="user" value="<%= JSON.stringify(user) %>" />
     <input type="hidden" name="checkConn" id="checkConn" value="<%= checkConn %>" />
     <div class="container-fluid p-0 px-4 forms-heading">
+        <% if (typeof processPath !== 'undefined' && processPath) { %>
+        <span class="bi bi-compass dynamic-process-compass" aria-hidden="true"></span>
+        <div class="dynamic-process-path">
+            <% if (user.LanguageContext == 'IT') { %>Sei in:<% } %>
+            <% if (user.LanguageContext == 'GB') { %>You are in:<% } %>
+            <% if (user.LanguageContext == 'ES') { %>Estás en:<% } %>
+            <% if (user.LanguageContext == 'CN') { %>您位于：<% } %>
+            <strong>
+                <% processPath.split(' / ').forEach(function (processName, index, processNames) { %>
+                    <% if (index > 0) { %> / <% } %>
+                    <% if (index === processNames.length - 1) { %>
+                        <span class="dynamic-process-path-current"><%= processName %></span>
+                    <% } else { %>
+                        <span><%= processName %></span>
+                    <% } %>
+                <% }); %>
+            </strong>
+        </div>
+        <h4 class="p-0 d-none">
+            <b class="f-roboto b">Forms</b>
+        </h4>
+        <% } else { %>
         <h4 class="p-0">
             <span class="bi bi-stack" style="font-size:2rem;"></span>&nbsp;
             <b class="f-roboto b">
@@ -64,6 +86,7 @@
                 <% } %>
             </b>
         </h4>
+        <% } %>
     </div>
     <div class="container-fluid forms-layout">
         <div class="filtro-container forms-filter">

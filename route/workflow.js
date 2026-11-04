@@ -25,6 +25,7 @@ const path = require('path');
 const sessionUtil = require('../utils/session')
 const session = require('express-session');
 const workflowCatalog = require('../crud/workflow-catalog');
+const breadcrumb = require('../crud/breadcrumb');
 
 function isPositiveInteger(value) {
     const number = Number(value);
@@ -123,7 +124,7 @@ workflow.get('/workflow', function (req, res) {
         return;
     }
     res.set('Access-Control-Allow-Origin', '*');
-    workflowCatalog.getBreadcrumb(req.session.user.LanguageContext).then(function (processPath) {
+    breadcrumb.getBreadcrumb(req.session.user.LanguageContext, 'workflow').then(function (processPath) {
         res.status(200).render('workflow-catalog', {
             user: req.session.user,
             processPath: processPath

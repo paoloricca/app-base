@@ -40,47 +40,6 @@ function textInput(value) {
     return { type: sql.NVarChar(sql.MAX), value: value };
 }
 
-function getBreadcrumb(languageContext) {
-    return execute(`
-        WITH ProcessHierarchy AS (
-            SELECT IDProcesso, IDProcessoParent, Descrizione, 0 AS Depth
-            FROM dbo.TProcessi
-            WHERE PageUrl = 'workflow'
-            UNION ALL
-            SELECT parent.IDProcesso, parent.IDProcessoParent, parent.Descrizione, child.Depth + 1
-            FROM dbo.TProcessi AS parent
-            INNER JOIN ProcessHierarchy AS child ON child.IDProcessoParent = parent.IDProcesso
-        )
-        SELECT COALESCE(
-            NULLIF(CASE @LanguageContext
-                WHEN 'IT' THEN Culture.Text_IT
-                WHEN 'GB' THEN Culture.Text_GB
-                WHEN 'ES' THEN Culture.Text_ES
-                WHEN 'CN' THEN Culture.Text_CN
-            END, ''),
-            NULLIF(Culture.Text_IT, ''),
-            NULLIF(Culture.Text_GB, ''),
-            NULLIF(Culture.Text_ES, ''),
-            NULLIF(Culture.Text_CN, ''),
-            Process.Descrizione
-        ) AS Description
-        FROM ProcessHierarchy AS Hierarchy
-        INNER JOIN dbo.TProcessi AS Process ON Process.IDProcesso = Hierarchy.IDProcesso
-        LEFT JOIN dbo.TProcessiCulture AS Culture ON Culture.IDProcesso = Process.IDProcesso
-        ORDER BY Hierarchy.Depth DESC
-        OPTION (MAXRECURSION 100);
-    `, {
-        LanguageContext: { type: sql.NVarChar(2), value: languageContext }
-    }).then(function (result) {
-        if (!result.recordset.length) {
-            throw new Error('The Workflow page is not configured in TProcessi.');
-        }
-        return result.recordset.map(function (row) {
-            return row.Description;
-        }).join(' / ');
-    });
-}
-
 function getRecords(IdAttore, pageIndex, pageSize, search, visibility, languageContext) {
     const offset = (pageIndex - 1) * pageSize;
     const searchTerm = search ? '%' + search.replace(/[%_[\]]/g, '[$&]') + '%' : null;
@@ -591,7 +550,6 @@ function deleteVersion(IDVersioneWorkflow) {
 }
 
 module.exports = {
-    getBreadcrumb,
     getRecords,
     getVersions,
     getVersionEditorDetails,

@@ -8,6 +8,7 @@ var requestBase = require('../../model/request-base.js');
 // var deleteRichiestaAssistenza = require('../../model/ticket/delete-richiesta-assistenza');
 var response = require('../../model/response');
 const crud = require('../../crud/forms/forms.js');
+const breadcrumb = require('../../crud/breadcrumb.js');
 const fs = require('fs');
 const path = require('path');
 const sessionUtil = require('../../utils/session')
@@ -101,15 +102,15 @@ forms.get('/forms', function (req, res) {
     var internetAvailable = require("internet-available");
     res.set('Access-Control-Allow-Origin', '*');
     if (sessionUtil.verifyUser(req, res)) {
-        internetAvailable().then(function (conn) {
-            res.status(200).render('forms', {
-                user: req.session.user,
-                checkConn: true,
-            });
-        }).catch(function () {
-            res.status(200).render('forms', {
-                user: req.session.user,
-                checkConn: false,
+        internetAvailable().then(function () { return true; }).catch(function () { return false; }).then(function (conn) {
+            return breadcrumb.getBreadcrumb(req.session.user.LanguageContext, 'forms').catch(function () {
+                return null;
+            }).then(function (processPath) {
+                res.status(200).render('forms', {
+                    user: req.session.user,
+                    checkConn: conn,
+                    processPath: processPath
+                });
             });
         });
     }
