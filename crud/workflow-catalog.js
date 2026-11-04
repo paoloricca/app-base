@@ -133,13 +133,51 @@ function getRecords(IdAttore, pageIndex, pageSize, search, visibility, languageC
 
 function getVersions(IdWorkflow) {
     return execute(`
-        SELECT IDVersioneWorkflow, IDWorkflow, Numero,
-            DataVersione AS DataRegistrazione,
-            DataIstanza AS DataUltimaModifica,
-            IsVisible
-        FROM dbo.TWorkflowVersioni
-        WHERE IDWorkflow = @IDWorkflow
-        ORDER BY Numero DESC, IDVersioneWorkflow DESC;
+        SELECT Version.IDVersioneWorkflow, Version.IDWorkflow, Version.Numero,
+            Version.DataIstanza AS DataRegistrazione,
+            Version.DataVersione AS DataUltimaModifica,
+            Version.IsVisible,
+            CASE WHEN EXISTS (
+                SELECT 1
+                FROM dbo.TEventiTransizioni AS StartNode
+                INNER JOIN dbo.TEventiTransizioniDirezioni AS Direction
+                    ON Direction.IDTransizioneStart = StartNode.IDEventoTransizione
+                INNER JOIN dbo.TEventiTransizioni AS ConnectedNode
+                    ON ConnectedNode.IDEventoTransizione = Direction.IDTransizioneEnd
+                    AND ConnectedNode.IDVersioneWorkflow = Version.IDVersioneWorkflow
+                WHERE StartNode.IDVersioneWorkflow = Version.IDVersioneWorkflow
+                    AND StartNode.IsStartNode = 1
+                    AND StartNode.IsVisible = 1
+                    AND ConnectedNode.IsVisible = 1
+                    AND ConnectedNode.IDEventoTransizione <> StartNode.IDEventoTransizione
+                    AND Direction.IsVisible = 1
+            ) AND EXISTS (
+                SELECT 1
+                FROM dbo.TEventiTransizioni AS ConnectedNode
+                INNER JOIN dbo.TEventiTransizioniDirezioni AS Direction
+                    ON Direction.IDTransizioneStart = ConnectedNode.IDEventoTransizione
+                INNER JOIN dbo.TEventiTransizioni AS EndNode
+                    ON EndNode.IDEventoTransizione = Direction.IDTransizioneEnd
+                    AND EndNode.IDVersioneWorkflow = Version.IDVersioneWorkflow
+                WHERE ConnectedNode.IDVersioneWorkflow = Version.IDVersioneWorkflow
+                    AND ConnectedNode.IsVisible = 1
+                    AND EndNode.IsVisible = 1
+                    AND ConnectedNode.IDEventoTransizione <> EndNode.IDEventoTransizione
+                    AND Direction.IsVisible = 1
+                    AND (
+                        UPPER(LTRIM(RTRIM(ISNULL(EndNode.Code_IT, '')))) IN ('FINE', 'END')
+                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Code_GB, '')))) IN ('FINE', 'END')
+                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Code_ES, '')))) IN ('FINE', 'END', 'FIN')
+                        OR LTRIM(RTRIM(ISNULL(EndNode.Code_CN, ''))) IN (N'FINE', N'END', N'结束')
+                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Text_IT, '')))) IN ('FINE', 'END')
+                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Text_GB, '')))) IN ('FINE', 'END')
+                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Text_ES, '')))) IN ('FINE', 'END', 'FIN')
+                        OR LTRIM(RTRIM(ISNULL(EndNode.Text_CN, ''))) IN (N'FINE', N'END', N'结束')
+                    )
+            ) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS IsValid
+        FROM dbo.TWorkflowVersioni AS Version
+        WHERE Version.IDWorkflow = @IDWorkflow
+        ORDER BY Version.Numero DESC, Version.IDVersioneWorkflow DESC;
     `, { IDWorkflow: intInput(IdWorkflow) }).then(function (result) {
         return result.recordset;
     });
@@ -196,6 +234,23 @@ function getVersionGraph(IDVersioneWorkflow, IDAttore, LanguageContext) {
             Node.IDEventoTransizione AS id,
             Node.XPos AS x,
             Node.YPos AS y,
+            CAST(CASE WHEN EXISTS (
+                SELECT 1
+                FROM dbo.TEventiTransizioniDirezioni AS Direction
+                WHERE Direction.IDTransizioneStart = Node.IDEventoTransizione
+                    AND Direction.IDTransizioneEnd <> Node.IDEventoTransizione
+            ) OR EXISTS (
+                SELECT 1
+                FROM dbo.TEventiTransizioniDirezioni AS Direction
+                WHERE Direction.IDTransizioneEnd = Node.IDEventoTransizione
+                    AND Direction.IDTransizioneStart <> Node.IDEventoTransizione
+            ) THEN 1 ELSE 0 END AS BIT) AS HasConnection,
+            CAST(CASE WHEN EXISTS (
+                SELECT 1
+                FROM dbo.TEventiTransizioniAzioni AS StateAction
+                WHERE StateAction.IDEventoTransizione = Node.IDEventoTransizione
+                    AND StateAction.IDProcesso IS NOT NULL
+            ) THEN 1 ELSE 0 END AS BIT) AS HasAuthorization,
             CASE @LanguageContext
                 WHEN 'IT' THEN Node.Text_IT
                 WHEN 'GB' THEN Node.Text_GB
@@ -272,31 +327,9 @@ function getVersionGraphStates(IDVersioneWorkflow, IDAttore, LanguageContext) {
 
 function createVersionGraphNode(IDVersioneWorkflow, IDAttore) {
     return execute(`
-        IF NOT EXISTS (
-            SELECT 1
-            FROM dbo.TWorkflowVersioni AS Version
-            INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
-            WHERE Version.IDVersioneWorkflow = @IDVersioneWorkflow
-                AND Workflow.IDAttore = @IDAttore
-        )
-            THROW 50001, 'Workflow version not found.', 1;
-
-        DECLARE @NodeCount INT;
-        SELECT @NodeCount = COUNT(1)
-        FROM dbo.TEventiTransizioni
-        WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
-
-        INSERT dbo.TEventiTransizioni (
-            IDAttore, IDVersioneWorkflow, Code_IT, Code_GB, Text_IT, Text_GB, XPos, YPos, IsVisible
-        )
-        VALUES (
-            @IDAttore, @IDVersioneWorkflow, N'Nuovo stato', N'New node',
-            N'Nuovo stato', N'New node',
-            CONVERT(NVARCHAR(32), 100 + (@NodeCount % 5) * 150),
-            CONVERT(NVARCHAR(32), 100 + (@NodeCount / 5) * 100), 1
-        );
-        UPDATE dbo.TWorkflowVersioni SET DataIstanza = GETDATE()
-        WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
+        EXEC dbo.SP_POST_WORKFLOW_VERSION_NODE
+            @IDVersioneWorkflow = @IDVersioneWorkflow,
+            @IDAttore = @IDAttore;
     `, {
         IDVersioneWorkflow: intInput(IDVersioneWorkflow),
         IDAttore: intInput(IDAttore)
@@ -307,35 +340,11 @@ function createVersionGraphNode(IDVersioneWorkflow, IDAttore) {
 
 function createVersionGraphTransition(IDVersioneWorkflow, IDAttore, startNodeId, endNodeId) {
     return execute(`
-        IF NOT EXISTS (
-            SELECT 1
-            FROM dbo.TWorkflowVersioni AS Version
-            INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
-            WHERE Version.IDVersioneWorkflow = @IDVersioneWorkflow
-                AND Workflow.IDAttore = @IDAttore
-        )
-            THROW 50001, 'Workflow version not found.', 1;
-        IF NOT EXISTS (
-            SELECT 1
-            FROM dbo.TEventiTransizioni
-            WHERE IDEventoTransizione = @StartNodeId
-                AND IDVersioneWorkflow = @IDVersioneWorkflow
-        ) OR NOT EXISTS (
-            SELECT 1
-            FROM dbo.TEventiTransizioni
-            WHERE IDEventoTransizione = @EndNodeId
-                AND IDVersioneWorkflow = @IDVersioneWorkflow
-        )
-            THROW 50001, 'Workflow node not found in this version.', 1;
-
-        INSERT dbo.TEventiTransizioniDirezioni (
-            IDTransizioneStart, IDTransizioneEnd, Text_IT, Text_GB, IsVisible
-        )
-        VALUES (
-            @StartNodeId, @EndNodeId, N'Nuovo collegamento', N'New link', 1
-        );
-        UPDATE dbo.TWorkflowVersioni SET DataIstanza = GETDATE()
-        WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
+        EXEC dbo.SP_POST_WORKFLOW_VERSION_TRANSITION
+            @IDVersioneWorkflow = @IDVersioneWorkflow,
+            @IDAttore = @IDAttore,
+            @StartNodeId = @StartNodeId,
+            @EndNodeId = @EndNodeId;
     `, {
         IDVersioneWorkflow: intInput(IDVersioneWorkflow),
         IDAttore: intInput(IDAttore),
@@ -348,24 +357,18 @@ function createVersionGraphTransition(IDVersioneWorkflow, IDAttore, startNodeId,
 
 function updateVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizione, codes, descriptions) {
     return execute(`
-        UPDATE Node
-        SET Code_IT = @Code_IT,
-            Code_GB = @Code_GB,
-            Code_ES = @Code_ES,
-            Code_CN = @Code_CN,
-            Text_IT = @Text_IT,
-            Text_GB = @Text_GB,
-            Text_ES = @Text_ES,
-            Text_CN = @Text_CN
-        FROM dbo.TEventiTransizioni AS Node
-        INNER JOIN dbo.TWorkflowVersioni AS Version ON Version.IDVersioneWorkflow = Node.IDVersioneWorkflow
-        INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
-        WHERE Node.IDEventoTransizione = @IDEventoTransizione
-            AND Node.IDVersioneWorkflow = @IDVersioneWorkflow
-            AND Workflow.IDAttore = @IDAttore;
-        IF @@ROWCOUNT = 0 THROW 50001, 'Workflow node not found in this version.', 1;
-        UPDATE dbo.TWorkflowVersioni SET DataIstanza = GETDATE()
-        WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
+        EXEC dbo.SP_PUT_WORKFLOW_VERSION_NODE
+            @IDVersioneWorkflow = @IDVersioneWorkflow,
+            @IDAttore = @IDAttore,
+            @IDEventoTransizione = @IDEventoTransizione,
+            @Code_IT = @Code_IT,
+            @Code_GB = @Code_GB,
+            @Code_ES = @Code_ES,
+            @Code_CN = @Code_CN,
+            @Text_IT = @Text_IT,
+            @Text_GB = @Text_GB,
+            @Text_ES = @Text_ES,
+            @Text_CN = @Text_CN;
     `, graphTranslationInputs(IDVersioneWorkflow, IDAttore, codes, descriptions, {
         IDEventoTransizione: intInput(IDEventoTransizione)
     })).then(function () {
@@ -375,29 +378,18 @@ function updateVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizion
 
 function updateVersionGraphTransition(IDVersioneWorkflow, IDAttore, IDEventoDirezione, codes, descriptions) {
     return execute(`
-        UPDATE Direction
-        SET Code_IT = @Code_IT,
-            Code_GB = @Code_GB,
-            Code_ES = @Code_ES,
-            Code_CN = @Code_CN,
-            Text_IT = @Text_IT,
-            Text_GB = @Text_GB,
-            Text_ES = @Text_ES,
-            Text_CN = @Text_CN
-        FROM dbo.TEventiTransizioniDirezioni AS Direction
-        INNER JOIN dbo.TEventiTransizioni AS StartNode
-            ON StartNode.IDEventoTransizione = Direction.IDTransizioneStart
-        INNER JOIN dbo.TEventiTransizioni AS EndNode
-            ON EndNode.IDEventoTransizione = Direction.IDTransizioneEnd
-        INNER JOIN dbo.TWorkflowVersioni AS Version ON Version.IDVersioneWorkflow = StartNode.IDVersioneWorkflow
-        INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
-        WHERE Direction.IDEventoDirezione = @IDEventoDirezione
-            AND StartNode.IDVersioneWorkflow = @IDVersioneWorkflow
-            AND EndNode.IDVersioneWorkflow = @IDVersioneWorkflow
-            AND Workflow.IDAttore = @IDAttore;
-        IF @@ROWCOUNT = 0 THROW 50001, 'Workflow link not found in this version.', 1;
-        UPDATE dbo.TWorkflowVersioni SET DataIstanza = GETDATE()
-        WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
+        EXEC dbo.SP_PUT_WORKFLOW_VERSION_TRANSITION
+            @IDVersioneWorkflow = @IDVersioneWorkflow,
+            @IDAttore = @IDAttore,
+            @IDEventoDirezione = @IDEventoDirezione,
+            @Code_IT = @Code_IT,
+            @Code_GB = @Code_GB,
+            @Code_ES = @Code_ES,
+            @Code_CN = @Code_CN,
+            @Text_IT = @Text_IT,
+            @Text_GB = @Text_GB,
+            @Text_ES = @Text_ES,
+            @Text_CN = @Text_CN;
     `, graphTranslationInputs(IDVersioneWorkflow, IDAttore, codes, descriptions, {
         IDEventoDirezione: intInput(IDEventoDirezione)
     })).then(function () {
@@ -422,18 +414,12 @@ function graphTranslationInputs(IDVersioneWorkflow, IDAttore, codes, description
 
 function updateVersionGraphNodePosition(IDVersioneWorkflow, IDAttore, IDEventoTransizione, x, y) {
     return execute(`
-        UPDATE Node
-        SET XPos = @XPos,
-            YPos = @YPos
-        FROM dbo.TEventiTransizioni AS Node
-        INNER JOIN dbo.TWorkflowVersioni AS Version ON Version.IDVersioneWorkflow = Node.IDVersioneWorkflow
-        INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
-        WHERE Node.IDEventoTransizione = @IDEventoTransizione
-            AND Node.IDVersioneWorkflow = @IDVersioneWorkflow
-            AND Workflow.IDAttore = @IDAttore;
-        IF @@ROWCOUNT = 0 THROW 50001, 'Workflow node not found in this version.', 1;
-        UPDATE dbo.TWorkflowVersioni SET DataIstanza = GETDATE()
-        WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
+        EXEC dbo.SP_PUT_WORKFLOW_VERSION_NODE_POSITION
+            @IDVersioneWorkflow = @IDVersioneWorkflow,
+            @IDAttore = @IDAttore,
+            @IDEventoTransizione = @IDEventoTransizione,
+            @XPos = @XPos,
+            @YPos = @YPos;
     `, {
         IDVersioneWorkflow: intInput(IDVersioneWorkflow),
         IDAttore: intInput(IDAttore),
@@ -447,33 +433,10 @@ function updateVersionGraphNodePosition(IDVersioneWorkflow, IDAttore, IDEventoTr
 
 function deleteVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizione) {
     return execute(`
-        SET XACT_ABORT ON;
-        BEGIN TRY
-            BEGIN TRANSACTION;
-            IF NOT EXISTS (
-                SELECT 1
-                FROM dbo.TEventiTransizioni AS Node
-                INNER JOIN dbo.TWorkflowVersioni AS Version ON Version.IDVersioneWorkflow = Node.IDVersioneWorkflow
-                INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
-                WHERE Node.IDEventoTransizione = @IDEventoTransizione
-                    AND Node.IDVersioneWorkflow = @IDVersioneWorkflow
-                    AND Workflow.IDAttore = @IDAttore
-            )
-                THROW 50001, 'Workflow node not found in this version.', 1;
-            DELETE FROM dbo.TEventiTransizioniDirezioni
-            WHERE IDTransizioneStart = @IDEventoTransizione
-                OR IDTransizioneEnd = @IDEventoTransizione;
-            DELETE FROM dbo.TEventiTransizioni
-            WHERE IDEventoTransizione = @IDEventoTransizione
-                AND IDVersioneWorkflow = @IDVersioneWorkflow;
-            UPDATE dbo.TWorkflowVersioni SET DataIstanza = GETDATE()
-            WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
-            COMMIT TRANSACTION;
-        END TRY
-        BEGIN CATCH
-            IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
-            THROW;
-        END CATCH;
+        EXEC dbo.SP_DELETE_WORKFLOW_VERSION_NODE
+            @IDVersioneWorkflow = @IDVersioneWorkflow,
+            @IDAttore = @IDAttore,
+            @IDEventoTransizione = @IDEventoTransizione;
     `, {
         IDVersioneWorkflow: intInput(IDVersioneWorkflow),
         IDAttore: intInput(IDAttore),
@@ -485,21 +448,10 @@ function deleteVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizion
 
 function deleteVersionGraphTransition(IDVersioneWorkflow, IDAttore, IDEventoDirezione) {
     return execute(`
-        DELETE Direction
-        FROM dbo.TEventiTransizioniDirezioni AS Direction
-        INNER JOIN dbo.TEventiTransizioni AS StartNode
-            ON StartNode.IDEventoTransizione = Direction.IDTransizioneStart
-        INNER JOIN dbo.TEventiTransizioni AS EndNode
-            ON EndNode.IDEventoTransizione = Direction.IDTransizioneEnd
-        INNER JOIN dbo.TWorkflowVersioni AS Version ON Version.IDVersioneWorkflow = StartNode.IDVersioneWorkflow
-        INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
-        WHERE Direction.IDEventoDirezione = @IDEventoDirezione
-            AND StartNode.IDVersioneWorkflow = @IDVersioneWorkflow
-            AND EndNode.IDVersioneWorkflow = @IDVersioneWorkflow
-            AND Workflow.IDAttore = @IDAttore;
-        IF @@ROWCOUNT = 0 THROW 50001, 'Workflow link not found in this version.', 1;
-        UPDATE dbo.TWorkflowVersioni SET DataIstanza = GETDATE()
-        WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
+        EXEC dbo.SP_DELETE_WORKFLOW_VERSION_TRANSITION
+            @IDVersioneWorkflow = @IDVersioneWorkflow,
+            @IDAttore = @IDAttore,
+            @IDEventoDirezione = @IDEventoDirezione;
     `, {
         IDVersioneWorkflow: intInput(IDVersioneWorkflow),
         IDAttore: intInput(IDAttore),
@@ -591,26 +543,7 @@ function deleteWorkflow(IdWorkflow) {
 
 function createVersion(IdWorkflow) {
     return execute(`
-        SET XACT_ABORT ON;
-        BEGIN TRY
-            BEGIN TRANSACTION;
-            IF NOT EXISTS (SELECT 1 FROM dbo.TWorkflow WITH (UPDLOCK, HOLDLOCK) WHERE IDWorkflow = @IDWorkflow)
-                THROW 50001, 'Workflow record not found.', 1;
-
-            DECLARE @Numero INT;
-            SELECT @Numero = ISNULL(MAX(Numero), 0) + 1
-            FROM dbo.TWorkflowVersioni WITH (UPDLOCK, HOLDLOCK)
-            WHERE IDWorkflow = @IDWorkflow;
-
-            INSERT INTO dbo.TWorkflowVersioni (IDWorkflow, Numero, DataVersione, IsVisible)
-            OUTPUT INSERTED.IDVersioneWorkflow
-            VALUES (@IDWorkflow, @Numero, GETDATE(), 1);
-            COMMIT TRANSACTION;
-        END TRY
-        BEGIN CATCH
-            IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
-            THROW;
-        END CATCH;
+        EXEC dbo.SP_POST_WORKFLOW_VERSION @IDWorkflow = @IDWorkflow;
     `, { IDWorkflow: intInput(IdWorkflow) }).then(function (result) {
         return result.recordset[0].IDVersioneWorkflow;
     });
@@ -619,8 +552,7 @@ function createVersion(IdWorkflow) {
 function setVersionVisibility(IDVersioneWorkflow, isVisible) {
     return execute(`
         UPDATE dbo.TWorkflowVersioni
-        SET IsVisible = @IsVisible,
-            DataIstanza = GETDATE()
+        SET IsVisible = @IsVisible
         WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
         IF @@ROWCOUNT = 0 THROW 50001, 'Workflow version not found.', 1;
     `, {

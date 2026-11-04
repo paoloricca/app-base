@@ -28,6 +28,46 @@
         }
     </style>
     <% } %>
+    <style>
+        #cy {
+            position: relative;
+        }
+
+        .workflow-node-health-bullet {
+            position: absolute;
+            z-index: 1002;
+            width: 8px;
+            height: 8px;
+            border: 1px solid #fff;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        #container-workflow-set-auth .workflow-auth-panel-title {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #container-workflow-set-auth .card-body {
+            font-size: 0.8rem;
+        }
+
+        #container-workflow-set-auth .card-body .btn {
+            font-size: 0.8rem;
+        }
+
+        #container-workflow-set-auth .card-body a {
+            text-decoration: none;
+        }
+
+        #container-workflow-set-auth .profilo-utente a.active,
+        #container-workflow-set-auth .gruppo-operativo a.active,
+        #container-workflow-set-auth .workflow-auth-selected {
+            font-weight: 700;
+            color: #212529 !important;
+        }
+    </style>
     <script type="text/javascript" src="/logout-script"></script>
 </head>
 <body class="<%= versionId ? 'workflow-version-editor-body' : '' %>">
@@ -100,7 +140,6 @@
                                     設定所有者
                                 <% } %>
                             </span>
-                            <% if (!versionId || processId) { %>
                             <span class="col-12 p-0 px-2 workflow-set-auth app-context-menu-item">
                                 <i class="bi bi-person-lock"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
@@ -116,7 +155,6 @@
                                     設定權限
                                 <% } %>
                             </span>
-                            <% } %>
                             <span class="col-12 p-0 px-2 workflow-set-rel app-context-menu-item">
                                 <i class="bi bi-link-45deg"></i>&nbsp;&nbsp;
 		                        <% if (user.LanguageContext == "IT") { %>
@@ -424,7 +462,7 @@
         </div>
 
         <div class="modal" id="container-workflow-set-profilo-utente" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="ModalProcessi">
-            <div class="modal-dialog modal-dialog-centered modal-lg h-50">
+            <div class="modal-dialog modal-dialog-centered modal-xl h-50">
                 <div class="modal-content h-75" style="margin-top:-7% !important; height:75% !important;">
                     <div class="modal-header">
                         <h5 class="modal-title text-primary">
@@ -612,9 +650,9 @@
                     </div>
                     <div class="modal-body p-1 pt-1" style="overflow-y:hidden;">
                         <div class="row g-0 h-100">
-                            <div class="col-4 p-0 h-100">
+                            <div class="col-3 p-0 h-100">
                                 <div class="card h-100 p-0">
-                                    <div class="card-header p-1 px-2 f-roboto">
+                                    <div class="card-header p-1 px-2 f-roboto workflow-auth-panel-title">
                                     <b>
 		                                <% if (user.LanguageContext == "IT") { %>
                                             Gruppi di lavoro
@@ -636,9 +674,9 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-4 p-0 h-100 px-1">
+                            <div class="col-3 p-0 h-100 px-1">
                                 <div class="card h-100 p-0">
-                                    <div class="card-header p-1 px-2 f-roboto">
+                                    <div class="card-header p-1 px-2 f-roboto workflow-auth-panel-title">
                                     <b>
 		                                <% if (user.LanguageContext == "IT") { %>
                                             Profili utente
@@ -652,7 +690,6 @@
                                         <% if (user.LanguageContext == "CN") { %>
                                             使用者資料
                                         <% } %>
-                                        <span class="auth-profili-utente-text"></span>
                                     </b>
                                     </div>
                                     <div class="card-body h-100 p-2 f-roboto">
@@ -661,9 +698,32 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-4 p-0 h-100 px-1">
+                            <div class="col-3 p-0 h-100 px-1">
                                 <div class="card h-100 p-0">
-                                    <div class="card-header p-1 px-2 f-roboto">
+                                    <div class="card-header p-1 px-2 f-roboto workflow-auth-panel-title">
+                                    <b>
+		                                <% if (user.LanguageContext == "IT") { %>
+                                            Processi
+                                        <% } %>
+                                        <% if (user.LanguageContext == "GB") { %>
+                                            Processes
+                                        <% } %>
+                                        <% if (user.LanguageContext == "ES") { %>
+                                            Procesos
+		                                <% } %>
+                                        <% if (user.LanguageContext == "CN") { %>
+                                            流程
+                                        <% } %>
+                                    </b>
+                                    </div>
+                                    <div class="card-body h-100 p-2 f-roboto">
+                                        <div id="auth-processi-container" style="overflow-y:auto; height:90%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-3 p-0 h-100 px-1">
+                                <div class="card h-100 p-0">
+                                    <div class="card-header p-1 px-2 f-roboto workflow-auth-panel-title">
                                     <b>
 		                                <% if (user.LanguageContext == "IT") { %>
                                             Autorizzazioni
@@ -677,7 +737,6 @@
                                         <% if (user.LanguageContext == "CN") { %>
                                             授權
                                         <% } %>
-                                        <span class="auth-autorizzazioni-text"></span>
                                     </b>
                                     </div>
                                     <div class="card-body h-100 p-2 f-roboto">

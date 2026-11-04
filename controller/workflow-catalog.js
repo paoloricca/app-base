@@ -351,6 +351,11 @@ $(function () {
             const id = Number(version.IDVersioneWorkflow);
             versionsById[id] = version;
             const $row = $('<tr>');
+            $('<td>').append(
+                $('<i>', {
+                    class: 'bi bi-circle-fill ' + (version.IsValid ? 'text-success' : 'text-danger')
+                })
+            ).appendTo($row);
             $('<td>').text(version.Numero).appendTo($row);
             $('<td>', { class: 'd-none d-md-table-cell' }).text(versionDateText(version.DataRegistrazione)).appendTo($row);
             $('<td>', { class: 'd-none d-md-table-cell' }).text(versionDateText(version.DataUltimaModifica)).appendTo($row);
