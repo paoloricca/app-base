@@ -175,6 +175,9 @@ $(function () {
             const id = Number(record.IDWorkflow);
             recordsById[id] = record;
             const $row = $('<tr>');
+            $('<td>').append(
+                $('<i>', { class: 'bi bi-circle-fill ' + (record.IsValid ? 'text-success' : 'text-danger') })
+            ).appendTo($row);
             $('<td>').text(id).appendTo($row);
             $('<td>').text(record.Description || '').appendTo($row);
             $('<td>').text(dateText(record.DataIstanza)).appendTo($row);
@@ -531,6 +534,7 @@ $(function () {
     });
     $('#workflow-versions-modal').on('hidden.bs.modal', function () {
         $('#workflow-version-editor-modal').modal('hide');
+        loadRecords();
     });
     window.addEventListener('message', function (event) {
         if (event.data && event.data.type === 'workflow-version-editor-closed') {

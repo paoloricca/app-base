@@ -54,6 +54,12 @@ function getRecords(IdAttore, pageIndex, pageSize, search, visibility, languageC
 
         SELECT IDWorkflow, IDAttore, Description_IT, Description_GB, Description_ES,
             Description_CN, Description_DE, DataIstanza, IsVisible,
+            CASE WHEN EXISTS (SELECT 1 FROM dbo.TWorkflowVersioni AS V WHERE V.IDWorkflow = TWorkflow.IDWorkflow)
+                AND NOT EXISTS (
+                    SELECT 1 FROM dbo.TWorkflowVersioni AS V
+                    WHERE V.IDWorkflow = TWorkflow.IDWorkflow
+                        AND dbo.FN_WORKFLOW_VERSION_IS_VALID(V.IDVersioneWorkflow) = 0
+                ) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS IsValid,
             COALESCE(
                 NULLIF(CASE @LanguageContext
                     WHEN 'IT' THEN Description_IT
@@ -96,44 +102,7 @@ function getVersions(IdWorkflow) {
             Version.DataIstanza AS DataRegistrazione,
             Version.DataVersione AS DataUltimaModifica,
             Version.IsVisible,
-            CASE WHEN EXISTS (
-                SELECT 1
-                FROM dbo.TEventiTransizioni AS StartNode
-                INNER JOIN dbo.TEventiTransizioniDirezioni AS Direction
-                    ON Direction.IDTransizioneStart = StartNode.IDEventoTransizione
-                INNER JOIN dbo.TEventiTransizioni AS ConnectedNode
-                    ON ConnectedNode.IDEventoTransizione = Direction.IDTransizioneEnd
-                    AND ConnectedNode.IDVersioneWorkflow = Version.IDVersioneWorkflow
-                WHERE StartNode.IDVersioneWorkflow = Version.IDVersioneWorkflow
-                    AND StartNode.IsStartNode = 1
-                    AND StartNode.IsVisible = 1
-                    AND ConnectedNode.IsVisible = 1
-                    AND ConnectedNode.IDEventoTransizione <> StartNode.IDEventoTransizione
-                    AND Direction.IsVisible = 1
-            ) AND EXISTS (
-                SELECT 1
-                FROM dbo.TEventiTransizioni AS ConnectedNode
-                INNER JOIN dbo.TEventiTransizioniDirezioni AS Direction
-                    ON Direction.IDTransizioneStart = ConnectedNode.IDEventoTransizione
-                INNER JOIN dbo.TEventiTransizioni AS EndNode
-                    ON EndNode.IDEventoTransizione = Direction.IDTransizioneEnd
-                    AND EndNode.IDVersioneWorkflow = Version.IDVersioneWorkflow
-                WHERE ConnectedNode.IDVersioneWorkflow = Version.IDVersioneWorkflow
-                    AND ConnectedNode.IsVisible = 1
-                    AND EndNode.IsVisible = 1
-                    AND ConnectedNode.IDEventoTransizione <> EndNode.IDEventoTransizione
-                    AND Direction.IsVisible = 1
-                    AND (
-                        UPPER(LTRIM(RTRIM(ISNULL(EndNode.Code_IT, '')))) IN ('FINE', 'END')
-                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Code_GB, '')))) IN ('FINE', 'END')
-                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Code_ES, '')))) IN ('FINE', 'END', 'FIN')
-                        OR LTRIM(RTRIM(ISNULL(EndNode.Code_CN, ''))) IN (N'FINE', N'END', N'结束')
-                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Text_IT, '')))) IN ('FINE', 'END')
-                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Text_GB, '')))) IN ('FINE', 'END')
-                        OR UPPER(LTRIM(RTRIM(ISNULL(EndNode.Text_ES, '')))) IN ('FINE', 'END', 'FIN')
-                        OR LTRIM(RTRIM(ISNULL(EndNode.Text_CN, ''))) IN (N'FINE', N'END', N'结束')
-                    )
-            ) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS IsValid
+            dbo.FN_WORKFLOW_VERSION_IS_VALID(Version.IDVersioneWorkflow) AS IsValid
         FROM dbo.TWorkflowVersioni AS Version
         WHERE Version.IDWorkflow = @IDWorkflow
         ORDER BY Version.Numero DESC, Version.IDVersioneWorkflow DESC;
@@ -527,12 +496,28 @@ function deleteVersion(IDVersioneWorkflow) {
         SET XACT_ABORT ON;
         BEGIN TRY
             BEGIN TRANSACTION;
-            DELETE Direction
-            FROM dbo.TEventiTransizioniDirezioni AS Direction
-            INNER JOIN dbo.TEventiTransizioni AS Node
-                ON Node.IDEventoTransizione = Direction.IDTransizioneStart
-                OR Node.IDEventoTransizione = Direction.IDTransizioneEnd
-            WHERE Node.IDVersioneWorkflow = @IDVersioneWorkflow;
+            DECLARE @Nodes TABLE (IDEventoTransizione INT PRIMARY KEY);
+            INSERT INTO @Nodes
+            SELECT IDEventoTransizione FROM dbo.TEventiTransizioni
+            WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
+            DECLARE @Directions TABLE (IDEventoDirezione INT PRIMARY KEY);
+            INSERT INTO @Directions
+            SELECT IDEventoDirezione FROM dbo.TEventiTransizioniDirezioni
+            WHERE IDTransizioneStart IN (SELECT IDEventoTransizione FROM @Nodes)
+                OR IDTransizioneEnd IN (SELECT IDEventoTransizione FROM @Nodes);
+            DELETE FROM dbo.TEventiTransizioniAzioniFilter
+            WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes)
+                OR IDEventoAzione IN (SELECT IDEventoAzione FROM dbo.TEventiTransizioniAzioni
+                    WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes));
+            DELETE FROM dbo.TEventiTransizioniFilter
+            WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes)
+                OR IDEventoDirezione IN (SELECT IDEventoDirezione FROM @Directions);
+            DELETE FROM dbo.TEventiTransizioniAzioni WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes);
+            DELETE FROM dbo.TEventiTransizioniVendor WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes);
+            DELETE FROM dbo.TEventiTransizioniTiming WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes);
+            DELETE FROM dbo.TEventiTransizioniOwner WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes);
+            DELETE FROM dbo.TEventiStati WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes);
+            DELETE FROM dbo.TEventiTransizioniDirezioni WHERE IDEventoDirezione IN (SELECT IDEventoDirezione FROM @Directions);
             DELETE FROM dbo.TEventiTransizioni
             WHERE IDVersioneWorkflow = @IDVersioneWorkflow;
             DELETE FROM dbo.TWorkflowVersioni
