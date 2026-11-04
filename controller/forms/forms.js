@@ -733,7 +733,6 @@ $(function () {
             });
 
             $('#txt-model-idmodello').val(model.IDModello);
-            $('#txt-model-codice').val(model.Codice);
 
             $('#container-form-new').modal('show');
         }
@@ -775,7 +774,6 @@ $(function () {
                         Description_GB: CtlTxtModelCulture.value.GB,
                         Description_ES: CtlTxtModelCulture.value.ES,
                         Description_CN: CtlTxtModelCulture.value.CN,
-                        Codice: $('#txt-model-codice').val(),
                     },
                     async: false
                 }).done(function (response) {
