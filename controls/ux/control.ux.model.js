@@ -1,4 +1,4 @@
-﻿(function ($) {
+(function ($) {
     /* Questo controllo utente consente di interagire con un processo di sistema */
 
     let labelNuovo = {
@@ -85,6 +85,11 @@
         };
 
         $.fn.model.load = function () {
+
+            /* al termine di tutte le chiamate nasconde i loader rimasti visibili */
+            $(document).off('ajaxStop.modelLoader').on('ajaxStop.modelLoader', function () {
+                plugin.find('.spinner-border').hide();
+            });
 
             var options = JSON.parse(plugin.attr('data-options'));
 
@@ -234,6 +239,10 @@
                                     $('#FileTypes').val($('#FileTypes').val() + ',' + $(this).data('type'));
                                 } else {
                                     $('#FileTypes').val($('#FileTypes').val().split(',' + $(this).data('type')).join(''));
+                                }
+                                if (plugin.find('.file-type:checked').length > 0) {
+                                    plugin.find('.tipo-file').removeClass('text-danger');
+                                    plugin.find('.tipo-file-error').hide();
                                 }
                             });
 
@@ -888,6 +897,9 @@
 
             /* Inizializza il controllo per gestire la descrizione del campo */
             modal.find('.attribute-header').html(campo.Description);
+            modal.find('.tipo-file').removeClass('text-danger');
+            modal.find('.tipo-file-error').hide();
+            plugin.find('#container-attribute-edit-values .attribute-header').html(campo.Description);
 
             modal.find(".container-control-culture-textbox-descrizione").multiLanguageTextBox({
                 Title: '',
@@ -913,7 +925,7 @@
                 CN: campo.Description_CN
             });
 
-            modal.find(".container-value-edit-culture").multiLanguageTextBox({
+            plugin.find(".container-value-edit-culture").multiLanguageTextBox({
                 Title: null,
                 Label: null,
                 Id: 'DescrizioneValue',
@@ -926,7 +938,7 @@
                 ]
             });
 
-            modal.find(".container-value-edit-culture").multiLanguageTextBox("option", "Title", null);
+            plugin.find(".container-value-edit-culture").multiLanguageTextBox("option", "Title", null);
 
             $.when(
                 plugin.model.laodTipoDati()
@@ -1008,6 +1020,7 @@
                 plugin.find('#IDAttributo').val(campo.IDAttributo);
 
                 modal.show();
+                plugin.find('.spinner-border').hide();
 
             });
             
@@ -1032,6 +1045,18 @@
                         isvalidform = false;
                     }
                 })
+
+                /* Tipo File: almeno un tipo file deve essere selezionato */
+                var fileTypesMissing = plugin.find('#IDTipoDati').val() == 7 && plugin.find('.file-type:checked').length == 0;
+                plugin.find('.tipo-file').toggleClass('text-danger', fileTypesMissing);
+                plugin.find('.tipo-file-error').toggle(fileTypesMissing);
+                if (fileTypesMissing) {
+                    isvalidform = false;
+                }
+
+                if (!isvalidform) {
+                    return;
+                }
 
                 const CtlTxtDescrizione = plugin.find(".container-control-culture-textbox-descrizione").data("mltextbox");
 

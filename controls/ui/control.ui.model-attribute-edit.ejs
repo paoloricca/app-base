@@ -1,7 +1,17 @@
-﻿<div id="confirm-delete-attribute"></div>
+﻿<style>
+#container-attribute-edit .modal-body { font-size: .85rem; }
+#container-attribute-edit .attribute-edit-divider { width: 1px; padding: 0; margin: 0 .5rem; background: #dee2e6; }
+#container-attribute-edit h5 { font-size: .9rem; margin: .5rem 0 .25rem; }
+#container-attribute-edit .form-control, #container-attribute-edit .form-select { font-size: .85rem; padding: .25rem .5rem; }
+#container-attribute-edit .attribute-toggle { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding: .25rem 0 !important; }
+#container-attribute-edit .attribute-toggle h5 { margin: 0; }
+#container-attribute-edit .attribute-toggle .form-switch { width: auto; margin: 0; }
+#container-attribute-edit .numero-file, #container-attribute-edit .dimensione-file { padding-left: 0 !important; }
+</style>
+<div id="confirm-delete-attribute"></div>
 <div class="modal" id="container-attribute-edit" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-lg h-75 modal-dialog-centered" role="document">
-        <div class="modal-content h-75">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
             <div class="modal-header">
                 <i class="bi bi-gear me-2"></i>
                 <h5 class="modal-title f-roboto b">
@@ -20,73 +30,18 @@
                 </h5>
                 <button type="button" class="btn-close btn-cancel-attribute-edit" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body h-100">
+            <div class="modal-body was-validated">
 
                 <input type="hidden" id="IDClasse" name="IDClasse" />
                 <input type="hidden" id="IDAttributo" name="IDAttributo" />
                 <div class="container-form-edit">
                 </div>
-                <div class="col-1 p-0">
-                    <h5 class="f-roboto-b text-primary">
-                        <% if (user.LanguageContext == "IT") { %>
-                            Visibile
-                        <% } %>
-                        <% if (user.LanguageContext == "GB") { %>
-                            Visible
-                        <% } %>
-                        <% if (user.LanguageContext == "ES") { %>
-                            visible
-                        <% } %>
-                        <% if (user.LanguageContext == "CN") { %>
-                            可見的
-                        <% } %>
-                    </h5>
-                    <div class="col-12 p-0 form-switch">
-                        <input id="Visibile" name="Visibile" class="form-check-input btn-toggle-" type="checkbox">
+                <div class="row g-3 attribute-edit-columns">
+                <div class="col attribute-edit-main">
+                    <div class="col-12 p-0">
+                        <div class="container-control-culture-textbox-descrizione"></div>
                     </div>
-                </div>
-                <div class="col-1 p-0">
-                    <h5 class="f-roboto-b text-primary">
-                        <% if (user.LanguageContext == "IT") { %>
-                            Obbligatorio
-                        <% } %>
-                        <% if (user.LanguageContext == "GB") { %>
-                            Required
-                        <% } %>
-                        <% if (user.LanguageContext == "ES") { %>
-                            Obligatorio
-                        <% } %>
-                        <% if (user.LanguageContext == "CN") { %>
-                            強制性的
-                        <% } %>
-                    </h5>
-                    <div class="col-12 p-0 form-switch">
-                        <input id="Obbligatorio" name="Obbligatorio" class="form-check-input btn-toggle-" type="checkbox">
-                    </div>
-                </div>
-                <div class="col-1 p-0">
-                    <h5 class="f-roboto-b text-primary">
-                        <% if (user.LanguageContext == "IT") { %>Filtro<% } %>
-                        <% if (user.LanguageContext == "GB") { %>Filter<% } %>
-                        <% if (user.LanguageContext == "ES") { %>Filtro<% } %>
-                        <% if (user.LanguageContext == "CN") { %>筛选<% } %>
-                    </h5>
-                    <div class="col-12 p-0 form-switch">
-                        <input id="IsFilter" name="IsFilter" class="form-check-input btn-toggle-" type="checkbox">
-                    </div>
-                </div>
-                <div class="col-1 p-0">
-                    <h5 class="f-roboto-b text-primary">
-                        <% if (user.LanguageContext == "IT") { %>Riepilogo<% } %>
-                        <% if (user.LanguageContext == "GB") { %>Summary<% } %>
-                        <% if (user.LanguageContext == "ES") { %>Resumen<% } %>
-                        <% if (user.LanguageContext == "CN") { %>汇总<% } %>
-                    </h5>
-                    <div class="col-12 p-0 form-switch">
-                        <input id="IsSummary" name="IsSummary" class="form-check-input btn-toggle-" type="checkbox">
-                    </div>
-                </div>
-                <div class="col-12 p-0 mb-2">
+                    <div class="col-12 p-0 mb-2">
                     <h5 class="f-roboto-b text-primary">
                         <% if (user.LanguageContext == "IT") { %>
                             Tipo
@@ -101,11 +56,8 @@
                             類型
                         <% } %>
                     </h5>
-                    <select id="IDTipoDati" required="" class="form-control tipo-dati">
+                    <select id="IDTipoDati" required="" class="form-select tipo-dati">
                     </select>
-                    <div class="col-12 p-0">
-                        <div class="container-control-culture-textbox-descrizione" />
-                    </div>
                     <div class="col-12 p-0 lunghezza-massima" style="display: none;">
                         <h5 class="f-roboto-b text-primary">
                             <% if (user.LanguageContext == "IT") { %>
@@ -166,7 +118,7 @@
                         </div>
                     </div>
 
-                    <div class="col-6 p-0 px-2 numero-file" style="display: none;">
+                    <div class="col-12 p-0 numero-file" style="display: none;">
                         <h5 class="f-roboto-b text-primary">
                             <% if (user.LanguageContext == "IT") { %>
                                 Numero file accettati
@@ -186,7 +138,7 @@
                         </div>
                     </div>
 
-                    <div class="col-6 p-0 dimensione-file" style="display: none;">
+                    <div class="col-12 p-0 dimensione-file" style="display: none;">
                         <h5 class="f-roboto-b text-primary">
                             <% if (user.LanguageContext == "IT") { %>
                                 Dimensione consentita
@@ -283,6 +235,12 @@
                             </div>
                         </div>
                     </div>
+                    <div class="invalid-feedback tipo-file-error" style="display: none;">
+                        <% if (user.LanguageContext == "IT") { %>Seleziona almeno un tipo file<% } %>
+                        <% if (user.LanguageContext == "GB") { %>Select at least one file type<% } %>
+                        <% if (user.LanguageContext == "ES") { %>Seleccione al menos un tipo de archivo<% } %>
+                        <% if (user.LanguageContext == "CN") { %>請至少選擇一種文件類型<% } %>
+                    </div>
                     
 		            <a class="btn btn-secondary btn-sm btn-configura-lista mt-2" style="display: none;">
 			            <% if (user.LanguageContext == "IT") { %>
@@ -298,6 +256,71 @@
                             配置清單
                         <% } %>
 		            </a>
+                </div>
+                </div>
+                <div class="col-auto attribute-edit-divider"></div>
+                <div class="col attribute-edit-toggles">
+                <div class="attribute-toggle p-0">
+                    <h5 class="f-roboto-b text-primary">
+                        <% if (user.LanguageContext == "IT") { %>
+                            Visibile
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Visible
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            visible
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            可見的
+                        <% } %>
+                    </h5>
+                    <div class="col-12 p-0 form-switch">
+                        <input id="Visibile" name="Visibile" class="form-check-input btn-toggle-" type="checkbox">
+                    </div>
+                </div>
+                <div class="attribute-toggle p-0">
+                    <h5 class="f-roboto-b text-primary">
+                        <% if (user.LanguageContext == "IT") { %>
+                            Obbligatorio
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Required
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Obligatorio
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            強制性的
+                        <% } %>
+                    </h5>
+                    <div class="col-12 p-0 form-switch">
+                        <input id="Obbligatorio" name="Obbligatorio" class="form-check-input btn-toggle-" type="checkbox">
+                    </div>
+                </div>
+                <div class="attribute-toggle p-0">
+                    <h5 class="f-roboto-b text-primary">
+                        <% if (user.LanguageContext == "IT") { %>Filtro<% } %>
+                        <% if (user.LanguageContext == "GB") { %>Filter<% } %>
+                        <% if (user.LanguageContext == "ES") { %>Filtro<% } %>
+                        <% if (user.LanguageContext == "CN") { %>筛选<% } %>
+                    </h5>
+                    <div class="col-12 p-0 form-switch">
+                        <input id="IsFilter" name="IsFilter" class="form-check-input btn-toggle-" type="checkbox">
+                    </div>
+                </div>
+                <div class="attribute-toggle p-0">
+                    <h5 class="f-roboto-b text-primary">
+                        <% if (user.LanguageContext == "IT") { %>Riepilogo<% } %>
+                        <% if (user.LanguageContext == "GB") { %>Summary<% } %>
+                        <% if (user.LanguageContext == "ES") { %>Resumen<% } %>
+                        <% if (user.LanguageContext == "CN") { %>汇总<% } %>
+                    </h5>
+                    <div class="col-12 p-0 form-switch">
+                        <input id="IsSummary" name="IsSummary" class="form-check-input btn-toggle-" type="checkbox">
+                    </div>
+                </div>
+                </div>
                 </div>
                 <div class="divider col-12 mt-4 mb-4"></div>
                 <div class="col-12 p-0">
