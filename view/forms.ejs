@@ -266,8 +266,8 @@
     </div>
 
     <div class="modal" id="container-model-versions" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog h-75 modal-lg modal-dialog-centered" role="document">
-            <div class="modal-content h-75">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title f-roboto b">
                         <i class="bi bi-stickies"></i>&nbsp;
@@ -288,7 +288,7 @@
                     <button type="button" class="btn-close btn-cancel-history" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="h-50" style="overflow-y:auto;">
+                    <div style="overflow-y:auto; min-height:20rem; max-height:60vh;">
                         <table class="table table-hover table-xs">
                             <thead>
                                 <tr>
@@ -388,9 +388,14 @@
             <div class="modal-content">
 
                 <div class="modal-header">
-                    <h3 class="modal-title">
-                        <span class="form-new-version-header f-roboto b" />
-                    </h3>
+                    <div>
+                        <h3 class="modal-title">
+                            <span class="form-new-version-header f-roboto b"></span>
+                        </h3>
+                        <h6 class="m-0 mt-1">
+                            <span class="form-new-version-header-sub text-primary f-roboto-b"></span>
+                        </h6>
+                    </div>
                     <button type="button" class="btn-close btn-cancel-container-form-new-version" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
@@ -399,12 +404,6 @@
                         <img src="images/start-new-form-version.png" class="img-fluid" />
                     </div>
                     <div class="col-lg-7 col-md-7 col-sm-12 col-12">
-                        <h4>
-                            <span class="form-new-version-header-sub text-primary f-roboto-b"></span>
-                        </h4>
-                        <h5 class="f-roboto lh-sm text-secondary">
-                            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
-                        </h5>
                         <div class="col-12 p-0">
                             <h5 class="f-roboto-b text-primary">
                                 <% if (user.LanguageContext == "IT") { %>

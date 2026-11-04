@@ -848,10 +848,24 @@
                     data: {},
                 }).done(function (response) {
                     if (response.status == "ERR") {
-                        ShowError(
-                            response.error.message,
-                            response.error.sender
-                        );
+                        /* attende la chiusura della conferma di eliminazione prima di mostrare l'avviso */
+                        var showAttributeError = function () {
+                            var systemMessage = $('#system-message').appendTo('body').css('z-index', 2000);
+                            systemMessage.one('shown.bs.modal', function () {
+                                $('.modal-backdrop').last().css('z-index', 1990);
+                            });
+                            ShowError(
+                                response.error.message,
+                                response.error.sender
+                            );
+                        };
+                        var openConfirm = $('.modal-confirm-delete.show');
+                        if (openConfirm.length) {
+                            openConfirm.one('hidden.bs.modal', showAttributeError);
+                            openConfirm.modal('hide');
+                        } else {
+                            showAttributeError();
+                        }
 
                     }
                 }).fail(function (xhr, status, errorThrown) {

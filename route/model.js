@@ -170,6 +170,18 @@ model.delete('/del-attribute/:IDAttributo', function (req, res) {
                 new response('OK', JSON.stringify(listOf), null)
             );
         }).catch(err => {
+            if (err && err.message === 'ATTRIBUTE_IN_USE') {
+                var messagesByLanguage = {
+                    IT: 'Impossibile eliminare il campo: è utilizzato da valori, allegati, condizioni o dati già registrati.',
+                    GB: 'The field cannot be deleted because it is used by values, attachments, conditions or already registered data.',
+                    ES: 'No se puede eliminar el campo porque está siendo utilizado por valores, archivos adjuntos, condiciones o datos ya registrados.',
+                    CN: '无法删除该字段：它已被值、附件、条件或已登记的数据使用。'
+                };
+                err = {
+                    sender: err.sender,
+                    message: messagesByLanguage[req.session.user.LanguageContext] || messagesByLanguage.IT
+                };
+            }
             res.status(200).json(new response('ERR', null, err));
         }).finally(() => {
 

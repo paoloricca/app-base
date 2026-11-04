@@ -18,6 +18,7 @@ $(function () {
         }
         $('.form-new-version-header').html($('LabelFormNewVersion').html());
         $('.form-new-version-header-sub').html(model.Description);
+        $('#chkCopyFromPreviousVersion').prop('checked', false);
         $('#container-form-new-version').modal('show');
     });
     $('.btn-success-form-new-version').click(function () {
@@ -37,7 +38,7 @@ $(function () {
         $.ajax({
             type: 'POST',
             url: '/post-forms-version',
-            data: { IDModello: IDModello }
+            data: { IDModello: IDModello, copyFromPreviousVersion: $('#chkCopyFromPreviousVersion').is(':checked') }
         }).done(function (response) {
             if (response.status === 'OK') {
                 $('#container-form-new-version').one('hidden.bs.modal', function () {
@@ -882,6 +883,16 @@ $(function () {
 
     $("#container-model-versions").on("hidden.bs.modal", function () {
         $('div.modal-backdrop').removeClass('modal-backdrop');
+    });
+
+    /* alla chiusura della gestione sezioni e campi aggiorna la popup Versioni */
+    $('#container-form-edit').on('hidden.bs.modal', function () {
+        var versionsModal = $('#container-model-versions');
+        var model = versionsModal.data('model');
+        if (model && versionsModal.hasClass('show')) {
+            $('body').addClass('modal-open');
+            loadFormsVersion(model);
+        }
     });
 
 });

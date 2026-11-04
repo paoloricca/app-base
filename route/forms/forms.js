@@ -59,7 +59,7 @@ forms.post('/post-forms-version', function (req, res) {
             return res.status(200).json(new response('ERR', null, { message: 'IDModello non valido' }));
         }
 
-        crud.CreateFormsVersion(IDModello).then(createdVersion => {
+        crud.CreateFormsVersion(IDModello, req.body.copyFromPreviousVersion === 'true' || req.body.copyFromPreviousVersion === true).then(createdVersion => {
             res.status(200).json(new response('OK', JSON.stringify(createdVersion), null));
         }).catch(err => {
             res.status(200).json(new response('ERR', null, err));
@@ -85,13 +85,20 @@ forms.delete('/forms-version/:IDVersione', function (req, res) {
             } catch (parseError) { }
 
             if (typeof message === 'string' && message.indexOf('Impossibile eliminare la versione:') === 0) {
+                var processMessagesByLanguage = {
+                    IT: 'Impossibile eliminare la versione: è utilizzata da uno o più processi.',
+                    GB: 'The version cannot be deleted because it is used by one or more processes.',
+                    ES: 'No se puede eliminar la versión porque la utilizan uno o más procesos.',
+                    CN: '无法删除此版本：它正被一个或多个流程使用。'
+                };
                 var messagesByLanguage = {
                     IT: 'Impossibile eliminare la versione: esistono istanze o associazioni collegate.',
                     GB: 'The version cannot be deleted because linked instances or associations exist.',
                     ES: 'No se puede eliminar la versión porque existen instancias o asociaciones vinculadas.',
                     CN: '无法删除此版本：存在关联的实例或关联记录。'
                 };
-                message = messagesByLanguage[req.session.user.LanguageContext] || messagesByLanguage.IT;
+                var languageMessages = message.indexOf('PROCESS_LINKED') >= 0 ? processMessagesByLanguage : messagesByLanguage;
+                message = languageMessages[req.session.user.LanguageContext] || languageMessages.IT;
             }
 
             res.status(200).json(new response('ERR', null, { message: message }));
