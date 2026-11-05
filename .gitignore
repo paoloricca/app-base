@@ -13,3 +13,5 @@ files/*
 
 # Non ignorare il file .gitkeep (permette di salvare la cartella)
 !files/.gitkeep
+
+*.sql
