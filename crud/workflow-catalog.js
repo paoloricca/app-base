@@ -40,6 +40,90 @@ function textInput(value) {
     return { type: sql.NVarChar(sql.MAX), value: value };
 }
 
+function workflowProtectedNodeSql(nodeAlias) {
+    const nodeTexts = ['Code_IT', 'Code_GB', 'Code_ES', 'Code_CN', 'Text_IT', 'Text_GB', 'Text_ES', 'Text_CN'];
+    const startLabels = "('INIZIO', 'START', 'INICIO', N'开始')";
+    const endLabels = "('FINE', 'END', 'FIN', N'结束')";
+    const hasLabel = function (labels) {
+        return nodeTexts.map(function (field) {
+            return `UPPER(LTRIM(RTRIM(ISNULL(${nodeAlias}.${field}, '')))) IN ${labels}`;
+        }).join(' OR ');
+    };
+
+    return `(
+        ISNULL(${nodeAlias}.IsStartNode, 0) = 1
+        OR ${hasLabel(startLabels)}
+        OR ${hasLabel(endLabels)}
+    )`;
+}
+
+function workflowVersionIsHealthySql(versionAlias) {
+    const nodeConditions = `
+        Node.IDVersioneWorkflow = ${versionAlias}.IDVersioneWorkflow
+        AND Node.IsVisible = 1
+        AND NOT ${workflowProtectedNodeSql('Node')}
+    `;
+    const hasConnection = `
+        EXISTS (
+            SELECT 1
+            FROM dbo.TEventiTransizioniDirezioni AS Direction
+            INNER JOIN dbo.TEventiTransizioni AS ConnectedNode
+                ON ConnectedNode.IDEventoTransizione = Direction.IDTransizioneEnd
+            WHERE Direction.IDTransizioneStart = Node.IDEventoTransizione
+                AND Direction.IDTransizioneEnd <> Node.IDEventoTransizione
+                AND Direction.IsVisible = 1
+                AND ConnectedNode.IsVisible = 1
+                AND ConnectedNode.IDVersioneWorkflow = Node.IDVersioneWorkflow
+        )
+        OR EXISTS (
+            SELECT 1
+            FROM dbo.TEventiTransizioniDirezioni AS Direction
+            INNER JOIN dbo.TEventiTransizioni AS ConnectedNode
+                ON ConnectedNode.IDEventoTransizione = Direction.IDTransizioneStart
+            WHERE Direction.IDTransizioneEnd = Node.IDEventoTransizione
+                AND Direction.IDTransizioneStart <> Node.IDEventoTransizione
+                AND Direction.IsVisible = 1
+                AND ConnectedNode.IsVisible = 1
+                AND ConnectedNode.IDVersioneWorkflow = Node.IDVersioneWorkflow
+        )
+    `;
+    const hasOwner = `
+        EXISTS (
+            SELECT 1
+            FROM dbo.TEventiTransizioniOwner AS NodeOwner
+            WHERE NodeOwner.IDEventoTransizione = Node.IDEventoTransizione
+                AND (
+                    NULLIF(LTRIM(RTRIM(NodeOwner.IsCreator)), '') IS NOT NULL
+                    OR NULLIF(LTRIM(RTRIM(NodeOwner.IsAdminOwnerSelectedNode)), '') IS NOT NULL
+                    OR NULLIF(LTRIM(RTRIM(NodeOwner.IsAdminOfCreator)), '') IS NOT NULL
+                    OR NULLIF(LTRIM(RTRIM(NodeOwner.IsOwnerSelectedNode)), '') IS NOT NULL
+                    OR NULLIF(LTRIM(RTRIM(NodeOwner.IsCreatorSelectedNode)), '') IS NOT NULL
+                    OR NULLIF(LTRIM(RTRIM(NodeOwner.IsSelectedProfile)), '') IS NOT NULL
+                    OR NULLIF(LTRIM(RTRIM(NodeOwner.IsUsersFromAdminProfileCreator)), '') IS NOT NULL
+                )
+        )
+    `;
+    const hasAuthorization = `
+        EXISTS (
+            SELECT 1
+            FROM dbo.TEventiTransizioniAzioni AS StateAction
+            WHERE StateAction.IDEventoTransizione = Node.IDEventoTransizione
+                AND StateAction.IDProcesso IS NOT NULL
+        )
+    `;
+
+    return `CASE WHEN EXISTS (
+        SELECT 1
+        FROM dbo.TEventiTransizioni AS Node
+        WHERE ${nodeConditions}
+    ) AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.TEventiTransizioni AS Node
+        WHERE ${nodeConditions}
+            AND NOT ((${hasConnection}) AND (${hasOwner}) AND (${hasAuthorization}))
+    ) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END`;
+}
+
 function getRecords(IdAttore, pageIndex, pageSize, search, visibility, languageContext) {
     const offset = (pageIndex - 1) * pageSize;
     const searchTerm = search ? '%' + search.replace(/[%_[\]]/g, '[$&]') + '%' : null;
@@ -58,7 +142,7 @@ function getRecords(IdAttore, pageIndex, pageSize, search, visibility, languageC
                 AND NOT EXISTS (
                     SELECT 1 FROM dbo.TWorkflowVersioni AS V
                     WHERE V.IDWorkflow = TWorkflow.IDWorkflow
-                        AND dbo.FN_WORKFLOW_VERSION_IS_VALID(V.IDVersioneWorkflow) = 0
+                        AND (${workflowVersionIsHealthySql('V')}) = 0
                 ) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS IsValid,
             COALESCE(
                 NULLIF(CASE @LanguageContext
@@ -102,7 +186,7 @@ function getVersions(IdWorkflow) {
             Version.DataIstanza AS DataRegistrazione,
             Version.DataVersione AS DataUltimaModifica,
             Version.IsVisible,
-            dbo.FN_WORKFLOW_VERSION_IS_VALID(Version.IDVersioneWorkflow) AS IsValid
+            ${workflowVersionIsHealthySql('Version')} AS IsValid
         FROM dbo.TWorkflowVersioni AS Version
         WHERE Version.IDWorkflow = @IDWorkflow
         ORDER BY Version.Numero DESC, Version.IDVersioneWorkflow DESC;
