@@ -544,7 +544,7 @@ $(function () {
             var $menuItems = $('<ul>', { class: 'dropdown-menu dropdown-menu-end app-context-menu processi-context-menu' });
             $('<li>').append(
                 $('<div>', { class: 'app-context-menu-heading' }).append(
-                    $('<b>').text($('.forms-heading h4 .b').text().trim())
+                    $('<b>').text(row.IDModelloIstanza)
                 )
             ).appendTo($menuItems);
             $('<li>').append($('<hr>', { class: 'dropdown-divider' })).appendTo($menuItems);
