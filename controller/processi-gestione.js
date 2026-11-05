@@ -218,8 +218,8 @@ $(function () {
                 response.data.forEach(function (version) {
                     var dateLabel = processSelectorText.emptyVersionDate;
                     var $option;
-                    if (version.DataIstanza) {
-                        var date = new Date(version.DataIstanza);
+                    if (version.DataVersione) {
+                        var date = new Date(version.DataVersione);
                         if (!isNaN(date.getTime())) {
                             var locales = { IT: 'it-IT', GB: 'en-GB', ES: 'es-ES', CN: 'zh-CN' };
                             dateLabel = ' (' + new Intl.DateTimeFormat(
@@ -327,6 +327,165 @@ $(function () {
     });
     $versionSelect.on('change.processi-models', updateProcessModelValidity);
     updateProcessModelValidity();
+
+    var $workflowSwitch = $processEditModal.find('#processi-edit-HasWorkflow');
+    var $workflowFields = $processEditModal.find('.processi-edit-workflow-fields');
+    var $workflowSelect = $processEditModal.find('#processi-edit-workflow');
+    var $workflowVersionSelect = $processEditModal.find('#processi-edit-workflow-version');
+    var workflowsLoaded = false;
+    var workflowsLoading = false;
+    var workflowVersionRequestId = 0;
+
+    function updateWorkflowValidity() {
+        var isRequired = $workflowSwitch.prop('checked');
+        var hasWorkflow = !!$workflowSelect.val();
+        var hasVersion = !!$workflowVersionSelect.val() && !$workflowVersionSelect.prop('disabled');
+
+        $workflowSelect.prop('required', isRequired)
+            .toggleClass('is-invalid', isRequired && !hasWorkflow)
+            .toggleClass('is-valid', isRequired && hasWorkflow);
+        $workflowVersionSelect.prop('required', isRequired)
+            .toggleClass('is-invalid', isRequired && !hasVersion)
+            .toggleClass('is-valid', isRequired && hasVersion);
+        $workflowFields.find('label').toggleClass('processi-required-label', isRequired);
+
+        return !isRequired || (hasWorkflow && hasVersion);
+    }
+
+    function setWorkflowVersionPlaceholder(text) {
+        $workflowVersionSelect.empty().append($('<option>', {
+            value: '',
+            text: text || processSelectorText.selectVersion
+        }));
+    }
+
+    function workflowVersionLabel(version) {
+        var date = version.DataVersione ? new Date(version.DataVersione) : null;
+        if (!date || isNaN(date.getTime())) {
+            return version.Numero + ' (' + processSelectorText.emptyVersionDate + ')';
+        }
+        var locales = { IT: 'it-IT', GB: 'en-GB', ES: 'es-ES', CN: 'zh-CN' };
+        return version.Numero + ' (' + new Intl.DateTimeFormat(
+            locales[languageContext],
+            { dateStyle: 'short', timeStyle: 'short' }
+        ).format(date) + ')';
+    }
+
+    function loadWorkflowVersions(workflowId, selectedVersionId) {
+        var requestId = ++workflowVersionRequestId;
+        setWorkflowVersionPlaceholder(workflowId ? processSelectorText.loading : null);
+        $workflowVersionSelect.prop('disabled', true);
+        updateWorkflowValidity();
+        if (!workflowId) {
+            return;
+        }
+
+        $.get('/processi-gestione/workflow/' + encodeURIComponent(workflowId) + '/versioni')
+            .done(function (response) {
+                if (requestId !== workflowVersionRequestId) {
+                    return;
+                }
+                if (!response || response.status !== 'OK') {
+                    showCustomActionError(
+                        response && response.error ? response.error : 'Invalid versions response',
+                        'processi-gestione.loadWorkflowVersions'
+                    );
+                    setWorkflowVersionPlaceholder();
+                    updateWorkflowValidity();
+                    return;
+                }
+
+                setWorkflowVersionPlaceholder(
+                    response.data.length ? processSelectorText.selectVersion : processSelectorText.noVersions
+                );
+                response.data.forEach(function (version) {
+                    $workflowVersionSelect.append($('<option>', {
+                        value: version.IDVersioneWorkflow,
+                        text: workflowVersionLabel(version)
+                    }));
+                });
+                $workflowVersionSelect.prop('disabled', !response.data.length);
+                if (selectedVersionId != null) {
+                    $workflowVersionSelect.val(String(selectedVersionId));
+                }
+                updateWorkflowValidity();
+            })
+            .fail(function (xhr, status, errorThrown) {
+                if (requestId !== workflowVersionRequestId) {
+                    return;
+                }
+                showCustomActionError(errorThrown || status, 'processi-gestione.loadWorkflowVersions');
+                setWorkflowVersionPlaceholder();
+                updateWorkflowValidity();
+            });
+    }
+
+    function applySelectedWorkflow() {
+        var workflowId = $workflowSelect.data('selectedWorkflow');
+        $workflowSelect.val(workflowId == null ? '' : String(workflowId));
+        loadWorkflowVersions(
+            $workflowSelect.val() || null,
+            $workflowVersionSelect.data('selectedVersion')
+        );
+    }
+
+    function loadWorkflows() {
+        if (workflowsLoaded) {
+            applySelectedWorkflow();
+            return;
+        }
+        if (workflowsLoading) {
+            return;
+        }
+
+        workflowsLoading = true;
+        $workflowSelect.prop('disabled', true);
+        $.get('/processi-gestione/workflow')
+            .done(function (response) {
+                if (!response || response.status !== 'OK') {
+                    showCustomActionError(
+                        response && response.error ? response.error : 'Invalid workflows response',
+                        'processi-gestione.loadWorkflows'
+                    );
+                    return;
+                }
+
+                response.data.forEach(function (workflow) {
+                    $workflowSelect.append($('<option>', {
+                        value: workflow.IDWorkflow,
+                        text: workflow.IDWorkflow + ' - ' + (workflow.Description || '')
+                    }));
+                });
+                workflowsLoaded = true;
+                applySelectedWorkflow();
+            })
+            .fail(function (xhr, status, errorThrown) {
+                showCustomActionError(errorThrown || status, 'processi-gestione.loadWorkflows');
+            })
+            .always(function () {
+                workflowsLoading = false;
+                $workflowSelect.prop('disabled', false);
+                updateWorkflowValidity();
+            });
+    }
+
+    $workflowSwitch.on('change.processi-workflow', function () {
+        $workflowFields.toggle(this.checked);
+        updateWorkflowValidity();
+        if (this.checked) {
+            loadWorkflows();
+        } else {
+            $workflowSelect.prop('required', false).removeClass('is-valid is-invalid');
+            $workflowVersionSelect.prop('required', false).removeClass('is-valid is-invalid');
+            $workflowFields.find('label').removeClass('processi-required-label');
+        }
+    });
+    $workflowSelect.on('change.processi-workflow', function () {
+        $workflowSelect.data('selectedWorkflow', this.value || null);
+        $workflowVersionSelect.removeData('selectedVersion');
+        loadWorkflowVersions(this.value || null, null);
+    });
+    $workflowVersionSelect.on('change.processi-workflow', updateWorkflowValidity);
 
     var $customActionsModal = $('#processi-custom-actions-modal');
     var $customActionsList = $customActionsModal.find('.processi-custom-actions-list');
@@ -542,6 +701,13 @@ $(function () {
                 if (!processIsEnabled && process.IDModello != null) {
                     loadProcessModels(process.IDModello, process.IDVersione);
                 }
+                workflowVersionRequestId++;
+                $workflowSelect.data('selectedWorkflow', process.IDWorkflow);
+                $workflowVersionSelect.data('selectedVersion', process.IDVersioneWorkflow);
+                $workflowSelect.val('');
+                setWorkflowVersionPlaceholder();
+                $workflowVersionSelect.prop('disabled', true);
+                $workflowSwitch.trigger('change');
                 $descriptionControl.multiLanguageTextBox('load', {
                     IT: process.Text_IT || process.Descrizione || '',
                     GB: process.Text_GB || '',
@@ -599,6 +765,13 @@ $(function () {
         $versionSelect.prop('disabled', true);
         $modelFields.hide();
         $processSwitch.trigger('change');
+        workflowVersionRequestId++;
+        $workflowSelect.removeData('selectedWorkflow').val('');
+        $workflowVersionSelect.removeData('selectedVersion');
+        setWorkflowVersionPlaceholder();
+        $workflowVersionSelect.prop('disabled', true);
+        $workflowFields.hide();
+        $workflowSwitch.trigger('change');
         $processEditModal.find('.processi-edit-fields').show();
         $processEditLoading.hide();
         bootstrap.Modal.getOrCreateInstance($processEditModal[0]).show();
@@ -652,6 +825,11 @@ $(function () {
             return;
         }
 
+        if (!updateWorkflowValidity()) {
+            $workflowFields.find('.is-invalid:enabled').first().trigger('focus');
+            return;
+        }
+
         if ($processSwitch.prop('checked') && $versionSelect.val()) {
             var selectedVersionHasFields = $versionSelect.find(':selected').data('dataIstanza');
             if (selectedVersionHasFields == null || selectedVersionHasFields === '') {
@@ -679,6 +857,8 @@ $(function () {
             IDProcessoParent: $processEditModal.find('#processi-edit-parent').val(),
             IDModello: $modelSelect.val() || null,
             IDVersione: $versionSelect.val() || null,
+            IDWorkflow: $workflowSwitch.prop('checked') ? $workflowSelect.val() || null : null,
+            IDVersioneWorkflow: $workflowSwitch.prop('checked') ? $workflowVersionSelect.val() || null : null,
             Descriptions: descriptions,
             PageUrl: $processEditModal.find('#processi-edit-page-url').val(),
             PageUrlVendor: $processEditModal.find('#processi-edit-page-url-vendor').val(),

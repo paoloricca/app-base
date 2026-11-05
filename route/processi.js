@@ -111,6 +111,41 @@ processi.get('/processi-gestione/modelli/:IdModello/versioni', function (req, re
         });
     }
 });
+processi.get('/processi-gestione/workflow', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        crud.GetProcessiWorkflowOptions({
+            IdAttore: req.session.user.IdAttore,
+            LanguageContext: req.session.user.LanguageContext
+        }).then(workflows => {
+            res.status(200).json(new response('OK', JSON.parse(workflows), null));
+        }).catch(err => {
+            let error = err;
+            try {
+                error = JSON.parse(err);
+            } catch (parseError) {
+            }
+            res.status(200).json(new response('ERR', null, error));
+        });
+    }
+});
+processi.get('/processi-gestione/workflow/:IdWorkflow/versioni', function (req, res) {
+    if (sessionUtil.verifyUser(req, res)) {
+        res.set('Access-Control-Allow-Origin', '*');
+        crud.GetProcessiWorkflowVersions({
+            IdWorkflow: req.params.IdWorkflow
+        }).then(versions => {
+            res.status(200).json(new response('OK', JSON.parse(versions), null));
+        }).catch(err => {
+            let error = err;
+            try {
+                error = JSON.parse(err);
+            } catch (parseError) {
+            }
+            res.status(200).json(new response('ERR', null, error));
+        });
+    }
+});
 processi.get('/processi-gestione/:IdProcesso', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {
         res.set('Access-Control-Allow-Origin', '*');

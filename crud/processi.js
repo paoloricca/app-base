@@ -187,6 +187,7 @@ function GetProcessiManagementDetails(myRequest) {
                 request.input('IdProcesso', sql.Int, processId);
                 request.query(
                     `SELECT P.IDProcesso, P.IDProcessoParent, P.IDModello, P.IDVersione,
+                            P.IDWorkflow, P.IDVersioneWorkflow,
                             P.Descrizione,
                             P.PageUrl, P.PageUrlVendor, P.Parameters, P.ImageUrl,
                             P.Ordine, P.IsPublic, P.IsMenu, P.IsSystemConfiguration,
@@ -378,7 +379,7 @@ function GetProcessiModelVersions(myRequest) {
                 const request = new sql.Request();
                 request.input('IdModello', sql.Int, modelId);
                 request.query(
-                    `SELECT IDVersione, IDModello, Numero, DataIstanza
+                    `SELECT IDVersione, IDModello, Numero, DataIstanza, DataVersione
                      FROM dbo.TModelliVersioni
                      WHERE IDModello = @IdModello
                      ORDER BY Numero DESC, IDVersione DESC`,
@@ -400,6 +401,76 @@ function GetProcessiModelVersions(myRequest) {
             );
         }
     });
+}
+function parseWorkflowIds(process) {
+    const toId = value => value == null || value === '' ? null : Number(value);
+    const workflowId = toId(process.IDWorkflow);
+    const versionId = toId(process.IDVersioneWorkflow);
+    const isValid = value => value === null || (Number.isInteger(value) && value > 0);
+
+    if (!process.HasWorkflow) {
+        return { workflowId: null, versionId: null };
+    }
+    if (workflowId === null || versionId === null || !isValid(workflowId) || !isValid(versionId)) {
+        return null;
+    }
+    return { workflowId, versionId };
+}
+function queryJson(sender, queryText, inputs) {
+    return new Promise((resolve, reject) => {
+        sql.connect(connection, function (err) {
+            if (err) {
+                reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
+                return;
+            }
+            const request = new sql.Request();
+            Object.keys(inputs).forEach(name => request.input(name, sql.Int, inputs[name]));
+            request.query(queryText, function (queryError, result) {
+                if (queryError) {
+                    reject(JSON.stringify(
+                        new exception(sender, queryError.message, queryError.name, queryError.stack)));
+                    return;
+                }
+                resolve(JSON.stringify(result.recordset));
+            });
+        });
+    });
+}
+function GetProcessiWorkflowOptions(myRequest) {
+    const sender = arguments.callee.name;
+    const actorId = Number(myRequest.IdAttore);
+    const descriptionColumn = {
+        IT: 'Description_IT', GB: 'Description_GB', ES: 'Description_ES', CN: 'Description_CN'
+    }[myRequest.LanguageContext];
+
+    if (!Number.isInteger(actorId) || actorId <= 0 || !descriptionColumn) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid actor ID or language context', 'ValidationError', '')
+        ));
+    }
+    return queryJson(sender,
+        `SELECT IDWorkflow,
+                COALESCE(NULLIF([${descriptionColumn}], N''), NULLIF(Description_IT, N'')) AS Description
+         FROM dbo.TWorkflow
+         WHERE IDAttore = @IdAttore AND IsVisible = 1
+         ORDER BY IDWorkflow`,
+        { IdAttore: actorId });
+}
+function GetProcessiWorkflowVersions(myRequest) {
+    const sender = arguments.callee.name;
+    const workflowId = Number(myRequest.IdWorkflow);
+
+    if (!Number.isInteger(workflowId) || workflowId <= 0) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'Invalid workflow ID', 'ValidationError', '')
+        ));
+    }
+    return queryJson(sender,
+        `SELECT IDVersioneWorkflow, IDWorkflow, Numero, DataIstanza, DataVersione
+         FROM dbo.TWorkflowVersioni
+         WHERE IDWorkflow = @IdWorkflow AND IsVisible = 1
+         ORDER BY Numero DESC, IDVersioneWorkflow DESC`,
+        { IdWorkflow: workflowId });
 }
 function UpdateProcessiManagement(myRequest) {
     const sender = arguments.callee.name;
@@ -443,6 +514,12 @@ function UpdateProcessiManagement(myRequest) {
         (order !== null && !Number.isInteger(order))) {
         return Promise.reject(JSON.stringify(
             new exception(sender, 'Invalid parent process, model, version, or order', 'ValidationError', '')
+        ));
+    }
+    const workflowIds = parseWorkflowIds(process);
+    if (!workflowIds) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'A valid workflow and workflow version are required when the process has a workflow', 'ValidationError', '')
         ));
     }
 
@@ -508,6 +585,8 @@ function UpdateProcessiManagement(myRequest) {
 
                 const request = new sql.Request();
                 request.input('IdProcesso', sql.Int, processId);
+                request.input('IdWorkflow', sql.Int, workflowIds.workflowId);
+                request.input('IdVersioneWorkflow', sql.Int, workflowIds.versionId);
                 request.input('IdProcessoParent', sql.Int, parentId);
                 request.input('IdModello', sql.Int, modelId);
                 request.input('IdVersione', sql.Int, versionId);
@@ -587,6 +666,8 @@ function UpdateProcessiManagement(myRequest) {
                          IsVendor = @IsVendor,
                          IsProcess = @IsProcess,
                          HasWorkflow = @HasWorkflow,
+                         IDWorkflow = @IdWorkflow,
+                         IDVersioneWorkflow = @IdVersioneWorkflow,
                          LinkedObject = @LinkedObject,
                          ObjectName = @ObjectName,
                          ObjectPk = @ObjectPk,
@@ -671,6 +752,12 @@ function CreateProcessiManagement(myRequest) {
             new exception(sender, 'A valid parent process, model, version, and order are required', 'ValidationError', '')
         ));
     }
+    const workflowIds = parseWorkflowIds(process);
+    if (!workflowIds) {
+        return Promise.reject(JSON.stringify(
+            new exception(sender, 'A valid workflow and workflow version are required when the process has a workflow', 'ValidationError', '')
+        ));
+    }
 
     const descriptions = {};
     for (const language of ['IT', 'GB', 'ES', 'CN']) {
@@ -733,6 +820,8 @@ function CreateProcessiManagement(myRequest) {
                 }
 
                 const request = new sql.Request();
+                request.input('IdWorkflow', sql.Int, workflowIds.workflowId);
+                request.input('IdVersioneWorkflow', sql.Int, workflowIds.versionId);
                 request.input('IdProcessoParent', sql.Int, parentId);
                 request.input('IdModello', sql.Int, modelId);
                 request.input('IdVersione', sql.Int, versionId);
@@ -781,13 +870,15 @@ function CreateProcessiManagement(myRequest) {
                          IDProcessoParent, IDModello, IDVersione, Descrizione, PageUrl, PageUrlVendor,
                          Parameters, ImageUrl, Ordine, IsPublic, IsMenu,
                          IsSystemConfiguration, IsChannel, IsVendor, IsProcess,
-                         HasWorkflow, LinkedObject, ObjectName, ObjectPk, ObjectFk
+                         HasWorkflow, LinkedObject, ObjectName, ObjectPk, ObjectFk,
+                         IDWorkflow, IDVersioneWorkflow
                      )
                      VALUES (
                          @IdProcessoParent, @IdModello, @IdVersione, @Descrizione, @PageUrl, @PageUrlVendor,
                          @Parameters, @ImageUrl, @Ordine, @IsPublic, @IsMenu,
                          @IsSystemConfiguration, @IsChannel, @IsVendor, @IsProcess,
-                         @HasWorkflow, @LinkedObject, @ObjectName, @ObjectPk, @ObjectFk
+                         @HasWorkflow, @LinkedObject, @ObjectName, @ObjectPk, @ObjectFk,
+                         @IdWorkflow, @IdVersioneWorkflow
                      );
 
                      DECLARE @IdProcesso INT = SCOPE_IDENTITY();
@@ -1336,6 +1427,8 @@ module.exports = {
     GetProcessiParentOptions,
     GetProcessiModelOptions,
     GetProcessiModelVersions,
+    GetProcessiWorkflowOptions,
+    GetProcessiWorkflowVersions,
     UpdateProcessiManagement,
     CreateProcessiManagement,
     DeleteProcessiManagement,
