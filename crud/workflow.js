@@ -1010,6 +1010,13 @@ function PostWorkflow(myRequest) {
 
     const customPromise = new Promise((resolve, reject) => {
         try {
+            // Controllo lato server: la transizione deve essere tra quelle consentite all'utente
+            GetWorkflowTransitions(Object.assign({}, myRequest, { IdProfiloUtente: myRequest.IdProfiloUtente || 0 })).then(listOf => {
+                var allowed = listOf ? JSON.parse(listOf) : [];
+                if (!Array.isArray(allowed) || !allowed.some(t => String(t.IDEventoDirezione) === String(myIDEventoDirezione))) {
+                    throw new Error('Operazione non autorizzata: stato non applicabile da questo utente');
+                }
+            }).then(() => {
             sql.connect(connection, function (err, conn) {
                 if (err) {
                     reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
@@ -1084,6 +1091,9 @@ function PostWorkflow(myRequest) {
 
                     }
                 });
+            });
+            }).catch(err => {
+                reject(typeof err === 'string' ? err : JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
             });
         }
         catch (err) {

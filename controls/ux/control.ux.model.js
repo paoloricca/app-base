@@ -1416,7 +1416,7 @@
                     fieldlist += '@' + row.IDAttributo;
                 });
 
-                if (options.Mode == "edit") {
+                if (options.Mode == "edit" && options.ReadOnly !== true) {
 
                     plugin.find('.model-class-' + IdClasse + '-container').data('fieldlist', fieldlist.substring(1));
                     $.get("/controls/ui/control.ui.button.salva.ejs?" + Date.now(), function (response) {

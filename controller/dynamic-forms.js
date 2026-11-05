@@ -242,6 +242,17 @@ $(function () {
         return value === true || value === 1 || value === '1' || value === 'true';
     }
 
+    function updateWorkflowNoteValidity($note, showFeedback) {
+        var isRequired = $note.prop('required');
+        var isValid = String($note.val() || '').trim().length > 0;
+        var showStatus = isRequired && (showFeedback || $note.data('validation-attempted') === true);
+        $note
+            .toggleClass('is-invalid', showStatus && !isValid)
+            .toggleClass('is-valid', showStatus && isValid)
+            .attr('aria-invalid', showStatus && !isValid ? 'true' : 'false');
+        return !isRequired || isValid;
+    }
+
     function openWorkflow(workflowRecordId, $workflowAction) {
         if (!workflowRecordId) {
             return;
@@ -262,7 +273,11 @@ $(function () {
                     var $noteContainer = $('.dynamic-form-workflow-note');
                     var $note = $('.dynamic-form-workflow-note-input');
                     $('.dynamic-form-workflow-apply').prop('disabled', true);
-                    $note.val('').prop('required', false);
+                    $note.val('')
+                        .prop('required', false)
+                        .removeClass('is-valid is-invalid')
+                        .attr('aria-invalid', 'false')
+                        .data('validation-attempted', false);
                     $noteContainer.addClass('d-none');
 
                     if (transitions == null || transitions === '' ||
@@ -560,7 +575,12 @@ $(function () {
                 'aria-disabled': 'true',
                 text: text('noWorkflow')
             })).appendTo($menuItems);
-            checkWorkflowAvailability($menuItems, row.WorkflowRecordId);
+            if (row.CanSwitchState === undefined) {
+                checkWorkflowAvailability($menuItems, row.WorkflowRecordId);
+            } else if (row.CanSwitchState === true || row.CanSwitchState === 1) {
+                $workflowAction.removeClass('d-none');
+                $menuItems.find('.dynamic-form-no-workflow').addClass('d-none');
+            }
             $menu.append($menuItems);
             $('<td>', { class: 'text-end' }).append($menu).appendTo($tr);
             $rows.append($tr);
@@ -772,17 +792,27 @@ $(function () {
         var $note = $('.dynamic-form-workflow-note-input');
         $noteContainer.toggleClass('d-none', !requiresNote);
         $note.prop('required', requiresNote);
+        if (!requiresNote) {
+            $note.data('validation-attempted', false);
+        }
+        updateWorkflowNoteValidity($note);
         $('.dynamic-form-workflow-apply').prop('disabled', false);
+    });
+    $('.dynamic-form-workflow-note-input').on('input', function () {
+        updateWorkflowNoteValidity($(this));
     });
     $('.dynamic-form-workflow-apply').on('click', function () {
         var workflowRecordId = $(this).data('workflow-record-id');
         var $selected = $('.dynamic-form-workflow-transition:checked');
-        var note = $('.dynamic-form-workflow-note-input').val();
+        var $note = $('.dynamic-form-workflow-note-input');
+        var note = $note.val();
         if (!workflowRecordId || !$selected.length) {
             return;
         }
-        if (workflowNoteRequired($selected.attr('data-note-required')) && !String(note || '').trim()) {
-            $('.dynamic-form-workflow-note-input')[0].reportValidity();
+        $note.prop('required', workflowNoteRequired($selected.attr('data-note-required')));
+        $note.data('validation-attempted', true);
+        if (!updateWorkflowNoteValidity($note, true)) {
+            $note.trigger('focus');
             return;
         }
 
