@@ -165,13 +165,23 @@ function getVersionGraph(IDVersioneWorkflow, IDAttore, LanguageContext) {
             CAST(CASE WHEN EXISTS (
                 SELECT 1
                 FROM dbo.TEventiTransizioniDirezioni AS Direction
+                INNER JOIN dbo.TEventiTransizioni AS ConnectedNode
+                    ON ConnectedNode.IDEventoTransizione = Direction.IDTransizioneEnd
                 WHERE Direction.IDTransizioneStart = Node.IDEventoTransizione
                     AND Direction.IDTransizioneEnd <> Node.IDEventoTransizione
+                    AND Direction.IsVisible = 1
+                    AND ConnectedNode.IsVisible = 1
+                    AND ConnectedNode.IDVersioneWorkflow = @IDVersioneWorkflow
             ) OR EXISTS (
                 SELECT 1
                 FROM dbo.TEventiTransizioniDirezioni AS Direction
+                INNER JOIN dbo.TEventiTransizioni AS ConnectedNode
+                    ON ConnectedNode.IDEventoTransizione = Direction.IDTransizioneStart
                 WHERE Direction.IDTransizioneEnd = Node.IDEventoTransizione
                     AND Direction.IDTransizioneStart <> Node.IDEventoTransizione
+                    AND Direction.IsVisible = 1
+                    AND ConnectedNode.IsVisible = 1
+                    AND ConnectedNode.IDVersioneWorkflow = @IDVersioneWorkflow
             ) THEN 1 ELSE 0 END AS BIT) AS HasConnection,
             CAST(CASE WHEN EXISTS (
                 SELECT 1
@@ -192,7 +202,8 @@ function getVersionGraph(IDVersioneWorkflow, IDAttore, LanguageContext) {
                 WHEN 'CN' THEN Node.Code_CN
             END AS label
         FROM dbo.TEventiTransizioni AS Node
-        WHERE Node.IDVersioneWorkflow = @IDVersioneWorkflow;
+        WHERE Node.IDVersioneWorkflow = @IDVersioneWorkflow
+            AND Node.IsVisible = 1;
 
         SELECT Direction.*,
             Direction.IDTransizioneStart AS [from],
@@ -209,7 +220,10 @@ function getVersionGraph(IDVersioneWorkflow, IDAttore, LanguageContext) {
         INNER JOIN dbo.TEventiTransizioni AS EndNode
             ON EndNode.IDEventoTransizione = Direction.IDTransizioneEnd
         WHERE StartNode.IDVersioneWorkflow = @IDVersioneWorkflow
-            AND EndNode.IDVersioneWorkflow = @IDVersioneWorkflow;
+            AND EndNode.IDVersioneWorkflow = @IDVersioneWorkflow
+            AND StartNode.IsVisible = 1
+            AND EndNode.IsVisible = 1
+            AND Direction.IsVisible = 1;
     `, {
         IDVersioneWorkflow: intInput(IDVersioneWorkflow),
         IDAttore: intInput(IDAttore),
@@ -243,6 +257,7 @@ function getVersionGraphStates(IDVersioneWorkflow, IDAttore, LanguageContext) {
             COALESCE(NULLIF(LTRIM(RTRIM(Node.HexColor)), ''), '#3498db') AS HexColor
         FROM dbo.TEventiTransizioni AS Node
         WHERE Node.IDVersioneWorkflow = @IDVersioneWorkflow
+            AND Node.IsVisible = 1
         ORDER BY Node.IDEventoTransizione;
     `, {
         IDVersioneWorkflow: intInput(IDVersioneWorkflow),
