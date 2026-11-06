@@ -4,6 +4,7 @@ const sql = require('mssql/msnodesqlv8');
 const config = require('../utils/config')
 var connection = require('../config.db');
 const business = require('../crud/business');
+const { minimumIntervalMessage } = require('../utils/workflow-timing-message');
 
 function GetWorkflow(myRequest) {
 
@@ -1053,13 +1054,18 @@ async function PostWorkflow(myRequest) {
                 .output('CanSwitch', sql.Bit)
                 .execute('SP_PROCESS_WORKFLOW_TIMING');
             if (!check.output.CanSwitch) {
-                const messages = {
-                    IT: 'Non è possibile cambiare stato prima della scadenza dell’intervallo minimo.',
-                    GB: 'The state cannot be changed before the minimum interval has elapsed.',
-                    ES: 'No se puede cambiar de estado antes de que transcurra el intervalo mínimo.',
-                    CN: '最短間隔到期前無法變更狀態。'
-                };
-                throw new Error(messages[myRequest.LanguageContext] || messages.GB);
+                const timing = await new sql.Request(transaction)
+                    .input('Node', sql.Int, currentState.IDEventoTransizione)
+                    .query(`
+                        SELECT ValidityTime, ValidityType
+                        FROM dbo.TEventiTransizioniTiming WITH (HOLDLOCK)
+                        WHERE IDEventoTransizione = @Node AND TimingType = 0 AND TimingActive = 1;
+                    `);
+                if (timing.recordset.length !== 1) {
+                    throw new Error('Configurazione intervallo minimo non valida.');
+                }
+                const minimum = timing.recordset[0];
+                throw new Error(minimumIntervalMessage(myRequest.LanguageContext, minimum.ValidityTime, minimum.ValidityType));
             }
         }
         const node = Number(selected.IDTransizioneEnd);

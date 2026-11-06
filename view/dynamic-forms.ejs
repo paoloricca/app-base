@@ -179,6 +179,16 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-warning dynamic-form-workflow-error d-none" role="alert"></div>
+                    <div class="dynamic-form-workflow-loading d-none mb-3" role="status" aria-live="polite">
+                        <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+                        <span>
+                            <% if (user.LanguageContext == 'IT') { %>Operazione in corso...<% } %>
+                            <% if (user.LanguageContext == 'GB') { %>Processing...<% } %>
+                            <% if (user.LanguageContext == 'ES') { %>Procesando...<% } %>
+                            <% if (user.LanguageContext == 'CN') { %>处理中...<% } %>
+                        </span>
+                    </div>
                     <div class="dynamic-form-workflow-transitions"></div>
                     <div class="dynamic-form-workflow-note d-none mt-3">
                         <label class="form-label" for="dynamic-form-workflow-note">
@@ -229,5 +239,6 @@
             </div>
         </div>
     </div>
+    <%- include('partials/system-message'); %>
 </body>
 </html>

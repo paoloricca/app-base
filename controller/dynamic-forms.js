@@ -15,6 +15,7 @@ $(function () {
     var deleteInstanceId = null;
     var editorMode = 'edit';
     var actionLoading = false;
+    var workflowApplying = false;
 
     function text(key) {
         var labels = {
@@ -72,11 +73,33 @@ $(function () {
         return response.data;
     }
 
-    function requestError(xhr) {
+    function requestErrorMessage(xhr) {
         var message = xhr.responseJSON && xhr.responseJSON.error
             ? (xhr.responseJSON.error.message || xhr.responseJSON.error)
             : (xhr.responseText || xhr.statusText || text('error'));
-        ShowError(typeof message === 'string' ? message : JSON.stringify(message), 'dynamic-forms');
+        return typeof message === 'string' ? message : JSON.stringify(message);
+    }
+
+    function requestError(xhr) {
+        ShowError(requestErrorMessage(xhr), 'dynamic-forms');
+    }
+
+    function clearWorkflowError() {
+        $('.dynamic-form-workflow-error').addClass('d-none').text('');
+    }
+
+    function showWorkflowError(message) {
+        $('.dynamic-form-workflow-error').text(message).removeClass('d-none');
+    }
+
+    function setWorkflowApplying(applying) {
+        workflowApplying = applying;
+        $('.dynamic-form-workflow-loading').toggleClass('d-none', !applying);
+        $('#dynamic-form-workflow-modal').attr('aria-busy', applying ? 'true' : 'false');
+        $('#dynamic-form-workflow-modal .btn-close, #dynamic-form-workflow-modal [data-bs-dismiss="modal"]')
+            .prop('disabled', applying);
+        $('.dynamic-form-workflow-transition, .dynamic-form-workflow-note-input, .dynamic-form-workflow-apply')
+            .prop('disabled', applying);
     }
 
     function startActionLoading() {
@@ -272,6 +295,7 @@ $(function () {
                     var $transitions = $('.dynamic-form-workflow-transitions').empty();
                     var $noteContainer = $('.dynamic-form-workflow-note');
                     var $note = $('.dynamic-form-workflow-note-input');
+                    clearWorkflowError();
                     $('.dynamic-form-workflow-apply').prop('disabled', true);
                     $note.val('')
                         .prop('required', false)
@@ -787,6 +811,7 @@ $(function () {
         $group.removeData('contextMenu');
     });
     $('.dynamic-form-workflow-transitions').on('change', '.dynamic-form-workflow-transition', function () {
+        clearWorkflowError();
         var requiresNote = workflowNoteRequired($(this).attr('data-note-required'));
         var $noteContainer = $('.dynamic-form-workflow-note');
         var $note = $('.dynamic-form-workflow-note-input');
@@ -801,7 +826,12 @@ $(function () {
     $('.dynamic-form-workflow-note-input').on('input', function () {
         updateWorkflowNoteValidity($(this));
     });
+    $('#dynamic-form-workflow-modal').on('hide.bs.modal', function (event) {
+        if (workflowApplying) event.preventDefault();
+    });
     $('.dynamic-form-workflow-apply').on('click', function () {
+        if (workflowApplying) return;
+        clearWorkflowError();
         var workflowRecordId = $(this).data('workflow-record-id');
         var $selected = $('.dynamic-form-workflow-transition:checked');
         var $note = $('.dynamic-form-workflow-note-input');
@@ -816,6 +846,8 @@ $(function () {
             return;
         }
 
+        setWorkflowApplying(true);
+        var succeeded = false;
         $.ajax({
             type: 'POST',
             url: '/workflow-apply/' + encodeURIComponent(workflowRecordId),
@@ -827,12 +859,19 @@ $(function () {
         }).done(function (response) {
             try {
                 unwrap(response);
+                succeeded = true;
+            } catch (error) {
+                showWorkflowError(error.message);
+            }
+        }).fail(function (xhr) {
+            showWorkflowError(requestErrorMessage(xhr));
+        }).always(function () {
+            setWorkflowApplying(false);
+            if (succeeded) {
                 $('#dynamic-form-workflow-modal').modal('hide');
                 loadRecords();
-            } catch (error) {
-                ShowError(error.message, 'applyWorkflow');
             }
-        }).fail(requestError);
+        });
     });
     $('.dynamic-form-delete-confirm').on('click', function () {
         if (!deleteInstanceId || !isAuthorized('Cancellazione')) {
