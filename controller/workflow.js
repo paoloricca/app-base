@@ -31,6 +31,9 @@ $(function () {
             const bounds = indicator.node.renderedBoundingBox({ includeLabels: false });
             indicator.marker.style.left = (bounds.x2 + 1) + 'px';
             indicator.marker.style.top = (bounds.y1 - 4) + 'px';
+            indicator.timing.style.left = (bounds.x2 + 11) + 'px';
+            indicator.timing.style.top = (bounds.y1 - 8) + 'px';
+            indicator.timing.hidden = !indicator.hasTiming;
         });
     }
 
@@ -55,6 +58,7 @@ $(function () {
                 }
                 indicator.hasConnection = isEnabled(state.HasConnection);
                 indicator.hasAuthorization = isEnabled(state.HasAuthorization);
+                indicator.hasTiming = isEnabled(state.HasTiming);
                 updateNodeHealthIndicator(indicator);
             });
         }).fail(function (xhr, status, errorThrown) {
@@ -324,6 +328,127 @@ $(function () {
         ControlAuthProcessi.processi.load();
         ControlAuthGruppiOperativi.gruppioperativi.load(ControlAuthGruppiOperativi, 0);
         $('#container-workflow-set-auth').modal('show');
+    });
+    const timingMessages = {
+        IT: ['Inserire una durata intera non negativa e selezionare lo stato automatico.',
+             'L’intervallo massimo non può essere inferiore all’intervallo minimo.'],
+        GB: ['Enter a non-negative integer duration and select the automatic state.',
+             'The maximum interval cannot be shorter than the minimum interval.'],
+        ES: ['Introduzca una duración entera no negativa y seleccione el estado automático.',
+             'El intervalo máximo no puede ser inferior al mínimo.'],
+        CN: ['請輸入非負整數持續時間並選擇自動狀態。', '最長間隔不能小於最短間隔。']
+    };
+    let timingNodeId = null;
+    let timingVersionId = null;
+    let timingRequestId = 0;
+    function timingUrl() {
+        return '/workflow/api/versions/' + encodeURIComponent(timingVersionId) +
+            '/graph/nodes/' + encodeURIComponent(timingNodeId) + '/timing';
+    }
+    function timingError(message) {
+        $('.workflow-timing-error').text(message).removeClass('d-none');
+    }
+    $('.workflow-timing-active').on('change', function () {
+        $('#timing-section-' + $(this).data('type')).prop('hidden', !this.checked);
+    });
+    $('.workflow-timing-duration').on('input', function () {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    });
+    $('.workflow-set-timing').on('click', function () {
+        const node = JSON.parse($('#context-menu-node').find('.node').val());
+        timingNodeId = Number($('#context-menu-node').find('#IdEventoTransizione').val());
+        timingVersionId = versionId || Number(node.IDVersioneWorkflow);
+        if (!timingVersionId) {
+            ShowError('Workflow version not available.', 'workflow-timing');
+            return;
+        }
+        const requestId = ++timingRequestId;
+        const nodeDescription = $('#context-menu-node').find('#DescTransizione').val();
+        $.get(timingUrl()).done(function (response) {
+            if (requestId !== timingRequestId) return;
+            if (response.status !== 'OK') {
+                ShowError(response.error.message, response.error.sender);
+                return;
+            }
+            $('.workflow-timing-error').addClass('d-none').text('');
+            $('.workflow-timing-node').text('(' + nodeDescription + ')');
+            $('#timing-target, #timing-time-0, #timing-time-1').val('');
+            $('#timing-target-description').text('');
+            [0, 1].forEach(function (type) {
+                const item = response.data.find(function (row) { return row.TimingType === type; });
+                $('#timing-active-' + type).prop('checked', !!item && isEnabled(item.TimingActive)).trigger('change');
+                $('#timing-type-' + type).val(item && item.ValidityType != null ? String(item.ValidityType) : '');
+                $('#timing-time-' + type).val(item && item.ValidityTime != null ? item.ValidityTime : '');
+                if (type === 1 && item && item.JumpToTransition) {
+                    $('#timing-target').val(item.JumpToTransition);
+                    $('#timing-target-description').text(' (' + (item.TargetDescription || item.JumpToTransition) + ')');
+                }
+            });
+            $('#context-menu-node').hide();
+            $('#container-workflow-timing').modal('show');
+        }).fail(function (xhr, status, error) {
+            if (requestId === timingRequestId) ShowError(error || status, 'workflow-timing');
+        });
+    });
+    $('.workflow-timing-select-state').on('click', function () {
+        const plugin = $('.control-workflow-node-states');
+        const options = JSON.parse(plugin.attr('data-options'));
+        options.Sender = 'workflow-timing';
+        options.IDVersioneWorkflow = timingVersionId;
+        options.SelectedState = $('#timing-target').val() || null;
+        options.SelectedText = null;
+        plugin.attr('data-options', JSON.stringify(options));
+        plugin.workflowNodeStates.loadStates(plugin);
+        $('#container-workflow-node-states').addClass('workflow-timing-picker').modal('show');
+    });
+    $('#container-workflow-node-states').on('hidden.bs.modal', function () {
+        $(this).removeClass('workflow-timing-picker');
+        if ($('#container-workflow-timing').hasClass('show')) $('body').addClass('modal-open');
+    });
+    $('.workflow-timing-save').on('click', function () {
+        const messages = timingMessages[$('#LanguageContext').val()] || timingMessages.GB;
+        const intervals = [0, 1].map(function (type) {
+            const active = $('#timing-active-' + type).prop('checked');
+            const duration = $('#timing-time-' + type).val();
+            const validity = $('#timing-type-' + type).val();
+            return {
+                type: type, active: active,
+                validityType: validity === '' ? null : Number(validity),
+                validityTime: duration === '' ? null : Number(duration),
+                target: type === 1 && $('#timing-target').val() ? Number($('#timing-target').val()) : null
+            };
+        });
+        if (intervals.some(function (item) {
+            return item.active && ((item.validityType !== 0 && item.validityType !== 1) ||
+                !Number.isInteger(item.validityTime) || item.validityTime < 0 ||
+                item.validityTime > 2147483647 || (item.type === 1 && (!item.target || item.target === timingNodeId)));
+        })) {
+            timingError(messages[0]);
+            return;
+        }
+        if (intervals[0].active && intervals[1].active &&
+            intervals[1].validityTime * (intervals[1].validityType ? 24 : 1) <
+            intervals[0].validityTime * (intervals[0].validityType ? 24 : 1)) {
+            timingError(messages[1]);
+            return;
+        }
+        const button = $(this).prop('disabled', true);
+        const requestId = timingRequestId;
+        $.ajax({ url: timingUrl(), type: 'PUT', contentType: 'application/json',
+            data: JSON.stringify({ intervals: intervals }) })
+            .done(function (response) {
+                if (response.status !== 'OK') {
+                    if (requestId === timingRequestId) timingError(response.error.message);
+                    else ShowError(response.error.message, response.error.sender);
+                    return;
+                }
+                if (requestId === timingRequestId) $('#container-workflow-timing').modal('hide');
+                if (isVersionEditor) refreshWorkflowNodeHealth();
+            }).fail(function (xhr, status, error) {
+                if (requestId === timingRequestId) timingError(error || status);
+                else ShowError(error || status, 'workflow-timing');
+            })
+            .always(function () { button.prop('disabled', false); });
     });
     $('.workflow-set-rel').click(function () {
         var ControlWorkflowNodeLink = $('.control-workflow-node-link');
@@ -1128,6 +1253,8 @@ $(function () {
         $('#context-menu-node').find('#DescTransizione').val(node.desc);
         $('#context-menu-node').find('.workflow-del-node')
             .toggle(!isVersionEditor || !isProtectedWorkflowNode(node.state));
+        $('#context-menu-node').find('.workflow-set-timing')
+            .toggle(!!(versionId || node.state.IDVersioneWorkflow) && !isProtectedWorkflowNode(node.state));
         menuHeader.html('<i class="bi bi-bezier2 x2"></i> ' + node.desc);
         menu.style.left = XPos + "px";
         menu.style.top = YPos + "px";
@@ -1281,6 +1408,7 @@ $(function () {
                     if (cy) {
                         workflowNodeHealth.forEach(function (indicator) {
                             indicator.marker.remove();
+                            indicator.timing.remove();
                         });
                         workflowNodeHealth.clear();
                         cy.destroy();
@@ -1523,10 +1651,16 @@ $(function () {
                             marker.className = 'workflow-node-health-bullet';
                             marker.setAttribute('aria-hidden', 'true');
                             graphInstance.container().appendChild(marker);
+                            const timing = document.createElement('i');
+                            timing.className = 'bi bi-clock workflow-node-timing-icon';
+                            timing.setAttribute('title', 'Duration interval');
+                            graphInstance.container().appendChild(timing);
 
                             const indicator = {
                                 node: node,
                                 marker: marker,
+                                timing: timing,
+                                hasTiming: isEnabled(state.HasTiming),
                                 hasConnection: isEnabled(state.HasConnection),
                                 hasOwner: null,
                                 hasAuthorization: isEnabled(state.HasAuthorization)
@@ -1821,6 +1955,14 @@ $(function () {
     ControlWorkflowNodeStates.bind("onselect", function () {
 
         var option = JSON.parse(ControlWorkflowNodeStates.attr('data-options'));
+
+        if (option.Sender === 'workflow-timing') {
+            $('#timing-target').val(option.SelectedState);
+            $('#timing-target-description').text(' (' + option.SelectedText + ')');
+            $('.workflow-timing-error').addClass('d-none').text('');
+            $('#container-workflow-node-states').modal('hide');
+            return;
+        }
 
         clearNodeWorkflowOwner();
 

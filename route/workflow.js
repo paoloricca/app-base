@@ -26,6 +26,7 @@ const sessionUtil = require('../utils/session')
 const session = require('express-session');
 const workflowCatalog = require('../crud/workflow-catalog');
 const breadcrumb = require('../crud/breadcrumb');
+const workflowTiming = require('../utils/workflow-timing');
 
 function isPositiveInteger(value) {
     const number = Number(value);
@@ -351,6 +352,35 @@ workflow.get('/workflow/api/versions/:IDVersioneWorkflow/states', function (req,
     }).catch(function (error) {
         sendCatalogError(res, error);
     });
+    workflow.get('/workflow/api/versions/:IDVersioneWorkflow/graph/nodes/:IDEventoTransizione/timing', function (req, res) {
+        if (!sessionUtil.verifyUser(req, res)) return;
+        if (!isPositiveInteger(req.params.IDVersioneWorkflow) || !isPositiveInteger(req.params.IDEventoTransizione)) {
+            sendCatalogError(res, { message: 'Invalid workflow node ID.' });
+            return;
+        }
+        workflowCatalog.getNodeTiming(Number(req.params.IDVersioneWorkflow), req.session.user.IdAttore,
+            Number(req.params.IDEventoTransizione), req.session.user.LanguageContext)
+            .then(function (data) { res.json(new response('OK', data, null)); })
+            .catch(function (error) { sendCatalogError(res, error); });
+    });
+    workflow.put('/workflow/api/versions/:IDVersioneWorkflow/graph/nodes/:IDEventoTransizione/timing', function (req, res) {
+        if (!sessionUtil.verifyUser(req, res)) return;
+        if (!isPositiveInteger(req.params.IDVersioneWorkflow) || !isPositiveInteger(req.params.IDEventoTransizione)) {
+            sendCatalogError(res, { message: 'Invalid workflow node ID.' });
+            return;
+        }
+        let intervals;
+        try {
+            intervals = workflowTiming.parseTiming(req.body);
+        } catch (error) {
+            sendCatalogError(res, { message: error.message, sender: 'workflow-timing' });
+            return;
+        }
+        workflowCatalog.saveNodeTiming(Number(req.params.IDVersioneWorkflow), req.session.user.IdAttore,
+            Number(req.params.IDEventoTransizione), intervals)
+            .then(function () { res.json(new response('OK', true, null)); })
+            .catch(function (error) { sendCatalogError(res, error); });
+    });
 });
 workflow.post('/workflow/api/versions/:IDVersioneWorkflow/graph/nodes', function (req, res) {
     if (!sessionUtil.verifyUser(req, res)) {
@@ -636,6 +666,7 @@ workflow.post('/workflow-apply/:IdRecord', function (req, res) {
             req.session.user.LanguageContext,            
             req.body
         );
+        myRequest.IdProfiloUtente = req.session.user.IDProfiloUtenteDefault || 0;
         crud.PostWorkflow(myRequest).then(listOf => {
             res.status(200).json(
                 new response('OK', JSON.parse(listOf), null)

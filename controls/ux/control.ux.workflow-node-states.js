@@ -86,7 +86,10 @@
                                         state.HexColor = '#3498db';
                                     }
                                     var partialToRender = ejs.render(templateString, { state, optionsWorkflow });
-                                    if (optionsWorkflow.SelectedState != null) {
+                                    if (optionsWorkflow.SelectedState != null &&
+                                        String(optionsWorkflow.SelectedState) === String(state.IdEventoTransizione)) {
+                                        optionsWorkflow.SelectedText = state.Descrizione;
+                                        plugin.attr('data-options', JSON.stringify(optionsWorkflow));
                                         plugin.find('.btn-confirm-container-workflow-node-states').prop('disabled', false);
                                     }
 

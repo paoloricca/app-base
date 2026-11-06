@@ -42,6 +42,17 @@
             border-radius: 50%;
             pointer-events: none;
         }
+        .workflow-node-timing-icon {
+            position: absolute;
+            z-index: 1002;
+            color: #0d6efd;
+            font-size: 15px;
+            line-height: 1;
+            pointer-events: none;
+        }
+        #container-workflow-node-states.workflow-timing-picker {
+            z-index: 1080;
+        }
 
         #container-workflow-set-auth .workflow-auth-panel-title {
             overflow: hidden;
@@ -154,6 +165,12 @@
                                 <% if (user.LanguageContext == "CN") { %>
                                     設定權限
                                 <% } %>
+                            </span>
+                            <span class="col-12 p-0 px-2 workflow-set-timing app-context-menu-item">
+                                <i class="bi bi-clock"></i>&nbsp;&nbsp;
+                                <%= user.LanguageContext === 'IT' ? 'Imposta intervallo durata' :
+                                    user.LanguageContext === 'ES' ? 'Configurar intervalo de duración' :
+                                    user.LanguageContext === 'CN' ? '設定持續時間' : 'Set duration interval' %>
                             </span>
                             <span class="col-12 p-0 px-2 workflow-set-rel app-context-menu-item">
                                 <i class="bi bi-link-45deg"></i>&nbsp;&nbsp;
@@ -599,6 +616,59 @@
             </div>
         </div>
 
+        <% const timingLabels = {
+            IT: ['Imposta intervallo durata', 'Minimo', 'Massimo', 'Intervallo minimo', 'Intervallo massimo', 'Tipo durata', 'Ore', 'Giorni', 'Intervallo durata', 'Stato automatico alla scadenza', 'Annulla', 'Conferma'],
+            GB: ['Set duration interval', 'Minimum', 'Maximum', 'Minimum interval', 'Maximum interval', 'Duration type', 'Hours', 'Days', 'Duration interval', 'Automatic state on expiry', 'Cancel', 'Confirm'],
+            ES: ['Configurar intervalo de duración', 'Mínimo', 'Máximo', 'Intervalo mínimo', 'Intervalo máximo', 'Tipo de duración', 'Horas', 'Días', 'Intervalo de duración', 'Estado automático al vencimiento', 'Cancelar', 'Confirmar'],
+            CN: ['設定持續時間', '最短', '最長', '最短間隔', '最長間隔', '持續時間類型', '小時', '天', '持續時間', '到期自動狀態', '取消', '確認']
+        }[user.LanguageContext] || ['Set duration interval', 'Minimum', 'Maximum', 'Minimum interval', 'Maximum interval', 'Duration type', 'Hours', 'Days', 'Duration interval', 'Automatic state on expiry', 'Cancel', 'Confirm']; %>
+        <div class="modal" id="container-workflow-timing" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="workflow-timing-title">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-primary" id="workflow-timing-title"><i class="bi bi-clock"></i> <%= timingLabels[0] %> <span class="text-dark workflow-timing-node"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning workflow-timing-error d-none" role="alert"></div>
+                        <div class="d-flex flex-wrap align-items-center gap-4 mb-3">
+                            <% [0, 1].forEach(function (type) { %>
+                            <div class="form-check form-switch p-0 me-3">
+                                <input class="form-check-input workflow-timing-active me-2" type="checkbox" id="timing-active-<%= type %>" data-type="<%= type %>">
+                                <label class="form-check-label" for="timing-active-<%= type %>"><%= timingLabels[1 + type] %></label>
+                            </div>
+                            <% }); %>
+                        </div>
+                        <% [0, 1].forEach(function (type) { %>
+                        <fieldset class="border rounded p-3 mb-3 workflow-timing-section" id="timing-section-<%= type %>" hidden>
+                            <legend class="float-none w-auto fs-6 fw-bold px-1"><%= timingLabels[3 + type] %></legend>
+                            <div class="row g-2">
+                                <div class="col-6"><label class="form-label" for="timing-type-<%= type %>"><%= timingLabels[5] %></label>
+                                    <select class="form-select" id="timing-type-<%= type %>">
+                                        <option value="">--</option>
+                                        <option value="0"><%= timingLabels[6] %></option><option value="1"><%= timingLabels[7] %></option>
+                                    </select>
+                                </div>
+                                <div class="col-6"><label class="form-label" for="timing-time-<%= type %>"><%= timingLabels[8] %></label>
+                                    <input type="text" class="form-control workflow-timing-duration" id="timing-time-<%= type %>" maxlength="10" inputmode="numeric" pattern="[0-9]*">
+                                </div>
+                            </div>
+                            <% if (type === 1) { %>
+                            <div class="mt-3"><span><%= timingLabels[9] %></span><span id="timing-target-description"></span>
+                                <input type="hidden" id="timing-target">
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-2 workflow-timing-select-state" aria-label="<%= timingLabels[9] %>"><i class="bi bi-gear"></i></button>
+                            </div>
+                            <% } %>
+                        </fieldset>
+                        <% }); %>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><%= timingLabels[10] %></button>
+                        <button type="button" class="btn btn-primary workflow-timing-save"><%= timingLabels[11] %></button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="modal" id="container-workflow-node-states" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-dialog-centered workflow-node-states-dialog" role="document">
                 <div class="modal-content">

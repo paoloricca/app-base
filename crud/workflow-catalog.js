@@ -273,6 +273,11 @@ function getVersionGraph(IDVersioneWorkflow, IDAttore, LanguageContext) {
                 WHERE StateAction.IDEventoTransizione = Node.IDEventoTransizione
                     AND StateAction.IDProcesso IS NOT NULL
             ) THEN 1 ELSE 0 END AS BIT) AS HasAuthorization,
+            CAST(CASE WHEN EXISTS (
+                SELECT 1 FROM dbo.TEventiTransizioniTiming AS Timing
+                WHERE Timing.IDEventoTransizione = Node.IDEventoTransizione
+                    AND Timing.TimingType IN (0, 1) AND Timing.TimingActive = 1
+            ) THEN 1 ELSE 0 END AS BIT) AS HasTiming,
             CASE @LanguageContext
                 WHEN 'IT' THEN Node.Text_IT
                 WHEN 'GB' THEN Node.Text_GB
@@ -318,6 +323,89 @@ function getVersionGraph(IDVersioneWorkflow, IDAttore, LanguageContext) {
             transitions: result.recordsets[1] || []
         };
     });
+}
+
+function getNodeTiming(versionId, actorId, nodeId, language) {
+    return execute(`
+        IF NOT EXISTS (
+            SELECT 1 FROM dbo.TEventiTransizioni AS N
+            INNER JOIN dbo.TWorkflowVersioni AS V ON V.IDVersioneWorkflow = N.IDVersioneWorkflow
+            INNER JOIN dbo.TWorkflow AS W ON W.IDWorkflow = V.IDWorkflow
+            WHERE N.IDEventoTransizione = @Node AND N.IDVersioneWorkflow = @Version
+                AND W.IDAttore = @Actor AND N.IsVisible = 1
+        ) THROW 50001, 'Workflow node not found.', 1;
+        IF EXISTS (
+            SELECT 1 FROM dbo.TEventiTransizioniTiming
+            WHERE IDEventoTransizione = @Node AND TimingType IN (0, 1)
+            GROUP BY TimingType HAVING COUNT(*) > 1
+        ) THROW 50001, 'Configurazioni intervallo duplicate per il nodo.', 1;
+        SELECT T.TimingType, T.TimingActive, T.ValidityType, T.ValidityTime,
+            T.JumpToTransition, CASE @Language
+                WHEN 'IT' THEN N.Text_IT WHEN 'GB' THEN N.Text_GB
+                WHEN 'ES' THEN N.Text_ES WHEN 'CN' THEN N.Text_CN END AS TargetDescription
+        FROM dbo.TEventiTransizioniTiming AS T
+        LEFT JOIN dbo.TEventiTransizioni AS N ON N.IDEventoTransizione = T.JumpToTransition
+        WHERE T.IDEventoTransizione = @Node AND T.TimingType IN (0, 1);
+    `, {
+        Version: intInput(versionId), Actor: intInput(actorId), Node: intInput(nodeId),
+        Language: { type: sql.NVarChar(2), value: language }
+    }).then(function (result) { return result.recordset; });
+}
+
+function saveNodeTiming(versionId, actorId, nodeId, intervals) {
+    const min = intervals[0], max = intervals[1];
+    return execute(`
+        SET XACT_ABORT ON;
+        BEGIN TRY
+            BEGIN TRANSACTION;
+            IF NOT EXISTS (
+                SELECT 1 FROM dbo.TEventiTransizioni AS N WITH (UPDLOCK, HOLDLOCK)
+                INNER JOIN dbo.TWorkflowVersioni AS V ON V.IDVersioneWorkflow = N.IDVersioneWorkflow
+                INNER JOIN dbo.TWorkflow AS W ON W.IDWorkflow = V.IDWorkflow
+                WHERE N.IDEventoTransizione = @Node AND N.IDVersioneWorkflow = @Version
+                    AND W.IDAttore = @Actor AND N.IsVisible = 1
+            ) THROW 50001, 'Workflow node not found.', 1;
+            IF @MaxActive = 1 AND NOT EXISTS (
+                SELECT 1 FROM dbo.TEventiTransizioni WITH (UPDLOCK, HOLDLOCK)
+                WHERE IDEventoTransizione = @Target AND IDVersioneWorkflow = @Version
+                    AND IsVisible = 1 AND IDEventoTransizione <> @Node
+            ) THROW 50001, 'Stato automatico non valido.', 1;
+            IF EXISTS (
+                SELECT 1 FROM dbo.TEventiTransizioniTiming WITH (UPDLOCK, HOLDLOCK)
+                WHERE IDEventoTransizione = @Node AND TimingType IN (0, 1)
+                GROUP BY TimingType HAVING COUNT(*) > 1
+            ) THROW 50001, 'Configurazioni intervallo duplicate per il nodo.', 1;
+
+            UPDATE dbo.TEventiTransizioniTiming
+            SET TimingActive = @MinActive,
+                ValidityType = CASE WHEN @MinActive = 1 THEN @MinType ELSE ValidityType END,
+                ValidityTime = CASE WHEN @MinActive = 1 THEN @MinTime ELSE ValidityTime END
+            WHERE IDEventoTransizione = @Node AND TimingType = 0;
+            IF @@ROWCOUNT = 0 AND @MinActive = 1
+                INSERT dbo.TEventiTransizioniTiming (IDEventoTransizione, TimingType, TimingActive, ValidityType, ValidityTime)
+                VALUES (@Node, 0, 1, @MinType, @MinTime);
+
+            UPDATE dbo.TEventiTransizioniTiming
+            SET TimingActive = @MaxActive,
+                ValidityType = CASE WHEN @MaxActive = 1 THEN @MaxType ELSE ValidityType END,
+                ValidityTime = CASE WHEN @MaxActive = 1 THEN @MaxTime ELSE ValidityTime END,
+                JumpToTransition = CASE WHEN @MaxActive = 1 THEN @Target ELSE JumpToTransition END
+            WHERE IDEventoTransizione = @Node AND TimingType = 1;
+            IF @@ROWCOUNT = 0 AND @MaxActive = 1
+                INSERT dbo.TEventiTransizioniTiming (IDEventoTransizione, TimingType, TimingActive, ValidityType, ValidityTime, JumpToTransition)
+                VALUES (@Node, 1, 1, @MaxType, @MaxTime, @Target);
+            COMMIT TRANSACTION;
+        END TRY
+        BEGIN CATCH
+            IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+            THROW;
+        END CATCH;
+    `, {
+        Version: intInput(versionId), Actor: intInput(actorId), Node: intInput(nodeId),
+        MinActive: bitInput(min.active), MinType: intInput(min.validityType), MinTime: intInput(min.validityTime),
+        MaxActive: bitInput(max.active), MaxType: intInput(max.validityType), MaxTime: intInput(max.validityTime),
+        Target: intInput(max.target)
+    }).then(function () { return true; });
 }
 
 function getVersionGraphStates(IDVersioneWorkflow, IDAttore, LanguageContext) {
@@ -460,10 +548,32 @@ function updateVersionGraphNodePosition(IDVersioneWorkflow, IDAttore, IDEventoTr
 
 function deleteVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizione) {
     return execute(`
-        EXEC dbo.SP_DELETE_WORKFLOW_VERSION_NODE
-            @IDVersioneWorkflow = @IDVersioneWorkflow,
-            @IDAttore = @IDAttore,
-            @IDEventoTransizione = @IDEventoTransizione;
+        SET XACT_ABORT ON;
+        BEGIN TRY
+            BEGIN TRANSACTION;
+            IF NOT EXISTS (
+                SELECT 1 FROM dbo.TEventiTransizioni AS N WITH (UPDLOCK, HOLDLOCK)
+                INNER JOIN dbo.TWorkflowVersioni AS V ON V.IDVersioneWorkflow = N.IDVersioneWorkflow
+                INNER JOIN dbo.TWorkflow AS W ON W.IDWorkflow = V.IDWorkflow
+                WHERE N.IDEventoTransizione = @IDEventoTransizione
+                    AND N.IDVersioneWorkflow = @IDVersioneWorkflow AND W.IDAttore = @IDAttore
+            ) THROW 50001, 'Workflow node not found.', 1;
+            IF EXISTS (
+                SELECT 1 FROM dbo.TEventiTransizioniTiming WITH (UPDLOCK, HOLDLOCK)
+                WHERE JumpToTransition = @IDEventoTransizione
+                    AND IDEventoTransizione <> @IDEventoTransizione
+            ) THROW 50001, 'Lo stato e usato come destinazione di un intervallo durata.', 1;
+            DELETE dbo.TEventiTransizioniTiming WHERE IDEventoTransizione = @IDEventoTransizione;
+            EXEC dbo.SP_DELETE_WORKFLOW_VERSION_NODE
+                @IDVersioneWorkflow = @IDVersioneWorkflow,
+                @IDAttore = @IDAttore,
+                @IDEventoTransizione = @IDEventoTransizione;
+            COMMIT TRANSACTION;
+        END TRY
+        BEGIN CATCH
+            IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+            THROW;
+        END CATCH;
     `, {
         IDVersioneWorkflow: intInput(IDVersioneWorkflow),
         IDAttore: intInput(IDAttore),
@@ -639,6 +749,8 @@ module.exports = {
     getVersionEditorDetails,
     getVersionGraph,
     getVersionGraphStates,
+    getNodeTiming,
+    saveNodeTiming,
     createVersionGraphNode,
     createVersionGraphTransition,
     updateVersionGraphNode,

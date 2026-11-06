@@ -989,118 +989,117 @@ function PostWorkflowLinkNode(myRequest) {
     });
     return customPromise
 }
-function PostWorkflow(myRequest) {
-
-    const sender = arguments.callee.name;
-
-    var myIdAttore = myRequest.IdAttore;
-    var myIdAccount = myRequest.IdAccount;
-    var myIDProcesso = myRequest.IdProcesso;
-    var myIDRecord = myRequest.IdRecord;
-    var myIDEventoDirezione = myRequest.IdEventoDirezione;
-    var myNote = myRequest.Note;
-    var myLanguageContext = myRequest.LanguageContext;
-
-    //console.log('myIDProcesso: ' + myIDProcesso); 
-    //console.log('myIDRecord: ' + myIDRecord);     
-    //console.log('myIDEventoDirezione: ' + myIDEventoDirezione); 
-
-    var StrGetOwner = "";
-    var StrGetEditors = "";
-
-    const customPromise = new Promise((resolve, reject) => {
-        try {
-            // Controllo lato server: la transizione deve essere tra quelle consentite all'utente
-            GetWorkflowTransitions(Object.assign({}, myRequest, { IdProfiloUtente: myRequest.IdProfiloUtente || 0 })).then(listOf => {
-                var allowed = listOf ? JSON.parse(listOf) : [];
-                if (!Array.isArray(allowed) || !allowed.some(t => String(t.IDEventoDirezione) === String(myIDEventoDirezione))) {
-                    throw new Error('Operazione non autorizzata: stato non applicabile da questo utente');
-                }
-            }).then(() => {
-            sql.connect(connection, function (err, conn) {
-                if (err) {
-                    reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
-                }
-                // Inizio transazione
-                conn.query("BEGIN TRAN", (err) => {
-                    if (err) {
-                        reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
-                    } else {
-
-                        /* 2. Recupera il nodo dalla transizione applicata */
-                        business.GetNodeEndFromTransition(myIDEventoDirezione, sql).then(listOf => {
-                            console.log(listOf);
-                            return listOf;
-                        }).catch(err => {
-
-                            RollBack(conn); reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
-
-                        }).then(IDNode => {
-
-                            console.log('GetNodeEndFromTransition: ' + IDNode);
-
-                            /* 3) Valorizzazione Owner e Editors del Processo (GetOwner, GetEditors) */
-                            business.GetOwner(IDNode, myIDRecord, myIdAccount, sql).then(listOf => {
-
-                                StrGetOwner = listOf;
-
-                                console.log('StrGetOwner: ' + listOf);
-                                return listOf;
-
-                            }).catch(err => {
-
-                                RollBack(conn); reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
-
-                            }).then(StrGetOwner => {
-
-                                business.GetEditors(myIDProcesso, IDNode, myIdAccount, sql).then(listOf => {
-
-                                    StrGetEditors = listOf;
-                                    console.log('StrGetEditors: ' + listOf);
-                                    return listOf;
-
-                                }).catch(err => {
-
-                                    RollBack(conn); reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
-
-                                }).then(StrGetEditors => {
-
-                                    business.PutFlowAccess(myIDRecord, IDNode, StrGetOwner, StrGetEditors, myIdAccount, myNote, sql).then(listOf => {
-
-                                        console.log("PutFlowAccess: " + listOf);
-
-                                    }).catch(err => {
-
-                                        console.log("PutFlowAccess err: " + err.message);
-
-                                        RollBack(conn); reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
-
-                                    }).then(StrGetEditors => {
-
-                                        conn.query("COMMIT", (err) => {
-                                            if (err) {
-                                                reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
-                                            }
-                                        });
-
-                                        resolve(JSON.stringify("OK"));
-                                    });
-                                })
-                            });
-                        });
-
-                    }
-                });
-            });
-            }).catch(err => {
-                reject(typeof err === 'string' ? err : JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
-            });
+async function PostWorkflow(myRequest) {
+    const sender = 'PostWorkflow';
+    let transaction;
+    let started = false;
+    let aborted = false;
+    try {
+        const pool = await sql.connect(connection);
+        transaction = new sql.Transaction(pool);
+        transaction.on('rollback', function (wasAborted) { aborted = wasAborted; });
+        await transaction.begin();
+        started = true;
+        const context = await new sql.Request(transaction)
+            .input('Process', sql.Int, Number(myRequest.IdProcesso))
+            .input('Record', sql.Int, Number(myRequest.IdRecord))
+            .query(`
+                SELECT P.IDModello, P.IDVersione, PR.IDVersioneWorkflow
+                FROM dbo.TProcessi AS P
+                LEFT JOIN dbo.TProcessiWorkflowRecord AS PR WITH (UPDLOCK, HOLDLOCK)
+                    ON PR.IDProcesso = P.IDProcesso AND PR.IDRecord = @Record
+                WHERE P.IDProcesso = @Process;
+            `);
+        const process = context.recordset[0];
+        if (!process) throw new Error('Processo non trovato.');
+        const dynamic = process.IDModello != null && process.IDVersione != null;
+        let currentState = null;
+        if (dynamic) {
+            if (!process.IDVersioneWorkflow) throw new Error('Occorrenza workflow non trovata.');
+            const state = await new sql.Request(transaction)
+                .input('Record', sql.Int, Number(myRequest.IdRecord))
+                .input('Version', sql.Int, process.IDVersioneWorkflow)
+                .query(`
+                    SELECT TOP (1) S.IDEventoStato, S.IDEventoTransizione
+                    FROM dbo.TEventiStati AS S WITH (UPDLOCK, HOLDLOCK)
+                    INNER JOIN dbo.TEventiTransizioni AS N ON N.IDEventoTransizione = S.IDEventoTransizione
+                    WHERE S.IDRecord = @Record AND N.IDVersioneWorkflow = @Version
+                    ORDER BY S.DataIstanza DESC, S.IDEventoStato DESC;
+                `);
+            currentState = state.recordset[0];
+            if (!currentState) throw new Error('Stato corrente non trovato.');
         }
-        catch (err) {
-            reject(JSON.stringify(new exception(sender, err.message, err.name, err.stack)));
+        const transitions = await new sql.Request(transaction)
+            .input('IdAttore', sql.Int, Number(myRequest.IdAttore))
+            .input('IdAccount', sql.Int, Number(myRequest.IdAccount))
+            .input('IdProfiloUtente', sql.Int, Number(myRequest.IdProfiloUtente || 0))
+            .input('IdRecord', sql.Int, Number(myRequest.IdRecord))
+            .input('IdProcesso', sql.Int, Number(myRequest.IdProcesso))
+            .input('LanguageContext', sql.VarChar(2), myRequest.LanguageContext)
+            .output('Status', sql.VarChar(500))
+            .execute('SP_GET_WORKFLOW_TRANSITIONS');
+        if (transitions.output.Status !== 'OK') throw new Error(transitions.output.Status || 'Errore nel caricamento delle transizioni.');
+        const selected = (transitions.recordset || []).find(function (item) {
+            return String(item.IDEventoDirezione) === String(myRequest.IdEventoDirezione) &&
+                (!dynamic || Number(item.IDTransizioneStart) === Number(currentState.IDEventoTransizione));
+        });
+        if (!selected) throw new Error('Operazione non autorizzata: stato non applicabile da questo utente.');
+        if (dynamic) {
+            const check = await new sql.Request(transaction)
+                .input('Mode', sql.VarChar(10), 'CHECK')
+                .input('IDProcesso', sql.Int, Number(myRequest.IdProcesso))
+                .input('IDRecord', sql.Int, Number(myRequest.IdRecord))
+                .input('IDStatoAtteso', sql.Int, currentState.IDEventoStato)
+                .output('CanSwitch', sql.Bit)
+                .execute('SP_PROCESS_WORKFLOW_TIMING');
+            if (!check.output.CanSwitch) {
+                const messages = {
+                    IT: 'Non è possibile cambiare stato prima della scadenza dell’intervallo minimo.',
+                    GB: 'The state cannot be changed before the minimum interval has elapsed.',
+                    ES: 'No se puede cambiar de estado antes de que transcurra el intervalo mínimo.',
+                    CN: '最短間隔到期前無法變更狀態。'
+                };
+                throw new Error(messages[myRequest.LanguageContext] || messages.GB);
+            }
         }
-    });
-    return customPromise
+        const node = Number(selected.IDTransizioneEnd);
+        const owner = await new sql.Request(transaction)
+            .input('IDAccount', sql.Int, Number(myRequest.IdAccount))
+            .input('IDNode', sql.Int, node)
+            .input('IDRecord', sql.Int, Number(myRequest.IdRecord))
+            .output('Result', sql.NVarChar(sql.MAX))
+            .output('Status', sql.NVarChar(500)).execute('SP_GET_OWNER');
+        if (owner.output.Status !== 'OK') throw new Error(owner.output.Status || 'Errore nel calcolo degli owner.');
+        const editors = await new sql.Request(transaction)
+            .input('IDAccount', sql.Int, Number(myRequest.IdAccount))
+            .input('IDNode', sql.Int, node)
+            .input('IDProcesso', sql.Int, Number(myRequest.IdProcesso))
+            .output('Result', sql.NVarChar(sql.MAX))
+            .output('Status', sql.NVarChar(500)).execute('SP_GET_EDITORS');
+        if (editors.output.Status !== 'OK') throw new Error(editors.output.Status || 'Errore nel calcolo degli editor.');
+        const saved = await new sql.Request(transaction)
+            .input('IDRecord', sql.Int, Number(myRequest.IdRecord))
+            .input('IDNode', sql.Int, node)
+            .input('Owner', sql.NVarChar(sql.MAX), owner.output.Result)
+            .input('Editors', sql.NVarChar(sql.MAX), editors.output.Result)
+            .input('IdAccount', sql.Int, Number(myRequest.IdAccount))
+            .input('AvailableNote', sql.NVarChar(sql.MAX), myRequest.Note || null)
+            .output('Status', sql.NVarChar(500)).execute('SP_PUT_FLOW_ACCESS');
+        if (saved.output.Status !== 'OK') throw new Error(saved.output.Status || 'Errore nella registrazione dello stato.');
+        await transaction.commit();
+        started = false;
+        return JSON.stringify('OK');
+    } catch (error) {
+        if (started && !aborted) {
+            try {
+                await transaction.rollback();
+            } catch (rollbackError) {
+                throw new exception(sender, error.message + ' (rollback: ' + rollbackError.message + ')',
+                    error.name, error.stack);
+            }
+        }
+        throw new exception(sender, error.message, error.name, error.stack);
+    }
 }
 
 module.exports = {
