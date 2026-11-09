@@ -659,7 +659,7 @@ $(function () {
 
         /* Questa funzione conferma e imposta l'owner selezionato */
 
-        if ($('#container-workflow-set-owner').find('.form-check-input:checked').length == 0) {
+        if ($('#container-workflow-set-owner').find('.form-check-input:checked').not('#rb-ChatAllParticipants').length == 0) {
             /* TODO: visualizza il messaggio di errore */
 
         } else {
@@ -722,10 +722,11 @@ $(function () {
                 IsCreatorSelectedNode,
                 IsSelectedProfile,
                 IsUsersFromAdminProfileCreator,
+                $('#rb-ChatAllParticipants').prop('checked'),
             )
         }
     });
-    $('#container-workflow-set-owner').find('.form-check-input').click(function () {
+    $('#container-workflow-set-owner').find('.form-check-input').not('#rb-ChatAllParticipants').click(function () {
         clearNodeWorkflowOwner($(this));
     });
     loadNodeInfo = function () {
@@ -1091,6 +1092,7 @@ $(function () {
         IsCreatorSelectedNode,
         IsSelectedProfile,
         IsUsersFromAdminProfileCreator,
+        ChatAllParticipants,
         IdEventoTransizione
     ) {
         try {
@@ -1107,6 +1109,7 @@ $(function () {
                     IsCreatorSelectedNode: IsCreatorSelectedNode,
                     IsSelectedProfile: IsSelectedProfile,
                     IsUsersFromAdminProfileCreator: IsUsersFromAdminProfileCreator,
+                    ChatAllParticipants: ChatAllParticipants,
                     IdEventoTransizione: IdEventoTransizione,
                 },
             }).done(function (response) {
@@ -1134,10 +1137,10 @@ $(function () {
     clearNodeWorkflowOwner = function (sender) {
         try {
             if (sender != null && sender.prop('checked')) {
-                $('#container-workflow-set-owner').find('.form-check-input').prop('checked', false);
+                $('#container-workflow-set-owner').find('.form-check-input').not('#rb-ChatAllParticipants').prop('checked', false);
                 sender.prop('checked', true);
             } else {
-                $('#container-workflow-set-owner').find('.form-check-input').prop('checked', false);
+                $('#container-workflow-set-owner').find('.form-check-input').not('#rb-ChatAllParticipants').prop('checked', false);
             }
             $('#IsOwnerSelectedNode_Id').val('');
             $('#IsOwnerSelectedNode_Desc').empty();
@@ -1171,6 +1174,7 @@ $(function () {
             }).done(function (response) {
 
                 clearNodeWorkflowOwner();
+                $('#rb-ChatAllParticipants').prop('checked', false);
 
                 if (response.status == "ERR") {
                     //$('.spinner-border').hide();
@@ -1182,6 +1186,7 @@ $(function () {
                     } else {
 
                         var data = (response.data[0]);
+                        $('#rb-ChatAllParticipants').prop('checked', !!data.ChatAllParticipants);
 
                         if (data.IsCreator != null) {
                             $('#rb-IsCreator').prop("checked", true);

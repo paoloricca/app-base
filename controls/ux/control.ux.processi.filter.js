@@ -26,10 +26,11 @@
         plugin.attr('data-options', JSON.stringify(optionsFiltroProcessi));
 
         /* load plugin template */
-        $.get("/controls/ui/control.ui.processi.filter.ejs?" + Date.now(), function (response) {
+        var ready = $.get("/controls/ui/control.ui.processi.filter.ejs?" + Date.now(), function (response) {
             /* render plugin template */
             renderTemplate(response);
         });
+        plugin.data('filtroprocessiReady', ready);
         function renderTemplate(templateString) {
 
             var optionsFiltroProcessi = JSON.parse(plugin.attr('data-options'));

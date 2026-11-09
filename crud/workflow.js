@@ -232,6 +232,7 @@ function PostWorkflowNodeOwner(myRequest) {
                     request.input('IsCreatorSelectedNode', sql.NVarChar(50), myRequest.RequestBody.IsCreatorSelectedNode);
                     request.input('IsSelectedProfile', sql.NVarChar(50), myRequest.RequestBody.IsSelectedProfile);
                     request.input('IsUsersFromAdminProfileCreator', sql.NVarChar(50), myRequest.RequestBody.IsUsersFromAdminProfileCreator);
+                    request.input('ChatAllParticipants', sql.Bit, myRequest.RequestBody.ChatAllParticipants === true || myRequest.RequestBody.ChatAllParticipants === 'true');
 
                     request.output('Status', sql.NVarChar(500))
 

@@ -12,6 +12,23 @@ $(function () {
         $('.artwork-order-layout').removeClass('filter-hidden');
         $(this).blur();
     });
+    var pendingChatRecord = null;
+    function openChatHistory(record, color) {
+        var history = $('.history');
+        history.workflowhistory({
+            IdRecord: record, IdProcesso: 71,
+            LanguageContext: history.data('user').LanguageContext, user: history.data('user')
+        });
+        $('.history-idrecord-color').empty().append($('<i>', { class: 'bi bi-circle-fill bullet-stato-processo' }).css('color', color || 'lightgray'));
+        $('.history-idrecord').text(record);
+        $('.ordine-reference').show();
+        history.workflowhistory.loadHistory(history).done(function () {
+            $('#container-history').modal('show');
+        });
+    }
+    $(document).on('workflow-chat-open-history', function (_, target) {
+        if (target && Number(target.process) === 71) openChatHistory(target.record);
+    });
     loadArtworkOrdini = function (pageSize, pageIndex) {
 
         $('.spinner-border').show();
@@ -24,6 +41,7 @@ $(function () {
             data: {
                 pageIndex: pageIndex,
                 pageSize: pageSize,
+                recordId: $('#filter_IdRecord').val() || '',
             },
         }).done(function (response, status, pageSize) {
 
@@ -161,29 +179,9 @@ $(function () {
 
                                 var optionsWorkflow = JSON.parse($(this).attr('data-options'));
 
-                                /* inizializza il controllo Model */
-                                var ArtworkHistory = $('.history');
-
-                                /* Imposta le propriet� di default del plug-in <WorkflowHistory> */
-                                ArtworkHistory.workflowhistory({
-                                    IdRecord: ordine.IdRecord,
-                                    IdProcesso: 71,
-                                    LanguageContext: $('.history').data('user').LanguageContext,
-                                    user: $('.history').data('user')
-                                });
-                                $('.history-idrecord-color').html('<i class="bi bi-circle-fill bullet-stato-processo" style="color: ' + ordine.ColoreStato + '" />');
-                                $('.history-idrecord').html(ordine.IdRecord);
-                                $('.ordine-reference').show();
-
-                                $.when(
-                                    /* Renderizza il plug-in <WorkflowHistory> */
-                                    ArtworkHistory.workflowhistory.loadHistory(ArtworkHistory)
-                                ).then(function () {
-                                    $('#container-history').modal('show');
-                                });
+                                openChatHistory(ordine.IdRecord, ordine.ColoreStato);
 
                         });
-
                         $('.result-ordini-container').find('.container-workflow-' + ordine.IdRecord).bind(
                             "onworkflow", function (e, Note) {
 
@@ -208,6 +206,12 @@ $(function () {
 
                             });
                     });
+                    if (pendingChatRecord !== null) {
+                        var selected = $('.result-ordini-container').find('.container-workflow-' + pendingChatRecord);
+                        pendingChatRecord = null;
+                        if (selected.length) selected.trigger('onhistory');
+                        else ShowError('Richiesta non trovata o non autorizzata.', 'openHistory');
+                    }
                 });
             }
 
@@ -379,6 +383,24 @@ $(function () {
             );
     });
 
-    loadArtworkOrdini(JSON.parse(ControlPagerArtworkOrdine.attr('data-options')).pageSize, 1);
+    ControlFiltroOrdini.data('filtroprocessiReady').done(function () {
+        var url = new URL(window.location.href);
+        var target = url.searchParams.get('chatRecord');
+        if (target !== null) {
+            url.searchParams.delete('chatRecord');
+            window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+            if (!/^[1-9]\d*$/.test(target) || Number(target) > 2147483647) {
+                ShowError('ID non valido.', 'openHistory');
+                return;
+            }
+            $('#filter_IdRecord').val(target);
+            pendingChatRecord = Number(target);
+        }
+        $('#filtro-ordini-container').on('click', '.btn', function (event) {
+            event.preventDefault();
+            loadArtworkOrdini(JSON.parse(ControlPagerArtworkOrdine.attr('data-options')).pageSize, 1);
+        });
+        loadArtworkOrdini(JSON.parse(ControlPagerArtworkOrdine.attr('data-options')).pageSize, 1);
+    }).fail(function () { ShowError('Impossibile caricare il filtro.', 'openHistory'); });
 
 });

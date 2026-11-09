@@ -50,7 +50,7 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-app.use(session({
+const sessionMiddleware = session({
     store: redisStore,
     secret: config.SecretKey,
     resave: false,
@@ -60,7 +60,8 @@ app.use(session({
         httpOnly: true,
         secure: false
     }
-}));
+});
+app.use(sessionMiddleware);
 
 app.use('/', require('./route/init'));
 app.use('/', require('./route/login'));
@@ -75,6 +76,7 @@ app.use('/', require('./route/dynamic-forms'));
 app.use('/', require('./route/gestione-utenti'));
 app.use('/', require('./route/model'));
 app.use('/', require('./route/workflow'));
+app.use('/', require('./route/workflow-chat'));
 app.use('/', require('./route/gruppi-operativi'));
 app.use('/', require('./route/profili-utente'));
 app.use('/', require('./route/profili-utente-abilitazioni'));
@@ -85,6 +87,17 @@ app.use('/', require('./route/artwork/artwork-ordine'));
 app.use('/', require('./route/ticket/richieste-assistenza'));
 
 //app.use('/', require('./route/changePassword'));
+
+app.use((req, res, next) => {
+   let pathname;
+   try {
+       pathname = path.posix.normalize(decodeURIComponent(req.path).replace(/\\/g, '/')).toLowerCase();
+   } catch (error) {
+       return res.status(400).send('Invalid path');
+   }
+   if (/^\/files\/\.workflow-chat(?:\/|$)/.test(pathname)) return res.sendStatus(404);
+   next();
+});
 
 app.use(express.static('public'));
 
@@ -121,3 +134,4 @@ const PORT = process.env.PORT || config.Port || 3000;
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+require('./utils/workflow-chat-realtime').initialize(server, sessionMiddleware);

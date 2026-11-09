@@ -26,7 +26,8 @@ $(function () {
                 workflow: 'Workflow', noWorkflow: 'Nessuno stato da impostare',
                 previous: 'Precedente', next: 'Successiva', page: 'Pagina',
                 of: 'di', total: 'Record Totali',
-                error: 'Errore durante il caricamento dei dati.'
+                error: 'Errore durante il caricamento dei dati.', invalidId: 'ID non valido.',
+                recordUnavailable: 'Richiesta non trovata o non autorizzata.'
             },
             GB: {
                 id: 'ID', creator: 'Created by', status: 'Status', actions: 'Actions', insert: 'Add', read: 'View',
@@ -35,7 +36,8 @@ $(function () {
                 workflow: 'Workflow', noWorkflow: 'No state available to set',
                 previous: 'Previous', next: 'Next', page: 'Page',
                 of: 'of', total: 'Total records',
-                error: 'An error occurred while loading data.'
+                error: 'An error occurred while loading data.', invalidId: 'Invalid ID.',
+                recordUnavailable: 'Request not found or access denied.'
             },
             ES: {
                 id: 'ID', creator: 'Creado por', status: 'Estado', actions: 'Acciones', insert: 'Añadir', read: 'Ver',
@@ -44,7 +46,8 @@ $(function () {
                 workflow: 'Flujo de trabajo', noWorkflow: 'No hay estados disponibles',
                 previous: 'Anterior', next: 'Siguiente', page: 'Página',
                 of: 'de', total: 'Registros totales',
-                error: 'Se produjo un error al cargar los datos.'
+                error: 'Se produjo un error al cargar los datos.', invalidId: 'ID no válido.',
+                recordUnavailable: 'Solicitud no encontrada o acceso denegado.'
             },
             CN: {
                 id: 'ID', creator: '创建者', status: '状态', actions: '操作', insert: '新增', read: '查看',
@@ -53,7 +56,8 @@ $(function () {
                 workflow: '工作流', noWorkflow: '没有可设置的状态',
                 previous: '上一页', next: '下一页', page: '页',
                 of: '/', total: '记录总数',
-                error: '加载数据时发生错误。'
+                error: '加载数据时发生错误。', invalidId: 'ID 无效。',
+                recordUnavailable: '找不到请求或无权访问。'
             }
         };
         return (labels[user.LanguageContext] || labels.GB)[key];
@@ -394,6 +398,11 @@ $(function () {
 
     function renderFilters(states) {
         var $container = $('.dynamic-form-filters').empty();
+        var $idWrapper = $('<div>', { class: 'mb-3 dynamic-filter-field' });
+        $('<label>', { class: 'form-label', for: 'dynamic-filter-id', text: text('id') }).appendTo($idWrapper);
+        $('<input>', { id: 'dynamic-filter-id', type: 'number', min: 1, max: 2147483647,
+            class: 'form-control dynamic-filter-id' }).appendTo($idWrapper);
+        $container.append($idWrapper);
         var $stateWrapper = $('<div>', { class: 'mb-3 dynamic-filter-field' });
         var $stateSelect = $('<select>', {
             id: 'dynamic-filter-current-state',
@@ -482,6 +491,13 @@ $(function () {
 
     function collectFilter() {
         var filters = [];
+        var instanceId = $('.dynamic-filter-id').val();
+        if (instanceId) {
+            if (!/^[1-9]\d*$/.test(instanceId) || Number(instanceId) > 2147483647) {
+                throw new Error(text('invalidId'));
+            }
+            filters.push({ filterType: 'instanceId', instanceId: Number(instanceId) });
+        }
         var currentStateId = $('.dynamic-filter-current-state').val();
         if (currentStateId) {
             filters.push({
@@ -650,7 +666,7 @@ $(function () {
     }
 
     function loadRecords() {
-        $.ajax({
+        return $.ajax({
             type: 'POST',
             url: apiBase + '/records',
             data: {
@@ -766,9 +782,16 @@ $(function () {
         $(this).blur();
     });
     $('.dynamic-form-search').on('click', function () {
-        activeFilter = collectFilter();
-        pageIndex = 1;
-        loadRecords();
+        try {
+            activeFilter = collectFilter();
+            pageIndex = 1;
+            loadRecords();
+        } catch (error) {
+            ShowError(error.message, 'dynamic-forms');
+        }
+    });
+    $(document).on('workflow-chat-open-history', function (_, target) {
+        if (target && Number(target.process) === IdProcesso) openHistory(target.record, target.record);
     });
     $('.dynamic-form-insert-action').on('click', '.dynamic-form-insert', function () {
         if (isAuthorized('Inserimento')) {
@@ -907,7 +930,34 @@ $(function () {
             renderFilters(states);
             renderHeading();
             renderActions();
-            loadRecords();
+            var url = new URL(window.location.href);
+            var target = url.searchParams.get('chatRecord');
+            if (target !== null) {
+                url.searchParams.delete('chatRecord');
+                window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+                if (!/^[1-9]\d*$/.test(target) || Number(target) > 2147483647) {
+                    throw new Error(text('invalidId'));
+                }
+                $('.dynamic-filter-id').val(target);
+                activeFilter = collectFilter();
+                loadRecords().done(function (response) {
+                    try {
+                        var result = unwrap(response);
+                        var row = (result.rows || []).find(function (item) {
+                            return Number(item.WorkflowRecordId) === Number(target);
+                        });
+                        if (!row || !isAuthorizedForState('VisualizzaStoria', row.WorkflowRecordId,
+                            workflowAuthorizedActionIds(row) || [])) {
+                            throw new Error(text('recordUnavailable'));
+                        }
+                        openHistory(row.WorkflowRecordId, row.IDModelloIstanza);
+                    } catch (error) {
+                        ShowError(error.message, 'openHistory');
+                    }
+                });
+            } else {
+                loadRecords();
+            }
         } catch (error) {
             ShowError(error.message, 'dynamic-forms');
         }

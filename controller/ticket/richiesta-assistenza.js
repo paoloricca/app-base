@@ -15,6 +15,23 @@ $(function () {
     $('.btn-filter-apply').click(function () {
         applyFilter();
     });
+    var pendingChatRecord = null;
+    function openChatHistory(record, color) {
+        var history = $('.history');
+        history.workflowhistory({
+            IdRecord: record, IdProcesso: 76,
+            LanguageContext: history.data('user').LanguageContext, user: history.data('user')
+        });
+        $('.history-idrecord-color').empty().append($('<i>', { class: 'bi bi-circle-fill bullet-stato-processo' }).css('color', color || 'lightgray'));
+        $('.history-idrecord').text(record);
+        $('.ordine-reference').show();
+        history.workflowhistory.loadHistory(history).done(function () {
+            $('#container-history').modal('show');
+        });
+    }
+    $(document).on('workflow-chat-open-history', function (_, target) {
+        if (target && Number(target.process) === 76) openChatHistory(target.record);
+    });
     applyFilter = function () {
         try {
 
@@ -190,8 +207,8 @@ $(function () {
                     function (filterJSON) {
                     })
             ).then(function (filterJSON, textStatus, jqXHR) {
-                $.each(filterJSON, function (i, row) {
-                    $.when(
+                var templates = $.map(filterJSON, function (row) {
+                    return $.when(
                         loadFilterTemplate(row.DataType)
                     ).then(function (templateString, textStatus, jqXHR) {
 
@@ -255,6 +272,7 @@ $(function () {
                         }
                     });
                 });
+                return $.when.apply($, templates);
             });
         } catch (err) {
 
@@ -584,32 +602,12 @@ $(function () {
 
                                                         var optionsWorkflow = JSON.parse($('.result-richieste-assistenza-container').find('.container-workflow-' + row.IdRecord).attr('data-options'));
 
-                                                        /* inizializza il controllo Model */
-                                                        var ArtworkHistory = $('.history');
-
-                                                        /* Imposta le propriet� di default del plug-in <WorkflowHistory> */
-                                                        ArtworkHistory.workflowhistory({
-                                                            IdRecord: row.IdRecord,
-                                                            IdProcesso: 76,
-                                                            LanguageContext: $('.history').data('user').LanguageContext,
-                                                            user: $('.history').data('user')
-                                                        });
-                                                        $('.history-idrecord-color').html('<i class="bi bi-circle-fill bullet-stato-processo" style="color: ' + row.ColoreStato + '" />');
-                                                        $('.history-idrecord').html(row.IdRecord);
-                                                        $('.ordine-reference').show();
-
-                                                        $.when(
-                                                            /* Renderizza il plug-in <WorkflowHistory> */
-                                                            ArtworkHistory.workflowhistory.loadHistory(ArtworkHistory)
-                                                        ).then(function () {
-                                                            $('#container-history').modal('show');
-                                                        });
+                                                        openChatHistory(row.IdRecord, row.ColoreStato);
 
                                                     } else {
                                                         RedirectToLogin();
                                                     }
                                                 });
-
                                             } catch (err) {
                                                 ShowError(err.message, "onhistory")
                                                 return false
@@ -641,6 +639,12 @@ $(function () {
 
                                         });
                                 });
+                                if (pendingChatRecord !== null) {
+                                    var selected = $('.result-richieste-assistenza-container').find('.container-workflow-' + pendingChatRecord);
+                                    pendingChatRecord = null;
+                                    if (selected.length) selected.trigger('onhistory');
+                                    else ShowError('Richiesta non trovata o non autorizzata.', 'openHistory');
+                                }
                             });
                         }
 
@@ -897,7 +901,25 @@ $(function () {
         $.when(
             loadFilter(user)
         ).then(function () {
-            loadArtworkOrdini(JSON.parse(ControlPagerArtworkOrdine.attr('data-options')).pageSize, 1);
+            var url = new URL(window.location.href);
+            var target = url.searchParams.get('chatRecord');
+            if (target !== null) {
+                url.searchParams.delete('chatRecord');
+                window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+                if (!/^[1-9]\d*$/.test(target) || Number(target) > 2147483647) {
+                    ShowError('ID non valido.', 'openHistory');
+                    return;
+                }
+                $('#control_IDRichiestaAssistenza').val(target);
+                pendingChatRecord = Number(target);
+                loadArtworkOrdini(JSON.parse(ControlPagerArtworkOrdine.attr('data-options')).pageSize, 1,
+                    ' AND IDRichiestaAssistenza = ' + Number(target));
+            } else {
+                loadArtworkOrdini(JSON.parse(ControlPagerArtworkOrdine.attr('data-options')).pageSize, 1);
+            }
+        }).fail(function () {
+            $('.spinner-border').hide();
+            ShowError('Impossibile caricare il filtro.', 'openHistory');
         });
     } else {
         $('.spinner-border').hide();

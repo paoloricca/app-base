@@ -7,6 +7,7 @@ const sessionUtil = require('../utils/session')
 const session = require('express-session');
 var response = require('../model/response');
 const crud = require('../crud/logout');
+const realtime = require('../utils/workflow-chat-realtime');
 
 // Define routes
 logout.get('/logout-script', (req, res) => {
@@ -15,7 +16,11 @@ logout.get('/logout-script', (req, res) => {
 });
 logout.post('/logout', function (req, res) {
     res.set('Access-Control-Allow-Origin', '*');
+    const sessionId = req.sessionID;
+    const account = req.session && req.session.user && req.session.user.IdAccount;
     crud.logout(req).then(listOf => {
+        if (account) realtime.disconnectSession(sessionId, account)
+            .catch(error => console.error('[workflow-chat] disconnect', error));
         res.json(new response('OK', null, null) );
     })
     .catch(err => {

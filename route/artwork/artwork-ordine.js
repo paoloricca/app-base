@@ -37,6 +37,9 @@ artworkordine.get('/artwork-ordine', function (req, res) {
 });
 artworkordine.post('/artwork-ordine/ordini', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {
+        if (req.body.recordId && (!/^[1-9]\d*$/.test(String(req.body.recordId)) || Number(req.body.recordId) > 2147483647)) {
+            return res.status(400).json(new response('ERR', null, { message: 'ID non valido.' }));
+        }
         res.set('Access-Control-Allow-Origin', '*');
 
         var myRequest = new requestArtworkOrdini(

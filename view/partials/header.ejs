@@ -29,24 +29,28 @@
 			<ul class="navbar-nav menu">
 			</ul>			
             <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item dropdown chat-notifications" data-language="<%= user.LanguageContext %>">
+                    <button class="nav-link chat-notifications-toggle position-relative" type="button"
+                        data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+                        aria-label="Chat">
+                        <i class="bi bi-chat-dots fs-4" aria-hidden="true"></i>
+                        <span class="badge rounded-pill bg-danger chat-notifications-badge" hidden></span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end chat-notifications-menu p-0">
+                        <div class="chat-notifications-heading">
+                            <strong class="chat-notifications-title"></strong>
+                            <button type="button" class="btn btn-link chat-notifications-read-all"></button>
+                        </div>
+                        <div class="chat-notifications-error text-danger px-3" role="alert" hidden></div>
+                        <div class="chat-notifications-list"></div>
+                    </div>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link text-decoration-none" id="logout" href="#">
-                        <i class="bi bi-box-arrow-right"></i>&nbsp;
-						<% if (user.LanguageContext == "IT") { %>
-								Esci
-							<% } %>
-							<% if (user.LanguageContext == "GB") { %>
-								Exit
-							<% } %>
-							<% if (user.LanguageContext == "ES") { %>
-								Salida
-							<% } %>
-							<% if (user.LanguageContext == "CN") { %>
-								出口
-							<% } %>  
+                        <i class="bi bi-box-arrow-right fs-5"></i>
                     </a>
                 </li>
-                <li class="nav-item dropdown ms-3">
+                <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <span class="bi bi-person fs-5"></span>
                     </a>
@@ -107,3 +111,6 @@
         </div>
     </div>
 </nav>
+<script src="/socket.io/socket.io.js" defer></script>
+<script src="/control-workflow-history-script" defer></script>
+<script src="/controller/workflow-chat-notifications.js" defer></script>

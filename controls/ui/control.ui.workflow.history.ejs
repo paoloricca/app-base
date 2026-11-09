@@ -1,1 +1,15 @@
 <div class="container-workflow-history-<%= IdRecord %> workflow-history-list"></div>
+<form class="workflow-chat-composer" hidden>
+    <label class="workflow-chat-context f-roboto" for="workflow-chat-text-<%= IdRecord %>"></label>
+    <div class="workflow-chat-inputs">
+        <textarea id="workflow-chat-text-<%= IdRecord %>" class="form-control workflow-chat-text" rows="2" maxlength="10000"></textarea>
+        <label class="btn btn-outline-secondary workflow-chat-file-label">
+            <i class="bi bi-paperclip" aria-hidden="true"></i>
+            <span class="visually-hidden workflow-chat-attach-label"></span>
+            <input class="workflow-chat-files visually-hidden" type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple>
+        </label>
+        <button type="submit" class="btn btn-primary workflow-chat-send"></button>
+    </div>
+    <div class="workflow-chat-selected small text-secondary"></div>
+    <div class="workflow-chat-error text-danger small" role="alert" hidden></div>
+</form>

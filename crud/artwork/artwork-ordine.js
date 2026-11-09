@@ -31,6 +31,9 @@ function GetOrdini(myRequest) {
                     request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
                     request.input('OffsetRows', sql.Int, parseInt(myOffsetRows));
                     request.input('NextRows', sql.Int, parseInt(myNextRows));
+                    if (myRequest.RequestBody.recordId) {
+                        request.input('IDRecord', sql.Int, Number(myRequest.RequestBody.recordId));
+                    }
                     request.output('Status', sql.NVarChar(500))
 
                     request.execute("SP_GET_ARTWORK_ORDINE_LIST", function (err, response) {
