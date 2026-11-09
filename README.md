@@ -1,5 +1,30 @@
 # app-base
 
+## Profili owner e collegamenti del workflow
+
+Per aggiornare un database esistente, applicare nell'ordine
+[dynamic-forms-record-id-filter.sql](sql/dynamic-forms-record-id-filter.sql),
+[workflow-chat.sql](sql/workflow-chat.sql) e
+[workflow-owner-profiles.sql](sql/workflow-owner-profiles.sql). Quest'ultimo
+deve essere eseguito anche dopo gli altri script che ridefiniscono le
+procedure di owner e transizioni. Migra i precedenti owner a profilo singolo,
+abilitando inizialmente tutti i collegamenti visibili; non riabilita i
+collegamenti successivamente disattivati quando viene rieseguito.
+
+Nel selettore dell'owner, il nome di un profilo seleziona il pannello dei
+collegamenti; il relativo interruttore attiva o disattiva il profilo.
+L'attivazione abilita tutti i collegamenti visibili. Disattivando «Tutti i
+collegamenti» si rimuovono tutte le associazioni e si possono scegliere
+singolarmente. Le modifiche ai profili e ai collegamenti sono immediate:
+Annulla non le ripristina. Disattivare «Utenti del profilo» rimuove tutte
+le associazioni. Le autorizzazioni considerano tutti i profili visibili
+associati all'account, non solo il profilo predefinito.
+
+Test mirati: `node --test tests\workflow-owner-profiles-ui.test.js`.
+Il test SQL utilizza il database configurato, ma esegue le modifiche in una
+transazione annullata: `$env:WORKFLOW_SQL_TEST='1'; node --test
+tests\workflow-owner-profiles-sql.test.js`.
+
 ## Intervalli di durata del workflow
 
 Eseguire [workflow-timing.sql](sql/workflow-timing.sql) sul database applicativo

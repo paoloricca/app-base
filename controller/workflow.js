@@ -605,6 +605,9 @@ $(function () {
         ControlGruppiOperativi.gruppioperativi.clear(ControlGruppiOperativi);
         ControlProfiliUtente.profiliutente.clear(ControlProfiliUtente);
         ControlGruppiOperativi.gruppioperativi.load(ControlGruppiOperativi, 0);
+        selectedOwnerProfile = null;
+        resetOwnerProfileLinks();
+        refreshOwnerProfiles();
 
         $('#container-workflow-set-profilo-utente').modal('show');
 
@@ -727,6 +730,12 @@ $(function () {
         }
     });
     $('#container-workflow-set-owner').find('.form-check-input').not('#rb-ChatAllParticipants').click(function () {
+        var oldProfile = $('#IsSelectedProfile_Id').val();
+        if (oldProfile && (this.id !== 'rb-IsSelectedProfile' || !this.checked)) {
+            saveOwnerProfileChange({ operation: 'clear' }, function () {}, function () {
+                loadNodeWorkflowOwner();
+            });
+        }
         clearNodeWorkflowOwner($(this));
     });
     loadNodeInfo = function () {
@@ -1222,15 +1231,7 @@ $(function () {
                                 ' (' + data.IsCreatorSelectedNode_Desc + ')'
                             )
                         }
-                        if (data.IsSelectedProfile != null) {
-                            $('#rb-IsSelectedProfile').prop("checked", true);
-                            $('#IsSelectedProfile_Id').val(
-                                data.IsSelectedProfile_Id
-                            )
-                            $('#IsSelectedProfile_Desc').html(
-                                ' (' + data.IsSelectedProfile_Desc + ')'
-                            )
-                        }
+                        updateOwnerProfileSummaryFromOwner(data);
                         if (data.IsUsersFromAdminProfileCreator != null) {
                             $('#rb-IsUsersFromAdminProfileCreator').prop("checked", true);
                         }
@@ -1841,19 +1842,146 @@ $(function () {
     /* Imposta le propriet� di default del plug-in <profili-utente> */
     ControlProfiliUtente.profiliutente({
         IDGruppoOperativo: null,
+        toggleEnabled: true,
     });
     /* Registra l'evento {onselect} del plug-in <profili-utente> */
     ControlProfiliUtente.bind("onselect", function () {
         var option = JSON.parse(ControlProfiliUtente.attr('data-options'));
 
-        clearNodeWorkflowOwner();
+        var group = JSON.parse(ControlGruppiOperativi.attr('data-options')).IDGruppoOperativo;
+        selectedOwnerProfile = { id: option.IDProfiloUtente, group: group, description: option.Descrizione };
+        refreshOwnerProfiles();
 
-        $('#rb-IsSelectedProfile').prop('checked', true);
-        $('#IsSelectedProfile_Id').val(option.IDProfiloUtente);
-        $('#IsSelectedProfile_Desc').html(' (' + option.Descrizione + ')');
-
-        $('#container-workflow-set-profilo-utente').modal('hide');
-
+    });
+    var selectedOwnerProfile = null;
+    var ownerProfileRequest = 0;
+    function ownerProfileUrl() {
+        return '/workflow-node-owner/' + encodeURIComponent($('#context-menu-node #IdEventoTransizione').val()) + '/profiles';
+    }
+    function resetOwnerProfileLinks() {
+        $('#workflow-profile-links').empty();
+        $('#workflow-profile-links-all').prop('checked', false).prop('disabled', true);
+        $('.workflow-profile-links-title').text('');
+    }
+    function updateOwnerProfileSummary(profiles) {
+        var descriptions = profiles.map(function (profile) {
+            return profile.OwnerDescription;
+        }).filter(function (description) {
+            return typeof description === 'string' && description.trim();
+        });
+        $('#rb-IsSelectedProfile').prop('checked', profiles.length > 0);
+        $('#IsSelectedProfile_Id').val(profiles.length ? profiles[0].IDProfiloUtente : '');
+        $('#IsSelectedProfile_Desc').text(descriptions.length
+            ? ' (' + descriptions.join(', ') + ')'
+            : '');
+    }
+    function updateOwnerProfileSummaryFromOwner(data) {
+        var hasProfiles = data && data.IsSelectedProfile != null;
+        $('#rb-IsSelectedProfile').prop('checked', !!hasProfiles);
+        $('#IsSelectedProfile_Id').val(hasProfiles ? data.IsSelectedProfile_Id : '');
+        $('#IsSelectedProfile_Desc').text(
+            hasProfiles && data.IsSelectedProfile_Desc ? ' (' + data.IsSelectedProfile_Desc + ')' : ''
+        );
+    }
+    function renderOwnerProfiles(data) {
+        var profiles = data.profiles;
+        var active = profiles.map(function (p) { return p.IDGruppoOperativo + ':' + p.IDProfiloUtente; });
+        var group = JSON.parse(ControlGruppiOperativi.attr('data-options')).IDGruppoOperativo;
+        ControlProfiliUtente.find('.workflow-profile-toggle').each(function () {
+            var id = $(this).closest('.profilo-utente').find('a[data-idprofiloutente]').data('idprofiloutente');
+            $(this).prop('checked', active.indexOf(group + ':' + id) !== -1);
+        });
+        var isActive = selectedOwnerProfile && active.indexOf(selectedOwnerProfile.group + ':' + selectedOwnerProfile.id) !== -1;
+        var links = data.links || [];
+        var all = !!isActive && links.every(function (link) { return link.Enabled; });
+        $('#workflow-profile-links-all').prop('checked', all).prop('disabled', !isActive || !links.length);
+        $('.workflow-profile-links-title').text(selectedOwnerProfile ? ' (' + selectedOwnerProfile.description + ')' : '');
+        var container = $('#workflow-profile-links').empty();
+        if (!isActive || all) return;
+        links.forEach(function (link) {
+            var id = 'workflow-profile-direction-' + link.IDEventoDirezione;
+            var row = $('<div class="form-check form-switch">');
+            var input = $('<input>', { type: 'checkbox', id: id, class: 'form-check-input' })
+                .prop('checked', !!link.Enabled);
+            row.append(input, $('<label>', { for: id, class: 'form-check-label' })
+                .text(link.Description || String(link.IDEventoDirezione)));
+            container.append(row);
+            input.on('change', function () {
+                saveOwnerProfileChange({ operation: 'direction', profile: selectedOwnerProfile.id,
+                    group: selectedOwnerProfile.group, direction: link.IDEventoDirezione, enabled: this.checked });
+            });
+        });
+    }
+    function refreshOwnerProfiles() {
+        var token = ++ownerProfileRequest;
+        $.ajax({ url: ownerProfileUrl(), type: 'GET',
+            data: { profile: selectedOwnerProfile ? selectedOwnerProfile.id : '',
+                group: selectedOwnerProfile ? selectedOwnerProfile.group : '' } })
+            .done(function (response) {
+                if (token !== ownerProfileRequest) return;
+                if (response.status === 'ERR') return ShowError(response.error.message, response.error.sender);
+                renderOwnerProfiles(response.data);
+            }).fail(function (xhr, status, error) { ShowError(error || status, 'refreshOwnerProfiles'); });
+    }
+    function saveOwnerProfileChange(data, onSuccess, onFailure) {
+        ++ownerProfileRequest;
+        var controls = $('#container-workflow-set-profilo-utente, #container-workflow-set-owner').find('input, button');
+        controls.prop('disabled', true);
+        $.ajax({ url: ownerProfileUrl(), type: 'POST', data: data })
+            .done(function (response) {
+                if (response.status === 'ERR') {
+                    ShowError(response.error.message, response.error.sender);
+                    if (onFailure) onFailure();
+                    return;
+                }
+                if (onSuccess) onSuccess(response.data);
+            }).fail(function (xhr, status, error) {
+                ShowError(error || status, 'saveOwnerProfileChange');
+                if (onFailure) onFailure();
+            }).always(function () {
+                controls.prop('disabled', false);
+                refreshOwnerProfiles();
+            });
+    }
+    function refreshOwnerProfileSummary() {
+        $.ajax({
+            url: '/workflow-node-owner/' + encodeURIComponent($('#context-menu-node #IdEventoTransizione').val()),
+            type: 'GET',
+            data: {}
+        }).done(function (response) {
+            if (response.status === 'ERR') {
+                ShowError(response.error.message, response.error.sender);
+                return;
+            }
+            updateOwnerProfileSummaryFromOwner(response.data && response.data[0]);
+        }).fail(function (xhr, status, error) {
+            ShowError(error || status, 'refreshOwnerProfileSummary');
+        });
+    }
+    var profileSelectorOpen = false;
+    $('#container-workflow-set-profilo-utente')
+        .on('shown.bs.modal', function () { profileSelectorOpen = true; })
+        .on('hidden.bs.modal', function () {
+            profileSelectorOpen = false;
+            refreshOwnerProfileSummary();
+    });
+    ControlProfiliUtente.bind('onprofilesloaded', function () {
+        if (profileSelectorOpen) refreshOwnerProfiles();
+    });
+    ControlProfiliUtente.bind('ontoggleprofile', function (event, profile, checked) {
+        var group = JSON.parse(ControlGruppiOperativi.attr('data-options')).IDGruppoOperativo;
+        selectedOwnerProfile = { id: profile.IDProfiloUtente, group: group, description: profile.ProfiloUtente };
+        saveOwnerProfileChange({ operation: 'profile', profile: profile.IDProfiloUtente, group: group, enabled: checked },
+            function (data) {
+                clearNodeWorkflowOwner();
+                updateOwnerProfileSummary(data.profiles);
+            });
+    });
+    $('#workflow-profile-links-all').on('change', function () {
+        if (selectedOwnerProfile) {
+            saveOwnerProfileChange({ operation: 'all', profile: selectedOwnerProfile.id,
+                group: selectedOwnerProfile.group, enabled: this.checked });
+        }
     });
 
     /* inizializza il controllo <gruppi-operativi> */
@@ -1872,6 +2000,8 @@ $(function () {
 
         /* Caricare la lista dei profili utente in base a {option.IDGruppoOperativo} */
         $('.profili-utente-text').html(' (' + option.Descrizione + ')');
+        selectedOwnerProfile = null;
+        resetOwnerProfileLinks();
         ControlProfiliUtente.profiliutente.load(ControlProfiliUtente, option.IDGruppoOperativo);
 
     });

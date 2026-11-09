@@ -103,7 +103,7 @@ function GetWorkflowActions(myRequest) {
                     request.input('IdRecord', sql.Int, parseInt(myIdRecord));
                     request.input('IdProcesso', sql.Int, parseInt(myIdProcesso));
                     request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
-                    request.output('Status', sql.NVarChar(2))
+                    request.output('Status', sql.NVarChar(500))
 
                     request.execute("SP_GET_WORKFLOW_AZIONI", function (err, response) {
                         if (err) {
@@ -111,9 +111,13 @@ function GetWorkflowActions(myRequest) {
                                 JSON.stringify(new exception(sender, err.message, err.name, err.stack))
                             );
                         } else {
+                            if (response.output.Status !== 'OK') {
+                                reject(JSON.stringify(new exception(sender, response.output.Status, null, null)));
+                                return;
+                            }
                             var myResponse = JSON.stringify(response);
 
-                            if (JSON.parse(myResponse).recordset.length > 0) {
+                            if (JSON.parse(myResponse).recordset && JSON.parse(myResponse).recordset.length > 0) {
 
                                 var resultData = JSON.parse(myResponse).recordset;
 
@@ -165,7 +169,7 @@ function GetWorkflowNodeOwner(myRequest)
                     request.input('IdAccount', sql.Int, parseInt(myIdAccount));
                     request.input('IdEventoTransizione', sql.Int, parseInt(myIdEventoTransizione));
                     request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
-                    request.output('Status', sql.NVarChar(2))
+                    request.output('Status', sql.NVarChar(500))
 
                     request.execute("SP_GET_WORKFLOW_NODE_OWNER", function (err, response) {
                         if (err) {
@@ -173,6 +177,10 @@ function GetWorkflowNodeOwner(myRequest)
                                 JSON.stringify(new exception(sender, err.message, err.name, err.stack))
                             );
                         } else {
+                            if (response.output.Status !== 'OK') {
+                                reject(JSON.stringify(new exception(sender, response.output.Status, null, null)));
+                                return;
+                            }
                             var myResponse = JSON.stringify(response);
 
                             if (JSON.parse(myResponse).recordset != undefined) {
@@ -565,7 +573,7 @@ function GetWorkflowTransitions(myRequest) {
                     request.input('IdRecord', sql.Int, parseInt(myIdRecord));
                     request.input('IdProcesso', sql.Int, parseInt(myIdProcesso));
                     request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
-                    request.output('Status', sql.NVarChar(2))
+                    request.output('Status', sql.NVarChar(500))
 
                     request.execute("SP_GET_WORKFLOW_TRANSITIONS", function (err, response) {
                         if (err) {
@@ -573,6 +581,10 @@ function GetWorkflowTransitions(myRequest) {
                                 JSON.stringify(new exception(sender, err.message, err.name, err.stack))
                             );
                         } else {
+                            if (response.output.Status !== 'OK') {
+                                reject(JSON.stringify(new exception(sender, response.output.Status, null, null)));
+                                return;
+                            }
                             var myResponse = JSON.stringify(response);
 
                             if (JSON.parse(myResponse).recordset != undefined) {
@@ -636,7 +648,7 @@ function GetHasWorkflowTransitions(myRequest) {
                     request.input('IdRecord', sql.Int, parseInt(myIdRecord));
                     request.input('IdProcesso', sql.Int, parseInt(myIdProcesso));
                     request.input('LanguageContext', sql.NVarChar(2), myLanguageContext);
-                    request.output('Status', sql.NVarChar(2))
+                    request.output('Status', sql.NVarChar(500))
 
                     request.execute("SP_GET_HAS_WORKFLOW_TRANSITIONS", function (err, response) {
                         if (err) {
@@ -645,8 +657,12 @@ function GetHasWorkflowTransitions(myRequest) {
                             );
                         } else {
                             var myResponse = JSON.stringify(response);
-
-                            resolve(JSON.stringify(JSON.parse(myResponse).output.Status));
+                            const status = JSON.parse(myResponse).output.Status;
+                            if (status !== 'OK' && status !== 'KO') {
+                                reject(JSON.stringify(new exception(sender, status, null, null)));
+                                return;
+                            }
+                            resolve(JSON.stringify(status));
                         }
                     });
                 }

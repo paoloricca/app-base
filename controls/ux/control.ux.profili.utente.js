@@ -7,6 +7,7 @@
             Descrizione: null,
             LanguageContext: null,
             onselect: null,
+            toggleEnabled: false,
         }, options);
 
         var plugin = $(this);
@@ -46,6 +47,21 @@
                             var partialToRender = ejs.render(templateString, { profiloutente });
 
                             plugin.find('.profiliutente-list').append(partialToRender);
+                            var row = plugin.find('.btn-profiloutente-' + profiloutente.IDProfiloUtente);
+                            if (options.toggleEnabled) {
+                                var toggle = $('<input>', {
+                                    type: 'checkbox',
+                                    class: 'form-check-input workflow-profile-toggle m-0 flex-shrink-0',
+                                    'aria-label': profiloutente.ProfiloUtente
+                                });
+                                row.prepend(toggle).addClass(
+                                    'form-switch d-flex align-items-center flex-nowrap gap-2 workflow-profile-row'
+                                );
+                                toggle.on('click', function (event) {
+                                    event.stopPropagation();
+                                    plugin.trigger('ontoggleprofile', [profiloutente, this.checked, this]);
+                                });
+                            }
 
                             /* raise plugin event */
                             plugin.find('.btn-profiloutente-' + profiloutente.IDProfiloUtente).click(function (e) {
@@ -69,9 +85,11 @@
                             });
                         });
 
+                        plugin.trigger('onprofilesloaded');
                     });
                 }
             }).fail(function (xhr, status, errorThrown) {
+                ShowError(errorThrown || status, 'profiliutente.load');
             }).always(function (xhr, status) {
             });
         }

@@ -27,6 +27,7 @@ const session = require('express-session');
 const workflowCatalog = require('../crud/workflow-catalog');
 const breadcrumb = require('../crud/breadcrumb');
 const workflowTiming = require('../utils/workflow-timing');
+const ownerProfiles = require('../crud/workflow-owner-profiles');
 
 function isPositiveInteger(value) {
     const number = Number(value);
@@ -741,6 +742,30 @@ workflow.get('/workflow-node-owner/:IdEventoTransizione', function (req, res) {
             res.status(200).json(new response('ERR', null, err));
         }).finally(() => {
 
+        });
+        workflow.all('/workflow-node-owner/:node/profiles', function (req, res) {
+            if (!sessionUtil.verifyUser(req, res)) return;
+            const body = req.body || {};
+            const operation = req.method === 'GET' ? 'read' : body.operation;
+            const profile = req.method === 'GET' ? req.query.profile : body.profile;
+            const group = req.method === 'GET' ? req.query.group : body.group;
+            const direction = body.direction;
+            const enabled = parseBoolean(body.enabled);
+            if (!['GET', 'POST'].includes(req.method) || !isPositiveInteger(req.params.node) ||
+                !['read', 'profile', 'direction', 'all', 'clear'].includes(operation) ||
+                (operation !== 'read' && req.method !== 'POST') ||
+                (operation !== 'clear' && operation !== 'read' && !isPositiveInteger(profile)) ||
+                (profile && !isPositiveInteger(profile)) ||
+                (profile && !isPositiveInteger(group)) ||
+                (operation === 'direction' && !isPositiveInteger(direction)) ||
+                (['profile', 'direction', 'all'].includes(operation) && enabled === null)) {
+                return sendCatalogError(res, { message: 'Parametri profilo workflow non validi.' });
+            }
+            ownerProfiles.execute(Number(req.params.node), Number(req.session.user.IdAttore),
+                profile ? Number(profile) : null, group ? Number(group) : null, req.session.user.LanguageContext,
+                operation, enabled, direction ? Number(direction) : null)
+                .then(data => res.status(200).json(new response('OK', data, null)))
+                .catch(error => sendCatalogError(res, { message: error.message, sender: 'workflow-owner-profiles' }));
         });
     }
 });

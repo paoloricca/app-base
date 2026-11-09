@@ -564,6 +564,11 @@ function deleteVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizion
                     AND IDEventoTransizione <> @IDEventoTransizione
             ) THROW 50001, 'Lo stato e usato come destinazione di un intervallo durata.', 1;
             DELETE dbo.TEventiTransizioniTiming WHERE IDEventoTransizione = @IDEventoTransizione;
+            DELETE P FROM dbo.TEventiTransizioniDirezioniProfili P
+            JOIN dbo.TEventiTransizioniDirezioni D ON D.IDEventoDirezione = P.IDEventoDirezione
+            WHERE D.IDTransizioneStart = @IDEventoTransizione OR D.IDTransizioneEnd = @IDEventoTransizione;
+            DELETE FROM dbo.TEventiTransizioniOwnerProfili WHERE IDEventoTransizione = @IDEventoTransizione;
+            DELETE FROM dbo.TEventiTransizioniOwner WHERE IDEventoTransizione = @IDEventoTransizione;
             EXEC dbo.SP_DELETE_WORKFLOW_VERSION_NODE
                 @IDVersioneWorkflow = @IDVersioneWorkflow,
                 @IDAttore = @IDAttore,
@@ -585,10 +590,24 @@ function deleteVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizion
 
 function deleteVersionGraphTransition(IDVersioneWorkflow, IDAttore, IDEventoDirezione) {
     return execute(`
-        EXEC dbo.SP_DELETE_WORKFLOW_VERSION_TRANSITION
-            @IDVersioneWorkflow = @IDVersioneWorkflow,
-            @IDAttore = @IDAttore,
-            @IDEventoDirezione = @IDEventoDirezione;
+        SET XACT_ABORT ON;
+        BEGIN TRY
+            BEGIN TRANSACTION;
+            DELETE P FROM dbo.TEventiTransizioniDirezioniProfili P
+            JOIN dbo.TEventiTransizioniDirezioni D ON D.IDEventoDirezione = P.IDEventoDirezione
+            JOIN dbo.TEventiTransizioni N ON N.IDEventoTransizione = D.IDTransizioneStart
+            WHERE D.IDEventoDirezione = @IDEventoDirezione AND N.IDVersioneWorkflow = @IDVersioneWorkflow
+                AND N.IDAttore = @IDAttore;
+            EXEC dbo.SP_DELETE_WORKFLOW_VERSION_TRANSITION
+                @IDVersioneWorkflow = @IDVersioneWorkflow,
+                @IDAttore = @IDAttore,
+                @IDEventoDirezione = @IDEventoDirezione;
+            COMMIT TRANSACTION;
+        END TRY
+        BEGIN CATCH
+            IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+            THROW;
+        END CATCH;
     `, {
         IDVersioneWorkflow: intInput(IDVersioneWorkflow),
         IDAttore: intInput(IDAttore),
@@ -651,6 +670,23 @@ function deleteWorkflow(IdWorkflow) {
         SET XACT_ABORT ON;
         BEGIN TRY
             BEGIN TRANSACTION;
+            DELETE P
+            FROM dbo.TEventiTransizioniDirezioniProfili P
+            JOIN dbo.TEventiTransizioniDirezioni D ON D.IDEventoDirezione = P.IDEventoDirezione
+            JOIN dbo.TEventiTransizioni N ON N.IDEventoTransizione = D.IDTransizioneStart
+                OR N.IDEventoTransizione = D.IDTransizioneEnd
+            JOIN dbo.TWorkflowVersioni V ON V.IDVersioneWorkflow = N.IDVersioneWorkflow
+            WHERE V.IDWorkflow = @IDWorkflow;
+            DELETE P
+            FROM dbo.TEventiTransizioniOwnerProfili P
+            JOIN dbo.TEventiTransizioni N ON N.IDEventoTransizione = P.IDEventoTransizione
+            JOIN dbo.TWorkflowVersioni V ON V.IDVersioneWorkflow = N.IDVersioneWorkflow
+            WHERE V.IDWorkflow = @IDWorkflow;
+            DELETE O
+            FROM dbo.TEventiTransizioniOwner O
+            JOIN dbo.TEventiTransizioni N ON N.IDEventoTransizione = O.IDEventoTransizione
+            JOIN dbo.TWorkflowVersioni V ON V.IDVersioneWorkflow = N.IDVersioneWorkflow
+            WHERE V.IDWorkflow = @IDWorkflow;
             DELETE Direction
             FROM dbo.TEventiTransizioniDirezioni AS Direction
             INNER JOIN dbo.TEventiTransizioni AS Node
@@ -714,6 +750,10 @@ function deleteVersion(IDVersioneWorkflow) {
             SELECT IDEventoDirezione FROM dbo.TEventiTransizioniDirezioni
             WHERE IDTransizioneStart IN (SELECT IDEventoTransizione FROM @Nodes)
                 OR IDTransizioneEnd IN (SELECT IDEventoTransizione FROM @Nodes);
+            DELETE FROM dbo.TEventiTransizioniDirezioniProfili
+            WHERE IDEventoDirezione IN (SELECT IDEventoDirezione FROM @Directions);
+            DELETE FROM dbo.TEventiTransizioniOwnerProfili
+            WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes);
             DELETE FROM dbo.TEventiTransizioniAzioniFilter
             WHERE IDEventoTransizione IN (SELECT IDEventoTransizione FROM @Nodes)
                 OR IDEventoAzione IN (SELECT IDEventoAzione FROM dbo.TEventiTransizioniAzioni
