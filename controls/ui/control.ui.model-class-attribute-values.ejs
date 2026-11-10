@@ -51,6 +51,23 @@
                         <% } %>
 			    </span>
 		    </li>
+		    <li>
+			    <span class="dropdown-item model-editor-context-menu-action btn-menu-item btn-value-<%= value.IDValue %>-visibility" data-idvalue="<%= value.IDValue %>">
+				    <i class="bi bi-eye"></i>
+				    <% if (user.LanguageContext == "IT") { %>
+						    Imposta visibilità
+                        <% } %>
+                        <% if (user.LanguageContext == "GB") { %>
+                            Set visibility
+                        <% } %>
+                        <% if (user.LanguageContext == "ES") { %>
+                            Establecer visibilidad
+                        <% } %>
+                        <% if (user.LanguageContext == "CN") { %>
+                            設定可見性
+                        <% } %>
+			    </span>
+		    </li>
 	    </ul>
 
     </div>

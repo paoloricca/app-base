@@ -7,6 +7,27 @@
 #container-attribute-edit .attribute-toggle h5 { margin: 0; }
 #container-attribute-edit .attribute-toggle .form-switch { width: auto; margin: 0; }
 #container-attribute-edit .numero-file, #container-attribute-edit .dimensione-file { padding-left: 0 !important; }
+#container-attribute-value-visibility .gruppo-operativo a,
+#container-attribute-value-visibility .profilo-utente a { text-decoration: none; }
+#container-attribute-value-visibility .gruppo-operativo a.active,
+#container-attribute-value-visibility .profilo-utente a.active { font-weight: 700; }
+#container-attribute-value-visibility .workflow-profile-row a {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#container-attribute-value-visibility .card-body > .form-check.form-switch .form-check-input,
+#container-attribute-value-visibility #attribute-value-visibility-profiles .form-check-input {
+    flex-shrink: 0;
+    margin: 0;
+}
+#container-attribute-value-visibility #attribute-value-visibility-profiles .workflow-profile-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 0;
+}
 </style>
 <div id="confirm-delete-attribute"></div>
 <div class="modal" id="container-attribute-edit" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -30,12 +51,14 @@
                 </h5>
                 <button type="button" class="btn-close btn-cancel-attribute-edit" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
             <div class="modal-body was-validated">
 
                 <input type="hidden" id="IDClasse" name="IDClasse" />
                 <input type="hidden" id="IDAttributo" name="IDAttributo" />
                 <div class="container-form-edit">
                 </div>
+
                 <div class="row g-3 attribute-edit-columns">
                 <div class="col attribute-edit-main">
                     <div class="col-12 p-0">
@@ -340,6 +363,63 @@
 		            </a>
                 </div>
 
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="container-attribute-value-visibility" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-xl modal-dialog-centered h-75" role="document">
+        <div class="modal-content h-75">
+            <div class="modal-header">
+                <h5 class="modal-title text-primary">
+                    <i class="bi bi-gear"></i>&nbsp;
+                    <% if (LanguageContext == "IT") { %>Imposta visibilità<% } %>
+                    <% if (LanguageContext == "GB") { %>Set visibility<% } %>
+                    <% if (LanguageContext == "ES") { %>Establecer visibilidad<% } %>
+                    <% if (LanguageContext == "CN") { %>設定可見性<% } %>
+                    <span class="attribute-value-visibility-description"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-attribute-value-visibility" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-1 pt-1" style="overflow-y:hidden;">
+                <input type="hidden" id="attribute-value-visibility-id" />
+                <div class="row g-1 h-100">
+                    <div class="col-6 p-0 h-100">
+                        <div class="card h-100 p-0">
+                            <div class="card-header p-3 f-roboto"><b>
+                                <% if (LanguageContext == "IT") { %>Gruppi di lavoro<% } %>
+                                <% if (LanguageContext == "GB") { %>Working groups<% } %>
+                                <% if (LanguageContext == "ES") { %>Grupos de trabajo<% } %>
+                                <% if (LanguageContext == "CN") { %>工作小組<% } %>
+                            </b></div>
+                            <div class="card-body h-100 p-2 f-roboto">
+                                <div id="attribute-value-visibility-groups" style="overflow-y:auto; height:90%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 p-0 h-100">
+                        <div class="card h-100 p-0">
+                            <div class="card-header p-3 f-roboto"><b>
+                                <% if (LanguageContext == "IT") { %>Profili utente<% } %>
+                                <% if (LanguageContext == "GB") { %>User profiles<% } %>
+                                <% if (LanguageContext == "ES") { %>Perfiles de usuario<% } %>
+                                <% if (LanguageContext == "CN") { %>使用者資料<% } %>
+                            </b><span class="attribute-value-visibility-group"></span></div>
+                            <div class="card-body h-100 p-2 f-roboto">
+                                <div id="attribute-value-visibility-profiles" style="overflow-y:auto; height:90%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-close-attribute-value-visibility" data-bs-dismiss="modal">
+                    <% if (LanguageContext == "IT") { %>Chiudi<% } %>
+                    <% if (LanguageContext == "GB") { %>Close<% } %>
+                    <% if (LanguageContext == "ES") { %>Cerrar<% } %>
+                    <% if (LanguageContext == "CN") { %>關閉<% } %>
+                </button>
             </div>
         </div>
     </div>

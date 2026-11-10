@@ -232,6 +232,66 @@ function GetModelClassAttributeValues(myRequest) {
     });
     return customPromise
 }
+function executeModelAttributeValueProfileProcedure(procedureName, inputs, returnsRows) {
+    const sender = procedureName;
+
+    return new Promise((resolve, reject) => {
+        sql.connect(connection, function (err, pool) {
+            if (err) {
+                reject(new exception(sender, err.message, err.name, err.stack));
+                return;
+            }
+
+            var request = new sql.Request(pool);
+            inputs.forEach(function (input) {
+                request.input(input.name, input.type, input.value);
+            });
+            request.output('Status', sql.NVarChar(500));
+
+            request.execute(procedureName, function (procedureError, result) {
+                if (procedureError) {
+                    reject(new exception(sender, procedureError.message, procedureError.name, procedureError.stack));
+                    return;
+                }
+                if (!result.output || result.output.Status !== 'OK') {
+                    reject(new exception(
+                        sender,
+                        result.output ? result.output.Status : 'Stored procedure returned no status.',
+                        'StoredProcedureError',
+                        ''
+                    ));
+                    return;
+                }
+                resolve(returnsRows ? result.recordset || [] : 'OK');
+            });
+        });
+    });
+}
+function GetModelClassAttributeValueProfili(IdAttore, IdValue, LanguageContext) {
+    return executeModelAttributeValueProfileProcedure(
+        'SP_GET_MODEL_CLASS_ATTRIBUTE_VALUE_PROFILI',
+        [
+            { name: 'IdAttore', type: sql.Int, value: IdAttore },
+            { name: 'IdValue', type: sql.BigInt, value: IdValue },
+            { name: 'LanguageContext', type: sql.NVarChar(2), value: LanguageContext }
+        ],
+        true
+    );
+}
+function PostModelClassAttributeValueProfilo(IdAttore, IdValue, IDGruppoOperativo, IDProfiloUtente, Enabled, LanguageContext) {
+    return executeModelAttributeValueProfileProcedure(
+        'SP_POST_MODEL_CLASS_ATTRIBUTE_VALUE_PROFILO',
+        [
+            { name: 'IdAttore', type: sql.Int, value: IdAttore },
+            { name: 'IdValue', type: sql.BigInt, value: IdValue },
+            { name: 'IdGruppoOperativo', type: sql.Int, value: IDGruppoOperativo },
+            { name: 'IdProfiloUtente', type: sql.Int, value: IDProfiloUtente },
+            { name: 'Enabled', type: sql.Bit, value: Enabled },
+            { name: 'LanguageContext', type: sql.NVarChar(2), value: LanguageContext }
+        ],
+        false
+    );
+}
 function PostIdModelloIstanza(myRequest) {
 
     const sender = arguments.callee.name;
@@ -768,6 +828,8 @@ module.exports = {
     GetModelClass,
     GetModelClassAttribute,
     GetModelClassAttributeValues,
+    GetModelClassAttributeValueProfili,
+    PostModelClassAttributeValueProfilo,
     PostIdModelloIstanza,
     PostIdModelloIstanzaRecord,
     PostIdModelloIstanzaRecordMedia,

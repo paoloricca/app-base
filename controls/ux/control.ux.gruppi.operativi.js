@@ -10,17 +10,20 @@
         }, options);
 
         var plugin = $(this);
+        var loadRequest = 0;
         $.fn.gruppioperativi.draw = function () {
 
             var options = JSON.parse(plugin.attr('data-options'));
 
         };
         $.fn.gruppioperativi.clear = function (plugin) {
+            ++loadRequest;
             plugin.find('.gruppioperativi-list').empty();
         }
         $.fn.gruppioperativi.load = function (plugin, IDGruppoOperativo) {
 
             var options = JSON.parse(plugin.attr('data-options'));
+            var requestId = ++loadRequest;
 
             $.ajax({
                 url: "/gruppi-operativi-list/" + IDGruppoOperativo,
@@ -40,14 +43,23 @@
                             function (templateString) {
                             })
                     ).then(function (templateString, textStatus, jqXHR) {
+                        if (requestId !== loadRequest) return;
+                        var targetContainer = IDGruppoOperativo > 0
+                            ? plugin.find('.gruppooperativo-' + IDGruppoOperativo + '-container').first()
+                            : plugin.find('.gruppioperativi-list');
+                        if (IDGruppoOperativo > 0) {
+                            targetContainer.children('[class*="-container"]').remove();
+                        } else {
+                            targetContainer.empty();
+                        }
                         $.each(response.data, function (key, gruppooperativo) {
 
                             var partialToRender = ejs.render(templateString, { gruppooperativo });
 
                             if (IDGruppoOperativo > 0) {
-                                plugin.find('.gruppooperativo-' + IDGruppoOperativo + '-container').append(partialToRender);
-                                var mleft = $('.gruppooperativo-' + IDGruppoOperativo + '-container').css('text-indent');
-                                mleft = eval(mleft.replace('px', '')) + 12;
+                                targetContainer.append(partialToRender);
+                                var mleft = parseFloat(targetContainer.css('text-indent')) || 0;
+                                mleft += 12;
                                 plugin.find('.gruppooperativo-' + gruppooperativo.IDGruppoOperativo + '-container').css("text-indent", mleft);
 
                             } else {
@@ -74,6 +86,7 @@
                                 $(this).trigger("onselect");
 
                                 if ($(this).parent().parent().find('div[class*=-container]').length > 0) {
+                                    ++loadRequest;
                                     $(this).parent().parent().find('div[class*=-container]').remove();
                                 } else {
                                     plugin.find('.spinner-border-gruppi-operativi').show();
@@ -86,6 +99,9 @@
                     });
                 }
             }).fail(function (xhr, status, errorThrown) {
+                if (requestId === loadRequest) {
+                    ShowError(errorThrown || status, 'gruppioperativi.load');
+                }
             }).always(function (xhr, status) {
             });
         }
@@ -111,6 +127,7 @@
                 var options = JSON.parse(plugin.attr('data-options'));
 
                 plugin.gruppioperativi.draw();
+                plugin.trigger('onload');
 
             };
             return plugin;

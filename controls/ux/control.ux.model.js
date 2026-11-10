@@ -223,7 +223,7 @@
                         ).then(function (templateString, textStatus, jqXHR) {
 
                             plugin.find('.model-container').append(
-                                ejs.render(templateString, { LanguageContext })
+                                ejs.render(templateString, { LanguageContext, user: options.user })
                             );
 
                             plugin.find('.btn-salva-attributo').click(function () {
@@ -232,6 +232,133 @@
 
                             plugin.find('.btn-cancel-attribute-edit').click(function () {
                                 plugin.find('#container-attribute-edit').hide();
+                            });
+
+                            var visibilityModal = plugin.find('#container-attribute-value-visibility');
+                            var visibilityGroups = visibilityModal.find('#attribute-value-visibility-groups');
+                            var visibilityProfiles = visibilityModal.find('#attribute-value-visibility-profiles');
+                            var selectedVisibilityGroup = null;
+                            var visibilityProfilesRequest = 0;
+                            var visibilityGroupsReady = false;
+                            var visibilityProfilesReady = false;
+
+                            function loadVisibilityGroups() {
+                                if (visibilityGroupsReady && visibilityModal.hasClass('show')) {
+                                    visibilityGroups.gruppioperativi.clear(visibilityGroups);
+                                    visibilityGroups.gruppioperativi.load(visibilityGroups, 0);
+                                }
+                            }
+                            function loadVisibilityProfiles(groupId) {
+                                if (visibilityProfilesReady && groupId) {
+                                    visibilityProfiles.profiliutente.load(visibilityProfiles, groupId);
+                                }
+                            }
+
+                            if (options.Mode == 'design') {
+                                visibilityGroups.gruppioperativi({});
+                                visibilityProfiles.profiliutente({ toggleEnabled: true });
+                            }
+
+                            visibilityGroups.on('onload', function () {
+                                visibilityGroupsReady = true;
+                                if (visibilityModal.hasClass('show')) loadVisibilityGroups();
+                            });
+                            visibilityProfiles.on('onload', function () {
+                                visibilityProfilesReady = true;
+                                loadVisibilityProfiles(selectedVisibilityGroup);
+                            });
+                            visibilityGroups.on('onselect', function () {
+                                var groupOptions = JSON.parse(visibilityGroups.attr('data-options'));
+                                selectedVisibilityGroup = groupOptions.IDGruppoOperativo;
+                                visibilityModal.find('.attribute-value-visibility-group').text(
+                                    groupOptions.Descrizione ? ' (' + groupOptions.Descrizione + ')' : ''
+                                );
+                                visibilityProfiles.profiliutente.clear(visibilityProfiles);
+                                loadVisibilityProfiles(selectedVisibilityGroup);
+                            });
+
+                            visibilityProfiles.on('onprofilesloaded', function () {
+                                var valueId = visibilityModal.find('#attribute-value-visibility-id').val();
+                                var groupId = selectedVisibilityGroup;
+                                if (!valueId || !groupId) return;
+
+                                var requestId = ++visibilityProfilesRequest;
+                                var profileToggles = visibilityProfiles.find('.workflow-profile-toggle').prop('disabled', true);
+                                $.getJSON('/model-class-attribute-value-profili/' + encodeURIComponent(valueId))
+                                    .done(function (response) {
+                                        if (response.status === 'ERR') {
+                                            ShowError(response.error.message, response.error.sender);
+                                            return;
+                                        }
+                                        if (requestId !== visibilityProfilesRequest ||
+                                            String(groupId) !== String(selectedVisibilityGroup) ||
+                                            String(valueId) !== String(visibilityModal.find('#attribute-value-visibility-id').val())) {
+                                            return;
+                                        }
+                                        var profiles = response.data || [];
+                                        visibilityProfiles.find('.workflow-profile-toggle').each(function () {
+                                            var profileId = $(this).closest('.profilo-utente')
+                                                .find('a[data-idprofiloutente]').data('idprofiloutente');
+                                            var enabled = profiles.some(function (item) {
+                                                return String(item.IDGruppoOperativo) === String(groupId) &&
+                                                    String(item.IDProfiloUtente) === String(profileId);
+                                            });
+                                            $(this).prop('checked', enabled);
+                                        });
+                                    })
+                                    .fail(function (xhr, status, errorThrown) {
+                                        ShowError(xhr.responseText || errorThrown || status, 'loadAttributeValueProfiles');
+                                    })
+                                    .always(function () {
+                                        profileToggles.prop('disabled', false);
+                                    });
+                            });
+
+                            visibilityProfiles.on('ontoggleprofile', function (event, profile, enabled, toggle) {
+                                var valueId = visibilityModal.find('#attribute-value-visibility-id').val();
+                                var groupId = selectedVisibilityGroup;
+                                if (!valueId || !groupId) return;
+
+                                $(toggle).prop('disabled', true);
+                                $.ajax({
+                                    url: '/model-class-attribute-value-profili/' + encodeURIComponent(valueId),
+                                    type: 'POST',
+                                    data: {
+                                        IDGruppoOperativo: groupId,
+                                        IDProfiloUtente: profile.IDProfiloUtente,
+                                        Enabled: enabled
+                                    }
+                                }).done(function (response) {
+                                    if (response.status === 'ERR') {
+                                        $(toggle).prop('checked', !enabled);
+                                        ShowError(response.error.message, response.error.sender);
+                                    }
+                                }).fail(function (xhr, status, errorThrown) {
+                                    $(toggle).prop('checked', !enabled);
+                                    ShowError(xhr.responseText || errorThrown || status, 'saveAttributeValueProfile');
+                                }).always(function () {
+                                    $(toggle).prop('disabled', false);
+                                });
+                            });
+
+                            plugin.off('setattributevaluevisibility').on('setattributevaluevisibility', function (event, value) {
+                                var valueId = value.IDValue;
+                                visibilityModal.appendTo('body');
+                                visibilityModal.find('#attribute-value-visibility-id').val(valueId);
+                                visibilityModal.find('.attribute-value-visibility-description').text(' / ' + value.Description);
+                                visibilityModal.find('.attribute-value-visibility-group').empty();
+                                visibilityGroups.gruppioperativi.clear(visibilityGroups);
+                                visibilityProfiles.profiliutente.clear(visibilityProfiles);
+                                selectedVisibilityGroup = null;
+                                visibilityModal.modal('show');
+                                var visibilityZIndex = 1065;
+                                visibilityModal.css('z-index', visibilityZIndex);
+                                $('.modal-backdrop').last().css('z-index', visibilityZIndex - 10);
+                            });
+                            visibilityModal.on('shown.bs.modal', loadVisibilityGroups);
+                            visibilityModal.on('hidden.bs.modal', function () {
+                                visibilityModal.css('z-index', '');
+                                $('.modal-backdrop').last().css('z-index', '');
                             });
 
                             plugin.find('.file-type').click(function () {
@@ -458,6 +585,11 @@
                             containerValues.find('.btn-value-' + value.IDValue + '-edit .lbl-value-' + value.IDValue + '-edit').addClass('text-dark');
                             plugin.model.editAttributeValueList(value);
 
+                        });
+                        containerValues.find('.btn-value-' + value.IDValue + '-visibility').click(function (event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            plugin.trigger('setattributevaluevisibility', [value]);
                         });
 
                     });

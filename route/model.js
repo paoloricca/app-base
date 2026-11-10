@@ -114,6 +114,60 @@ model.get('/model-class-attribute-values/:idattributo', function (req, res) {
         });
     }
 });
+model.get('/model-class-attribute-value-profili/:idvalue', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+
+    res.set('Access-Control-Allow-Origin', '*');
+    var rawValueId = String(req.params.idvalue || '');
+    var IDValue = Number(rawValueId);
+    if (!/^[1-9]\d*$/.test(rawValueId) || !Number.isSafeInteger(IDValue)) {
+        return res.status(200).json(new response('ERR', null, { message: 'IDValue non valido' }));
+    }
+
+    crud.GetModelClassAttributeValueProfili(
+        req.session.user.IdAttore,
+        IDValue,
+        req.session.user.LanguageContext
+    ).then(profiles => {
+        res.status(200).json(new response('OK', profiles, null));
+    }).catch(err => {
+        res.status(200).json(new response('ERR', null, err));
+    });
+});
+model.post('/model-class-attribute-value-profili/:idvalue', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+
+    res.set('Access-Control-Allow-Origin', '*');
+    var rawValueId = String(req.params.idvalue || '');
+    var IDValue = Number(rawValueId);
+    var IDGruppoOperativo = Number(req.body.IDGruppoOperativo);
+    var IDProfiloUtente = Number(req.body.IDProfiloUtente);
+    var enabledValue = req.body.Enabled;
+    var validEnabled = enabledValue === true || enabledValue === false ||
+        enabledValue === 'true' || enabledValue === 'false';
+    if (!/^[1-9]\d*$/.test(rawValueId) || !Number.isSafeInteger(IDValue) ||
+        !Number.isSafeInteger(IDGruppoOperativo) || IDGruppoOperativo <= 0 ||
+        !Number.isSafeInteger(IDProfiloUtente) || IDProfiloUtente <= 0 || !validEnabled) {
+        return res.status(200).json(new response('ERR', null, { message: 'Configurazione profilo non valida' }));
+    }
+
+    crud.PostModelClassAttributeValueProfilo(
+        req.session.user.IdAttore,
+        IDValue,
+        IDGruppoOperativo,
+        IDProfiloUtente,
+        enabledValue === true || enabledValue === 'true',
+        req.session.user.LanguageContext
+    ).then(() => {
+        res.status(200).json(new response('OK', null, null));
+    }).catch(err => {
+        res.status(200).json(new response('ERR', null, err));
+    });
+});
 model.post('/post-class', function (req, res) {
 
     if (sessionUtil.verifyUser(req, res)) {
