@@ -25,6 +25,15 @@ Il test SQL utilizza il database configurato, ma esegue le modifiche in una
 transazione annullata: `$env:WORKFLOW_SQL_TEST='1'; node --test
 tests\workflow-owner-profiles-sql.test.js`.
 
+## Visibilità dei valori lista nei form
+
+Applicare [forms-attribute-values-profili.sql](sql/forms-attribute-values-profili.sql)
+sul database applicativo per installare le procedure di lettura e
+aggiornamento delle associazioni tra valori lista e profili utente. Durante la
+compilazione del form, un valore senza associazioni resta visibile a tutti;
+quando sono configurati profili, il valore è mostrato solo agli account
+associati a uno dei profili selezionati.
+
 ## Intervalli di durata del workflow
 
 Eseguire [workflow-timing.sql](sql/workflow-timing.sql) sul database applicativo
