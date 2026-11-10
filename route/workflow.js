@@ -63,6 +63,16 @@ function getDescriptions(body) {
     return Object.values(descriptions).some(Boolean) ? descriptions : null;
 }
 
+function toOptionalBoolean(value) {
+    if (value === true || value === 'true' || value === 1 || value === '1') {
+        return true;
+    }
+    if (value === false || value === 'false' || value === 0 || value === '0') {
+        return false;
+    }
+    return null;
+}
+
 function getGraphTranslations(body) {
     if (!body || typeof body !== 'object') {
         return null;
@@ -460,7 +470,11 @@ workflow.put('/workflow/api/versions/:IDVersioneWorkflow/graph/transitions/:IDEv
         req.session.user.IdAttore,
         Number(req.params.IDEventoDirezione),
         translations.codes,
-        translations.descriptions
+        translations.descriptions,
+        {
+            isAvailableNote: toOptionalBoolean(req.body.IsAvailableNote),
+            requiredConfirmation: toOptionalBoolean(req.body.RequiredConfirmation)
+        }
     ).then(function () {
         res.status(200).json(new response('OK', true, null));
     }).catch(function (error) {

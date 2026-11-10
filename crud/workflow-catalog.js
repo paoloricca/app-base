@@ -491,12 +491,15 @@ function updateVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizion
     });
 }
 
-function updateVersionGraphTransition(IDVersioneWorkflow, IDAttore, IDEventoDirezione, codes, descriptions) {
+function updateVersionGraphTransition(IDVersioneWorkflow, IDAttore, IDEventoDirezione, codes, descriptions, flags) {
+    flags = flags || {};
     return execute(`
         EXEC dbo.SP_PUT_WORKFLOW_VERSION_TRANSITION
             @IDVersioneWorkflow = @IDVersioneWorkflow,
             @IDAttore = @IDAttore,
             @IDEventoDirezione = @IDEventoDirezione,
+            @IsAvailableNote = @IsAvailableNote,
+            @RequiredConfirmation = @RequiredConfirmation,
             @Code_IT = @Code_IT,
             @Code_GB = @Code_GB,
             @Code_ES = @Code_ES,
@@ -506,7 +509,9 @@ function updateVersionGraphTransition(IDVersioneWorkflow, IDAttore, IDEventoDire
             @Text_ES = @Text_ES,
             @Text_CN = @Text_CN;
     `, graphTranslationInputs(IDVersioneWorkflow, IDAttore, codes, descriptions, {
-        IDEventoDirezione: intInput(IDEventoDirezione)
+        IDEventoDirezione: intInput(IDEventoDirezione),
+        IsAvailableNote: bitInput(flags.isAvailableNote),
+        RequiredConfirmation: bitInput(flags.requiredConfirmation)
     })).then(function () {
         return true;
     });

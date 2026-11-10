@@ -1039,7 +1039,8 @@ $(function () {
                     contentType: 'application/json',
                     data: JSON.stringify({
                         Code_IT: Code_IT, Code_GB: Code_GB, Code_ES: Code_ES, Code_CN: Code_CN,
-                        Text_IT: Text_IT, Text_GB: Text_GB, Text_ES: Text_ES, Text_CN: Text_CN
+                        Text_IT: Text_IT, Text_GB: Text_GB, Text_ES: Text_ES, Text_CN: Text_CN,
+                        IsAvailableNote: IsAvailableNote, RequiredConfirmation: RequiredConfirmation
                     })
                 }).done(function (response) {
                     $('.spinner-node-workflow-link').hide();
