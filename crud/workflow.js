@@ -1022,7 +1022,8 @@ async function PostWorkflow(myRequest) {
             .input('Process', sql.Int, Number(myRequest.IdProcesso))
             .input('Record', sql.Int, Number(myRequest.IdRecord))
             .query(`
-                SELECT P.IDModello, P.IDVersione, PR.IDVersioneWorkflow
+                SELECT P.IDModello, P.IDVersione, P.IDVersioneWorkflow AS ProcessVersion,
+                       PR.IDVersioneWorkflow AS RecordVersion
                 FROM dbo.TProcessi AS P
                 LEFT JOIN dbo.TProcessiWorkflowRecord AS PR WITH (UPDLOCK, HOLDLOCK)
                     ON PR.IDProcesso = P.IDProcesso AND PR.IDRecord = @Record
@@ -1031,12 +1032,13 @@ async function PostWorkflow(myRequest) {
         const process = context.recordset[0];
         if (!process) throw new Error('Processo non trovato.');
         const dynamic = process.IDModello != null && process.IDVersione != null;
+        const workflowVersion = dynamic ? process.RecordVersion : process.ProcessVersion;
         let currentState = null;
         if (dynamic) {
-            if (!process.IDVersioneWorkflow) throw new Error('Occorrenza workflow non trovata.');
+            if (!workflowVersion) throw new Error('Occorrenza workflow non trovata.');
             const state = await new sql.Request(transaction)
                 .input('Record', sql.Int, Number(myRequest.IdRecord))
-                .input('Version', sql.Int, process.IDVersioneWorkflow)
+                .input('Version', sql.Int, workflowVersion)
                 .query(`
                     SELECT TOP (1) S.IDEventoStato, S.IDEventoTransizione
                     FROM dbo.TEventiStati AS S WITH (UPDLOCK, HOLDLOCK)
@@ -1062,6 +1064,15 @@ async function PostWorkflow(myRequest) {
                 (!dynamic || Number(item.IDTransizioneStart) === Number(currentState.IDEventoTransizione));
         });
         if (!selected) throw new Error('Operazione non autorizzata: stato non applicabile da questo utente.');
+        const noteAvailable = [true, 1, '1', 'true'].includes(selected.IsAvailableNote);
+        const note = String(myRequest.Note || '').trim();
+        const attachments = Array.isArray(myRequest.Attachments) ? myRequest.Attachments : [];
+        if (attachments.length && !noteAvailable) {
+            throw new Error('Gli allegati sono consentiti solo per transizioni con nota.');
+        }
+        if (myRequest.PostNoteAsMessage === true && note && !noteAvailable) {
+            throw new Error('La nota non e consentita per questa transizione.');
+        }
         if (dynamic) {
             const check = await new sql.Request(transaction)
                 .input('Mode', sql.VarChar(10), 'CHECK')
@@ -1106,22 +1117,60 @@ async function PostWorkflow(myRequest) {
             .input('Owner', sql.NVarChar(sql.MAX), owner.output.Result)
             .input('Editors', sql.NVarChar(sql.MAX), editors.output.Result)
             .input('IdAccount', sql.Int, Number(myRequest.IdAccount))
-            .input('AvailableNote', sql.NVarChar(sql.MAX), myRequest.Note || null)
+            .input('AvailableNote', sql.NVarChar(sql.MAX),
+                myRequest.PostNoteAsMessage ? null : (myRequest.Note || null))
             .output('Status', sql.NVarChar(500)).execute('SP_PUT_FLOW_ACCESS');
         if (saved.output.Status !== 'OK') throw new Error(saved.output.Status || 'Errore nella registrazione dello stato.');
+
+        let notificationAccounts = [];
+        const messageCreated = noteAvailable && myRequest.PostNoteAsMessage === true &&
+            (note.length > 0 || attachments.length > 0);
+        if (messageCreated) {
+            const state = await new sql.Request(transaction)
+                .input('Record', sql.Int, Number(myRequest.IdRecord))
+                .input('Node', sql.Int, node)
+                .input('Version', sql.Int, workflowVersion)
+                .query(`
+                    SELECT TOP (1) S.IDEventoStato
+                    FROM dbo.TEventiStati AS S WITH (UPDLOCK, HOLDLOCK)
+                    INNER JOIN dbo.TEventiTransizioni AS N ON N.IDEventoTransizione = S.IDEventoTransizione
+                    WHERE S.IDRecord = @Record AND S.IDEventoTransizione = @Node
+                      AND N.IDVersioneWorkflow = @Version
+                    ORDER BY S.DataIstanza DESC, S.IDEventoStato DESC;
+                `);
+            if (!state.recordset.length) throw new Error('Stato workflow registrato non trovato.');
+            const message = await new sql.Request(transaction)
+                .input('IDProcesso', sql.Int, Number(myRequest.IdProcesso))
+                .input('IDRecord', sql.Int, Number(myRequest.IdRecord))
+                .input('IDEventoStato', sql.Int, state.recordset[0].IDEventoStato)
+                .input('IDAccount', sql.Int, Number(myRequest.IdAccount))
+                .input('IDAttore', sql.Int, Number(myRequest.IdAttore))
+                .input('Text', sql.NVarChar(sql.MAX), note)
+                .input('Attachments', sql.NVarChar(sql.MAX), JSON.stringify(attachments))
+                .execute('SP_POST_WORKFLOW_APPLY_MESSAGE');
+            notificationAccounts = (message.recordset || []).map(row => Number(row.IDDestinatario));
+        }
         await transaction.commit();
         started = false;
-        return JSON.stringify('OK');
+        return { notificationAccounts, messageCreated };
     } catch (error) {
+        let transactionRolledBack = aborted;
         if (started && !aborted) {
             try {
                 await transaction.rollback();
+                transactionRolledBack = true;
             } catch (rollbackError) {
-                throw new exception(sender, error.message + ' (rollback: ' + rollbackError.message + ')',
+                const wrapped = new exception(sender, error.message + ' (rollback: ' + rollbackError.message + ')',
                     error.name, error.stack);
+                wrapped.code = error.code;
+                wrapped.transactionRolledBack = false;
+                throw wrapped;
             }
         }
-        throw new exception(sender, error.message, error.name, error.stack);
+        const wrapped = new exception(sender, error.message, error.name, error.stack);
+        wrapped.code = error.code;
+        wrapped.transactionRolledBack = transactionRolledBack;
+        throw wrapped;
     }
 }
 

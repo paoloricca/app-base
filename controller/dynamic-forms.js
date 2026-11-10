@@ -16,6 +16,7 @@ $(function () {
     var editorMode = 'edit';
     var actionLoading = false;
     var workflowApplying = false;
+    var selectedWorkflowFiles = [];
 
     function text(key) {
         var labels = {
@@ -24,6 +25,8 @@ $(function () {
                 edit: 'Modifica', preview: 'Anteprima', delete: 'Elimina', from: 'Da', to: 'A',
                 currentState: 'Stato attuale',
                 workflow: 'Workflow', noWorkflow: 'Nessuno stato da impostare',
+                attach: 'Allega file', removeAttachment: 'Rimuovi allegato',
+                tooManyAttachments: 'Sono consentiti al massimo 5 allegati.',
                 previous: 'Precedente', next: 'Successiva', page: 'Pagina',
                 of: 'di', total: 'Record Totali',
                 error: 'Errore durante il caricamento dei dati.', invalidId: 'ID non valido.',
@@ -34,6 +37,8 @@ $(function () {
                 edit: 'Edit', preview: 'Preview', delete: 'Delete', from: 'From', to: 'To',
                 currentState: 'Current state',
                 workflow: 'Workflow', noWorkflow: 'No state available to set',
+                attach: 'Attach files', removeAttachment: 'Remove attachment',
+                tooManyAttachments: 'A maximum of 5 attachments is allowed.',
                 previous: 'Previous', next: 'Next', page: 'Page',
                 of: 'of', total: 'Total records',
                 error: 'An error occurred while loading data.', invalidId: 'Invalid ID.',
@@ -44,6 +49,8 @@ $(function () {
                 edit: 'Modificar', preview: 'Vista previa', delete: 'Eliminar', from: 'Desde', to: 'Hasta',
                 currentState: 'Estado actual',
                 workflow: 'Flujo de trabajo', noWorkflow: 'No hay estados disponibles',
+                attach: 'Adjuntar archivos', removeAttachment: 'Quitar archivo adjunto',
+                tooManyAttachments: 'Se permiten como máximo 5 archivos adjuntos.',
                 previous: 'Anterior', next: 'Siguiente', page: 'Página',
                 of: 'de', total: 'Registros totales',
                 error: 'Se produjo un error al cargar los datos.', invalidId: 'ID no válido.',
@@ -54,6 +61,8 @@ $(function () {
                 edit: '修改', preview: '预览', delete: '删除', from: '从', to: '至',
                 currentState: '当前状态',
                 workflow: '工作流', noWorkflow: '没有可设置的状态',
+                attach: '添加附件', removeAttachment: '移除附件',
+                tooManyAttachments: '最多允许 5 个附件。',
                 previous: '上一页', next: '下一页', page: '页',
                 of: '/', total: '记录总数',
                 error: '加载数据时发生错误。', invalidId: 'ID 无效。',
@@ -104,6 +113,7 @@ $(function () {
             .prop('disabled', applying);
         $('.dynamic-form-workflow-transition, .dynamic-form-workflow-note-input, .dynamic-form-workflow-apply')
             .prop('disabled', applying);
+        $('.dynamic-form-workflow-files, .dynamic-form-workflow-remove-file').prop('disabled', applying);
     }
 
     function startActionLoading() {
@@ -280,6 +290,28 @@ $(function () {
         return !isRequired || isValid;
     }
 
+    function renderWorkflowFiles() {
+        var $selected = $('.dynamic-form-workflow-selected').empty();
+        selectedWorkflowFiles.forEach(function (file, index) {
+            var $file = $('<span>', { class: 'workflow-chat-selected-file' }).appendTo($selected);
+            $('<span>').text(file.name).appendTo($file);
+            $('<button>', {
+                type: 'button',
+                class: 'workflow-chat-remove-file dynamic-form-workflow-remove-file',
+                'data-index': index,
+                'aria-label': text('removeAttachment') + ': ' + file.name,
+                title: text('removeAttachment')
+            }).append($('<i>', { class: 'bi bi-x-lg', 'aria-hidden': 'true' })).appendTo($file);
+        });
+    }
+
+    function clearWorkflowFiles() {
+        selectedWorkflowFiles = [];
+        $('.dynamic-form-workflow-files').val('');
+        renderWorkflowFiles();
+        $('.dynamic-form-workflow-file-error').prop('hidden', true).text('');
+    }
+
     function openWorkflow(workflowRecordId, $workflowAction) {
         if (!workflowRecordId) {
             return;
@@ -299,6 +331,7 @@ $(function () {
                     var $transitions = $('.dynamic-form-workflow-transitions').empty();
                     var $noteContainer = $('.dynamic-form-workflow-note');
                     var $note = $('.dynamic-form-workflow-note-input');
+                    clearWorkflowFiles();
                     clearWorkflowError();
                     $('.dynamic-form-workflow-apply').prop('disabled', true);
                     $note.val('')
@@ -842,6 +875,7 @@ $(function () {
         $note.prop('required', requiresNote);
         if (!requiresNote) {
             $note.data('validation-attempted', false);
+            clearWorkflowFiles();
         }
         updateWorkflowNoteValidity($note);
         $('.dynamic-form-workflow-apply').prop('disabled', false);
@@ -849,8 +883,29 @@ $(function () {
     $('.dynamic-form-workflow-note-input').on('input', function () {
         updateWorkflowNoteValidity($(this));
     });
+    $('.dynamic-form-workflow-attach-label').text(text('attach'));
+    $('.dynamic-form-workflow-files').on('change', function () {
+        var files = Array.from(this.files || []);
+        this.value = '';
+        var $error = $('.dynamic-form-workflow-file-error');
+        if (selectedWorkflowFiles.length + files.length > 5) {
+            $error.text(text('tooManyAttachments')).prop('hidden', false);
+            return;
+        }
+        $error.prop('hidden', true).text('');
+        selectedWorkflowFiles.push.apply(selectedWorkflowFiles, files);
+        renderWorkflowFiles();
+    });
+    $('.dynamic-form-workflow-selected').on('click', '.dynamic-form-workflow-remove-file', function () {
+        selectedWorkflowFiles.splice(Number($(this).attr('data-index')), 1);
+        $('.dynamic-form-workflow-file-error').prop('hidden', true).text('');
+        renderWorkflowFiles();
+    });
     $('#dynamic-form-workflow-modal').on('hide.bs.modal', function (event) {
         if (workflowApplying) event.preventDefault();
+    });
+    $('#dynamic-form-workflow-modal').on('hidden.bs.modal', function () {
+        clearWorkflowFiles();
     });
     $('.dynamic-form-workflow-apply').on('click', function () {
         if (workflowApplying) return;
@@ -858,11 +913,12 @@ $(function () {
         var workflowRecordId = $(this).data('workflow-record-id');
         var $selected = $('.dynamic-form-workflow-transition:checked');
         var $note = $('.dynamic-form-workflow-note-input');
-        var note = $note.val();
         if (!workflowRecordId || !$selected.length) {
             return;
         }
-        $note.prop('required', workflowNoteRequired($selected.attr('data-note-required')));
+        var requiresNote = workflowNoteRequired($selected.attr('data-note-required'));
+        var note = requiresNote ? $note.val() : '';
+        $note.prop('required', requiresNote);
         $note.data('validation-attempted', true);
         if (!updateWorkflowNoteValidity($note, true)) {
             $note.trigger('focus');
@@ -871,14 +927,20 @@ $(function () {
 
         setWorkflowApplying(true);
         var succeeded = false;
+        var payload = new FormData();
+        payload.append('IDEventoDirezione', $selected.val());
+        payload.append('IDProcesso', IdProcesso);
+        payload.append('Note', note || '');
+        payload.append('PostNoteAsMessage', 'true');
+        if (requiresNote) {
+            selectedWorkflowFiles.forEach(function (file) { payload.append('files', file); });
+        }
         $.ajax({
             type: 'POST',
             url: '/workflow-apply/' + encodeURIComponent(workflowRecordId),
-            data: {
-                IDEventoDirezione: $selected.val(),
-                IDProcesso: IdProcesso,
-                Note: note
-            }
+            data: payload,
+            processData: false,
+            contentType: false
         }).done(function (response) {
             try {
                 unwrap(response);

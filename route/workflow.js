@@ -1,6 +1,8 @@
 const express = require('express');
 const workflow = express.Router();
 const bodyParser = require('body-parser');
+const formidable = require('formidable');
+const crypto = require('crypto');
 //var requestIdModelloIstanzaRecordValue = require('../model/request-idmodello-istanza-record-value');
 //var requestIdModelloIstanzaRecordMedia = require('../model/request-idmodello-istanza-record-media');
 //var requestIdModelloIstanzaRecord = require('../model/request-idmodello-istanza-record');
@@ -28,6 +30,36 @@ const workflowCatalog = require('../crud/workflow-catalog');
 const breadcrumb = require('../crud/breadcrumb');
 const workflowTiming = require('../utils/workflow-timing');
 const ownerProfiles = require('../crud/workflow-owner-profiles');
+const { identifyFile } = require('../utils/workflow-chat-file');
+const workflowChatRealtime = require('../utils/workflow-chat-realtime');
+const workflowChatStorage = path.join(__dirname, '..', 'files', '.workflow-chat');
+const workflowChatMaxFileSize = 10 * 1024 * 1024;
+
+function parseWorkflowApplyUpload(req) {
+    return new Promise((resolve, reject) => {
+        const form = new formidable.IncomingForm({
+            multiples: true,
+            maxFiles: 5,
+            maxFileSize: workflowChatMaxFileSize,
+            maxTotalFileSize: 5 * workflowChatMaxFileSize,
+            maxFields: 4,
+            maxFieldsSize: 100000
+        });
+        form.parse(req, (error, fields, parsedFiles) => {
+            const files = Object.values(parsedFiles || {}).flat().filter(Boolean);
+            if (error) {
+                error.uploadedFiles = files;
+                reject(error);
+                return;
+            }
+            const body = {};
+            Object.keys(fields || {}).forEach(key => {
+                body[key] = Array.isArray(fields[key]) ? fields[key][0] : fields[key];
+            });
+            resolve({ body, files });
+        });
+    });
+}
 
 function isPositiveInteger(value) {
     const number = Number(value);
@@ -668,29 +700,78 @@ workflow.put('/workflow-update-node-position/:IdEventoTransizione', function (re
         });
     }
 });
-workflow.post('/workflow-apply/:IdRecord', function (req, res) {
-    if (sessionUtil.verifyUser(req, res)) {
-        res.set('Access-Control-Allow-Origin', '*');
-        var myRequest = new requestWorkflowPost(
+workflow.post('/workflow-apply/:IdRecord', async function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) return;
+    res.set('Access-Control-Allow-Origin', '*');
+    let files = [];
+    let savedPaths = [];
+    let saveAttempted = false;
+    try {
+        const upload = req.is('multipart/form-data')
+            ? await parseWorkflowApplyUpload(req)
+            : { body: req.body || {}, files: [] };
+        files = upload.files;
+        const body = upload.body;
+        const note = String(body.Note || '');
+        if (note.length > 10000) throw new Error('Messaggio troppo lungo.');
+        const postNoteAsMessage = body.PostNoteAsMessage === 'true';
+        if (files.length && !postNoteAsMessage) throw new Error('Allegati non validi.');
+
+        const attachments = [];
+        if (files.length) await fs.promises.mkdir(workflowChatStorage, { recursive: true });
+        for (const file of files) {
+            const mime = await identifyFile(file, workflowChatMaxFileSize);
+            const name = crypto.randomBytes(24).toString('hex');
+            const target = path.join(workflowChatStorage, name);
+            await fs.promises.copyFile(file.filepath, target, fs.constants.COPYFILE_EXCL);
+            savedPaths.push(target);
+            attachments.push({
+                OriginalName: path.basename(file.originalFilename || 'allegato').slice(0, 255),
+                StorageName: name,
+                MimeType: mime,
+                Size: file.size
+            });
+        }
+
+        const myRequest = new requestWorkflowPost(
             req.session.user.IdAttore,
             req.session.user.IdAccount,
-            req.body.IDProcesso,
+            body.IDProcesso,
             req.params.IdRecord,
-            req.body.IDEventoDirezione,
-            req.body.Note,
-            req.session.user.LanguageContext,            
-            req.body
+            body.IDEventoDirezione,
+            note,
+            req.session.user.LanguageContext,
+            body
         );
         myRequest.IdProfiloUtente = req.session.user.IDProfiloUtenteDefault || 0;
-        crud.PostWorkflow(myRequest).then(listOf => {
-            res.status(200).json(
-                new response('OK', JSON.parse(listOf), null)
-            );
-        }).catch(err => {
-            res.status(200).json(new response('ERR', null, err));
-        }).finally(() => {
-
-        });
+        myRequest.PostNoteAsMessage = postNoteAsMessage;
+        myRequest.Attachments = attachments;
+        saveAttempted = true;
+        const result = await crud.PostWorkflow(myRequest);
+        savedPaths.length = 0;
+        if (result.messageCreated) {
+            const accounts = new Set(result.notificationAccounts || []);
+            accounts.add(Number(req.session.user.IdAccount));
+            accounts.forEach(account => workflowChatRealtime.publish(account, 'new_chat_notification', {})
+                .catch(error => console.error('[workflow-apply] realtime', error)));
+        }
+        res.status(200).json(new response('OK', 'OK', null));
+    } catch (error) {
+        if (error.uploadedFiles) files = error.uploadedFiles;
+        if (saveAttempted && !error.transactionRolledBack && error.code !== 'EREQUEST') {
+            console.error('[workflow-apply] Esito SQL incerto: allegati conservati per verifica.', savedPaths);
+            savedPaths = [];
+        }
+        res.status(200).json(new response('ERR', null, error));
+    } finally {
+        for (const file of files) {
+            try { await fs.promises.unlink(file.filepath); }
+            catch (error) { console.error('[workflow-apply] cleanup', error); }
+        }
+        for (const file of savedPaths) {
+            try { await fs.promises.unlink(file); }
+            catch (error) { console.error('[workflow-apply] cleanup', error); }
+        }
     }
 });
 workflow.post('/workflow-action/:IdRecord', function (req, res) {

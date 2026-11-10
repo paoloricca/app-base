@@ -60,13 +60,20 @@ node --test tests\workflow-timing-sql.test.js
 
 ## Chat nella storia del workflow
 
-Eseguire [workflow-chat-notifications.sql](sql/workflow-chat-notifications.sql)
-e poi [workflow-chat.sql](sql/workflow-chat.sql), dopo gli script del workflow
-e di dynamic-forms. Le migrazioni richiedono le tabelle esistenti
+Eseguire [workflow-chat-notifications.sql](sql/workflow-chat-notifications.sql),
+poi [workflow-chat.sql](sql/workflow-chat.sql) e infine
+[workflow-apply-message.sql](sql/workflow-apply-message.sql), dopo gli script
+del workflow e di dynamic-forms. Le migrazioni richiedono le tabelle esistenti
 `TEventiStatiMessaggi`, `TEventiStatiAllegati` e
 `TEventiStatiMessaggiNotifiche`. La registrazione di messaggio, allegati e
 notifiche avviene in un'unica transazione; i messaggi precedenti non generano
-notifiche retroattive.
+notifiche retroattive. Nota e allegati inseriti nel popup «Imposta Workflow»
+sono registrati sul nuovo stato da `SP_POST_WORKFLOW_APPLY_MESSAGE`; non vengono
+scritti in `AvailableNote`. Gli allegati sono disponibili solo per le
+transizioni che prevedono la nota; selezionando una transizione senza nota
+gli allegati eventualmente selezionati vengono rimossi e il cambio stato non
+crea messaggi o notifiche. Il server rifiuta note o allegati inviati per tali
+transizioni nel flusso del popup.
 La visualizzazione richiede l'azione `VisualizzaStoria` sul processo e sullo
 stato corrente. Il creatore e gli owner possono scrivere; il flag sul nodo
 abilita anche gli altri utenti autorizzati a vedere la storia.

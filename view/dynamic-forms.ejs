@@ -197,12 +197,21 @@
                             <% if (user.LanguageContext == 'ES') { %>Nota<% } %>
                             <% if (user.LanguageContext == 'CN') { %>备注<% } %>
                         </label>
-                        <textarea id="dynamic-form-workflow-note" class="form-control dynamic-form-workflow-note-input" rows="4" aria-describedby="dynamic-form-workflow-note-feedback" aria-invalid="false"></textarea>
+                        <textarea id="dynamic-form-workflow-note" class="form-control dynamic-form-workflow-note-input" rows="4" maxlength="10000" aria-describedby="dynamic-form-workflow-note-feedback" aria-invalid="false"></textarea>
                         <div id="dynamic-form-workflow-note-feedback" class="invalid-feedback">
                             <% if (user.LanguageContext == 'IT') { %>Compila questo campo.<% } %>
                             <% if (user.LanguageContext == 'GB') { %>Please fill out this field.<% } %>
                             <% if (user.LanguageContext == 'ES') { %>Complete este campo.<% } %>
                             <% if (user.LanguageContext == 'CN') { %>请填写此字段。<% } %>
+                        </div>
+                        <div class="dynamic-form-workflow-attachments mt-2">
+                            <label class="btn btn-outline-secondary workflow-chat-file-label">
+                                <i class="bi bi-paperclip" aria-hidden="true"></i>
+                                <span class="dynamic-form-workflow-attach-label"></span>
+                                <input class="dynamic-form-workflow-files visually-hidden" type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple>
+                            </label>
+                            <div class="dynamic-form-workflow-selected workflow-chat-selected small text-secondary mt-2"></div>
+                            <div class="dynamic-form-workflow-file-error text-danger small" role="alert" hidden></div>
                         </div>
                     </div>
                 </div>
