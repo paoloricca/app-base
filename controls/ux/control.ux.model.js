@@ -600,10 +600,22 @@
                 ShowError(err.message, fnName);
             }
         };
-        $.fn.model.loadAttributeValues = function (IDAttributo) {
+        $.fn.model.loadAttributeValues = function (IDAttributo, currentValue) {
+            var options = JSON.parse(plugin.attr('data-options'));
+            var endpoint = "model-class-attribute-values/" + IDAttributo;
+            var query = [];
+            if (options.ActionName) {
+                query.push("action=" + encodeURIComponent(options.ActionName));
+            }
+            if (currentValue != null && currentValue !== '') {
+                query.push("currentValue=" + encodeURIComponent(currentValue));
+            }
+            if (query.length) {
+                endpoint += "?" + query.join("&");
+            }
             return modelApiRequest(
-                JSON.parse(plugin.attr('data-options')),
-                "model-class-attribute-values/" + IDAttributo,
+                options,
+                endpoint,
                 "GET"
             );
         };
@@ -1320,7 +1332,7 @@
 
                                             /* Caricamento valori lista */
                                             $.when(
-                                                plugin.model.loadAttributeValues(row.IDAttributo)
+                                                plugin.model.loadAttributeValues(row.IDAttributo, RecordValue)
                                             ).then(function (AttributesValues, textStatus, jqXHR) {
                                                 $.each(JSON.parse(AttributesValues).data, function (key, AttributeValue) {
                                                     plugin.find("#control_" + row.IDAttributo).append(
@@ -1329,7 +1341,8 @@
                                                             AttributeValue.Code)
                                                     );
                                                 });
-                                                plugin.find("#control_" + row.IDAttributo).val(RecordValue);
+                                                var $control = plugin.find("#control_" + row.IDAttributo);
+                                                $control.val(RecordValue);
                                             });
                                         }
                                         /* FILE */

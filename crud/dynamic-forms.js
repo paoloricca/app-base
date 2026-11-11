@@ -144,12 +144,25 @@ function getClassAttributes(IdProcesso, IdClasse, IdAccount, LanguageContext) {
     });
 }
 
-function getAttributeValues(IdProcesso, IdAttributo, IdAccount, LanguageContext) {
+function getAttributeValues(
+    IdProcesso,
+    IdAttributo,
+    IdAccount,
+    IdGruppoOperativo,
+    IdProfiloUtente,
+    LanguageContext,
+    ActionName,
+    CurrentValue
+) {
     return executeProcedure('SP_GET_PROCESS_FORM_ATTRIBUTE_VALUES', {
         IdProcesso: intInput(IdProcesso),
         IdAttributo: intInput(IdAttributo),
         IdAccount: intInput(IdAccount),
-        LanguageContext: stringInput(LanguageContext, 2)
+        LanguageContext: stringInput(LanguageContext, 2),
+        IdGruppoOperativo: intInput(IdGruppoOperativo),
+        IdProfiloUtente: intInput(IdProfiloUtente),
+        ActionName: stringInput(ActionName || '', 50),
+        CurrentValue: stringInput(CurrentValue || '', 4000)
     }).then(function (result) {
         return result.recordset || [];
     });

@@ -758,6 +758,8 @@ $(function () {
             IDVersione: process.IDVersione,
             IDModelloIstanza: instanceId || null,
             Mode: 'edit',
+            ActionName: mode === 'edit' ? 'Modifica' :
+                (mode === 'view' ? 'Visualizza' : (mode === 'preview' ? 'Anteprima' : 'Inserimento')),
             ReadOnly: mode === 'view' || mode === 'preview',
             user: user,
             ApiBase: apiBase

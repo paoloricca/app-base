@@ -143,7 +143,11 @@ router.get('/dynamic-forms/:IdProcesso/api/model-class-attribute-values/:IdAttri
         req.params.IdProcesso,
         req.params.IdAttributo,
         req.session.user.IdAccount,
-        req.session.user.LanguageContext
+        req.session.user.IdGruppoOperativoDefault,
+        req.session.user.IDProfiloUtenteDefault,
+        req.session.user.LanguageContext,
+        req.query.action,
+        req.query.currentValue
     ).then(data => res.status(200).json(new response('OK', data, null)))
         .catch(error => sendError(res, error));
 });
