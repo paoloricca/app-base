@@ -18,11 +18,11 @@
             var options = JSON.parse(plugin.attr('data-options'));
 
         };
-        $.fn.processi.load = function (IDProcesso) {
-
-            var options = JSON.parse(plugin.attr('data-options'));
-            if (!plugin.find('.processi-list').length) {
-                plugin.data('processi-pending-load', { IDProcesso: IDProcesso });
+        $.fn.processi.load = function (IDProcesso, target) {
+            var control = target ? $(target) : plugin;
+            var options = JSON.parse(control.attr('data-options'));
+            if (!control.find('.processi-list').length) {
+                control.data('processi-pending-load', { IDProcesso: IDProcesso });
                 return;
             }
 
@@ -36,72 +36,59 @@
                 data: {},
             }).done(function (response) {
                 if (response.status == "ERR") {
-                    ShowError(
-                        response.error.message,
-                        response.error.sender
-                    );
+                    ShowError(response.error.message, response.error.sender);
                 } else if (response.status == "OK") {
-
-                    //plugin.find('.processi-list').empty();
-
                     $.get("/controls/ui/control.ui.processo.ejs?" + Date.now()).done(function (templateString) {
                         $.each(response.data, function (key, processo) {
-
                             var partialToRender = ejs.render(templateString, {
                                 processo,
                                 contextMenu: options.contextMenu
                             });
 
                             if (Number.isInteger(IDProcesso)) {
-                                plugin.find('.processo-' + IDProcesso + '-container').append(partialToRender);
-                                var mleft = $('.processo-' + IDProcesso + '-container').css('text-indent');
-                                mleft = eval(mleft.replace('px', '')) + 7;
-                                plugin.find('.processo-' + processo.IDProc + '-container').css("text-indent", mleft);
-
+                                control.find('.processo-' + IDProcesso + '-container').append(partialToRender);
+                                var mleft = control.find('.processo-' + IDProcesso + '-container').css('text-indent');
+                                mleft = Number.parseFloat(mleft) + 7;
+                                control.find('.processo-' + processo.IDProc + '-container').css('text-indent', mleft);
                             } else {
-                                plugin.find('.processi-list').append(partialToRender);
+                                control.find('.processi-list').append(partialToRender);
                             }
 
-                            /* raise plugin event */
-                            plugin.find('.btn-processo-' + processo.IDProc).click(function (e) {
-                                var processOptions = JSON.parse(plugin.attr('data-options'));
+                            control.find('.btn-processo-' + processo.IDProc).click(function (e) {
+                                var processOptions = JSON.parse(control.attr('data-options'));
 
                                 if (processOptions.contextMenu && $(e.target).closest('.processo-context-dropdown').length) {
                                     return;
                                 }
 
                                 if (processOptions.selectionEnabled !== false) {
-                                    /* set pluging attribute */
-                                    processOptions.IDProcesso = processo.IDProc
+                                    processOptions.IDProcesso = processo.IDProc;
                                     processOptions.Descrizione = processo.Description;
-                                    /* re-store plugin attribute option */
-                                    plugin.attr('data-options', JSON.stringify(processOptions));
-
-                                    /* raise event */
-                                    $(this).trigger("onselect");
+                                    processOptions.IDModello = processo.IDModello;
+                                    processOptions.IDVersione = processo.IDVersione;
+                                    processOptions.ModelDescription = processo.ModelDescription;
+                                    processOptions.ModelVersionNumber = processo.ModelVersionNumber;
+                                    control.attr('data-options', JSON.stringify(processOptions));
+                                    $(this).trigger('onselect');
 
                                     if (processo.HasWorkflow == 1) {
-                                        $(this).trigger("onworkflow");
+                                        $(this).trigger('onworkflow');
                                     }
                                 }
 
                                 if ($(this).parent().parent().find('div[class*=-container]').length > 0) {
                                     $(this).parent().parent().find('div[class*=-container]').remove();
                                 } else {
-                                    plugin.processi.load(processo.IDProc);
+                                    control.processi.load(processo.IDProc, control);
                                 }
-                                
                             });
                         });
-
                     }).fail(function (xhr, status, errorThrown) {
-                        ShowError(errorThrown || status, "processi.row-template");
+                        ShowError(errorThrown || status, 'processi.row-template');
                     });
                 }
             }).fail(function (xhr, status, errorThrown) {
-                ShowError(errorThrown || status, "processi.load");
-            }).always(function (xhr, status) {
-
+                ShowError(errorThrown || status, 'processi.load');
             });
         }
 
@@ -131,7 +118,7 @@
                 var pendingLoad = plugin.data('processi-pending-load');
                 if (pendingLoad) {
                     plugin.removeData('processi-pending-load');
-                    plugin.processi.load(pendingLoad.IDProcesso);
+                    plugin.processi.load(pendingLoad.IDProcesso, plugin);
                 }
 
                 /* raise plugin event */

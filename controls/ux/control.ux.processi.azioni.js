@@ -9,6 +9,7 @@
             IdProfiloUtente: null,
             IdEventoTransizione: null,
             Toggled: null,
+            VisibilityEnabled: false,
             ontoggle: null,
         }, options);
 
@@ -52,6 +53,10 @@
 
                                 var partialToRender = ejs.render(templateString, { processoazione });
                                 plugin.find('.processi-azioni-list').append(partialToRender);
+                                if (options.VisibilityEnabled) {
+                                    plugin.find('.processo-azione-' + processoazione.IDProcessoAzione + '-container')
+                                        .find('.workflow-action-visibility').removeClass('d-none');
+                                }
 
                                 /* raise plugin event */
                                 plugin.find('.btn-toggle-processo-azione-' + processoazione.IDProcessoAzione).click(function (e) {
@@ -76,8 +81,7 @@
                         });
                     }
                 }).fail(function (xhr, status, errorThrown) {
-                }).always(function (xhr, status) {
-
+                    ShowError(errorThrown || status, 'processiazioni.loadFromWorkflowState');
                 });
 
             }

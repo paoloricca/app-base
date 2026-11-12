@@ -1256,10 +1256,26 @@
             user = options.user;
 
             var fieldlist = "";
+            function isWorkflowFieldReadOnly(row) {
+                return options.ActionName === 'Modifica' &&
+                    (row.IsWorkflowEditable === false || row.IsWorkflowEditable === 0 ||
+                        row.IsWorkflowEditable === '0');
+            }
+            function lockWorkflowField(row) {
+                if (!isWorkflowFieldReadOnly(row)) {
+                    return;
+                }
+                plugin.find('#control_' + row.IDAttributo +
+                    ', [name="control_' + row.IDAttributo + '"]').prop('disabled', true);
+                plugin.find('.control_' + row.IDAttributo + ' :input').prop('disabled', true);
+            }
 
             $.when(
                 $.ajax({
-                    url: modelApiUrl(JSON.parse(plugin.attr('data-options')), "model-class-attribute/" + IdClasse),
+                    url: modelApiUrl(JSON.parse(plugin.attr('data-options')),
+                        "model-class-attribute/" + IdClasse) +
+                        '?workflowRecordId=' + encodeURIComponent(options.WorkflowRecordId || '') +
+                        '&action=' + encodeURIComponent(options.ActionName || ''),
                     type: "GET",
                     data: {},
                 }).done(function (response) {
@@ -1294,6 +1310,7 @@
 
                                             ejs.render(templateString, { row, mode, user })
                                         );
+                                        lockWorkflowField(row);
 
                                         plugin.find('.number').inputFilter(function (value) {
                                             return /^-?\d*$/.test(value);
@@ -1360,7 +1377,7 @@
                                                 filenumber: row.FileNumber,
                                                 filetypes: row.FileTypes,
                                                 fileweight: row.FileWeight,
-                                                readOnly: options.ReadOnly === true
+                                                readOnly: options.ReadOnly === true || isWorkflowFieldReadOnly(row)
                                             });
 
                                             /* Registra l'evento {onupload} */
@@ -1558,10 +1575,19 @@
 
                 /* Valorizza la lista degli IDAttributo, utilizzata per la registrazione dei valori */
                 $.each(response.data, function (key, row) {
+                    if (isWorkflowFieldReadOnly(row)) {
+                        return;
+                    }
                     fieldlist += '@' + row.IDAttributo;
                 });
 
                 if (options.Mode == "edit" && options.ReadOnly !== true) {
+
+                    if (!fieldlist && options.ActionName === 'Modifica' && options.WorkflowRecordId) {
+                        plugin.trigger("onload");
+                        plugin.find('.spinner-border').hide();
+                        return;
+                    }
 
                     plugin.find('.model-class-' + IdClasse + '-container').data('fieldlist', fieldlist.substring(1));
                     $.get("/controls/ui/control.ui.button.salva.ejs?" + Date.now(), function (response) {

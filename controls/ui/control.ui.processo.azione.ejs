@@ -1,14 +1,20 @@
 <div class="processo-azione-<%= processoazione.IDProcessoAzione %>-container p-0">
-    <div class="d-flex align-items-center w-100 p-0 process-bg">
-        <div class="flex-grow-1 p-0 text-start">
+    <div class="d-flex align-items-center w-100 p-0 process-bg workflow-action-row">
+        <div class="flex-grow-1 p-0 text-start workflow-action-label">
             <span class="text-start text-decoration-none p-0 px-2 text-secondary f-roboto" data-idprocessoazione="<%= processoazione.IDProcessoAzione %>">
                 <%= processoazione.Description %>
             </span>
         </div>
-        <div class="form-check form-switch m-0 px-2">
-            <input class="form-check-input me-2 btn-toggle-processo-azione-<%= processoazione.IDProcessoAzione %>" type="checkbox"
-            <% if (processoazione.IdProcesso != undefined) { %> checked <% } %>
-            id="rb-processo-azione-<%= processoazione.IDProcessoAzione %>" name="rb-processo-azione-<%= processoazione.IDProcessoAzione %>">
+        <div class="d-flex align-items-center justify-content-end workflow-action-controls">
+            <div class="form-check form-switch m-0 workflow-action-toggle">
+                <input class="form-check-input btn-toggle-processo-azione-<%= processoazione.IDProcessoAzione %>" type="checkbox"
+                <% if (processoazione.IdProcesso != undefined) { %> checked <% } %>
+                id="rb-processo-azione-<%= processoazione.IDProcessoAzione %>" name="rb-processo-azione-<%= processoazione.IDProcessoAzione %>">
+            </div>
+            <button type="button" class="btn btn-sm btn-light bi bi-gear workflow-action-visibility d-none"
+                data-idprocessoazione="<%= processoazione.IDProcessoAzione %>"
+                data-action-description="<%= processoazione.Description %>"
+                aria-label="<%= processoazione.Description %>"></button>
         </div>
     </div>
 </div>

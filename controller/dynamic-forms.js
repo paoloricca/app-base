@@ -719,15 +719,15 @@ $(function () {
         }).fail(requestError);
     }
 
-    function openEditor(instanceId, mode) {
+    function openEditor(instanceId, mode, workflowRecordId) {
         startActionLoading().done(function () {
-            loadEditor(instanceId, mode);
+            loadEditor(instanceId, mode, workflowRecordId);
         }).fail(function (error) {
             ShowError(error.message, 'openEditor');
         });
     }
 
-    function loadEditor(instanceId, mode) {
+    function loadEditor(instanceId, mode, workflowRecordId) {
         editorMode = mode;
         var $container = $('.container-dynamic-form-edit');
         var editorShown = false;
@@ -761,6 +761,9 @@ $(function () {
             ActionName: mode === 'edit' ? 'Modifica' :
                 (mode === 'view' ? 'Visualizza' : (mode === 'preview' ? 'Anteprima' : 'Inserimento')),
             ReadOnly: mode === 'view' || mode === 'preview',
+            WorkflowRecordId: workflowRecordId || null,
+            WorkflowProfileId: user.IDProfiloUtenteDefault,
+            WorkflowGroupId: user.IdGruppoOperativoDefault,
             user: user,
             ApiBase: apiBase
         });
@@ -776,17 +779,17 @@ $(function () {
         switch (String(actionName).toLowerCase()) {
             case 'lettura':
                 if (isAuthorizedForState(actionName, workflowRecordId, authorizedActionIds)) {
-                    openEditor(instanceId, 'view');
+                    openEditor(instanceId, 'view', workflowRecordId);
                 }
                 break;
             case 'anteprima':
                 if (isAuthorizedForState(actionName, workflowRecordId, authorizedActionIds)) {
-                    openEditor(instanceId, 'preview');
+                    openEditor(instanceId, 'preview', workflowRecordId);
                 }
                 break;
             case 'modifica':
                 if (isAuthorizedForState(actionName, workflowRecordId, authorizedActionIds)) {
-                    openEditor(instanceId, 'edit');
+                    openEditor(instanceId, 'edit', workflowRecordId);
                 }
                 break;
             case 'cancellazione':

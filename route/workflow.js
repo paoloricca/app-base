@@ -378,6 +378,146 @@ workflow.get('/workflow/api/versions/:IDVersioneWorkflow/graph', function (req, 
         sendCatalogError(res, error);
     });
 });
+workflow.get('/workflow/api/versions/:IDVersioneWorkflow/visibility/processes/:IDProcessoParent?', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    const versionId = Number(req.params.IDVersioneWorkflow);
+    const parentId = req.params.IDProcessoParent == null ? null : Number(req.params.IDProcessoParent);
+    if (!isPositiveInteger(versionId) || (parentId !== null && !isPositiveInteger(parentId))) {
+        sendCatalogError(res, { message: 'Parametri processo workflow non validi.' });
+        return;
+    }
+    workflowCatalog.getVersionEditorDetails(
+        versionId,
+        req.session.user.IdAttore,
+        req.session.user.LanguageContext
+    ).then(function (version) {
+        if (!version) {
+            sendCatalogError(res, { message: 'Versione workflow non trovata o non autorizzata.' });
+            return;
+        }
+        return workflowCatalog.getVisibilityProcesses(
+            versionId,
+            req.session.user.IdAttore,
+            req.session.user.LanguageContext,
+            parentId
+        ).then(data => res.status(200).json(new response('OK', data, null)));
+    }).catch(function (error) {
+        sendCatalogError(res, error);
+    });
+});
+workflow.get('/workflow/api/versions/:IDVersioneWorkflow/visibility/processes/:IDProcesso/classes', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    const versionId = Number(req.params.IDVersioneWorkflow);
+    const processId = Number(req.params.IDProcesso);
+    const nodeId = Number(req.query.nodeId);
+    if (!isPositiveInteger(versionId) || !isPositiveInteger(processId) || !isPositiveInteger(nodeId)) {
+        sendCatalogError(res, { message: 'Parametri form workflow non validi.' });
+        return;
+    }
+    workflowCatalog.getVersionEditorDetails(
+        versionId,
+        req.session.user.IdAttore,
+        req.session.user.LanguageContext
+    ).then(function (version) {
+        if (!version) {
+            sendCatalogError(res, { message: 'Versione workflow non trovata o non autorizzata.' });
+            return;
+        }
+        return workflowCatalog.getVisibilityClasses(
+            versionId,
+            req.session.user.IdAttore,
+            processId,
+            nodeId,
+            req.session.user.LanguageContext
+        ).then(data => res.status(200).json(new response('OK', data, null)));
+    }).catch(function (error) {
+        sendCatalogError(res, error);
+    });
+});
+workflow.get('/workflow/api/versions/:IDVersioneWorkflow/visibility/processes/:IDProcesso/classes/:IDClasse/attributes', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    const versionId = Number(req.params.IDVersioneWorkflow);
+    const processId = Number(req.params.IDProcesso);
+    const classId = Number(req.params.IDClasse);
+    const nodeId = Number(req.query.nodeId);
+    const processActionId = Number(req.query.processActionId);
+    const groupId = Number(req.query.groupId);
+    const profileId = Number(req.query.profileId);
+    if (![versionId, processId, classId, nodeId, processActionId, groupId, profileId].every(isPositiveInteger)) {
+        sendCatalogError(res, { message: 'Parametri campo workflow non validi.' });
+        return;
+    }
+    workflowCatalog.getVersionEditorDetails(
+        versionId,
+        req.session.user.IdAttore,
+        req.session.user.LanguageContext
+    ).then(function (version) {
+        if (!version) {
+            sendCatalogError(res, { message: 'Versione workflow non trovata o non autorizzata.' });
+            return;
+        }
+        return workflowCatalog.getVisibilityAttributes(
+            versionId,
+            req.session.user.IdAttore,
+            processId,
+            nodeId,
+            processActionId,
+            groupId,
+            profileId,
+            classId,
+            req.session.user.LanguageContext
+        ).then(data => res.status(200).json(new response('OK', data, null)));
+    }).catch(function (error) {
+        sendCatalogError(res, error);
+    });
+});
+workflow.put('/workflow/api/versions/:IDVersioneWorkflow/visibility/processes/:IDProcesso/attributes/:IDAttributo', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    const versionId = Number(req.params.IDVersioneWorkflow);
+    const processId = Number(req.params.IDProcesso);
+    const attributeId = Number(req.params.IDAttributo);
+    const nodeId = Number(req.body.nodeId);
+    const processActionId = Number(req.body.processActionId);
+    const groupId = Number(req.body.groupId);
+    const profileId = Number(req.body.profileId);
+    const visible = parseBoolean(req.body.visible);
+    if (![versionId, processId, attributeId, nodeId, processActionId, groupId, profileId].every(isPositiveInteger) ||
+        visible === null) {
+        sendCatalogError(res, { message: 'Parametri visibilità campo non validi.' });
+        return;
+    }
+    workflowCatalog.getVersionEditorDetails(
+        versionId,
+        req.session.user.IdAttore,
+        req.session.user.LanguageContext
+    ).then(function (version) {
+        if (!version) {
+            sendCatalogError(res, { message: 'Versione workflow non trovata o non autorizzata.' });
+            return;
+        }
+        return workflowCatalog.setVisibilityAttribute(
+            versionId,
+            req.session.user.IdAttore,
+            processId,
+            nodeId,
+            processActionId,
+            groupId,
+            profileId,
+            attributeId,
+            visible
+        ).then(data => res.status(200).json(new response('OK', data, null)));
+    }).catch(function (error) {
+        sendCatalogError(res, error);
+    });
+});
 workflow.get('/workflow/api/versions/:IDVersioneWorkflow/states', function (req, res) {
     if (!sessionUtil.verifyUser(req, res)) {
         return;
@@ -744,6 +884,7 @@ workflow.post('/workflow-apply/:IdRecord', async function (req, res) {
             body
         );
         myRequest.IdProfiloUtente = req.session.user.IDProfiloUtenteDefault || 0;
+        myRequest.IdGruppoOperativo = req.session.user.IdGruppoOperativoDefault || 0;
         myRequest.PostNoteAsMessage = postNoteAsMessage;
         myRequest.Attachments = attachments;
         saveAttempted = true;

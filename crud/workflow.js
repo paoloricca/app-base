@@ -1064,6 +1064,100 @@ async function PostWorkflow(myRequest) {
                 (!dynamic || Number(item.IDTransizioneStart) === Number(currentState.IDEventoTransizione));
         });
         if (!selected) throw new Error('Operazione non autorizzata: stato non applicabile da questo utente.');
+        if (dynamic) {
+            const missingField = await new sql.Request(transaction)
+                .input('Process', sql.Int, Number(myRequest.IdProcesso))
+                .input('Record', sql.Int, Number(myRequest.IdRecord))
+                .input('Node', sql.Int, Number(currentState.IDEventoTransizione))
+                .input('LanguageContext', sql.VarChar(2), myRequest.LanguageContext)
+                .query(`
+                    ;WITH MissingFields AS (
+                        SELECT StateAction.IDEventoAzione,
+                            Configured.IDAttributo,
+                            COALESCE(NULLIF(CASE @LanguageContext
+                                WHEN 'IT' THEN Attribute.Description_IT
+                                WHEN 'GB' THEN Attribute.Description_GB
+                                WHEN 'ES' THEN Attribute.Description_ES
+                                WHEN 'CN' THEN Attribute.Description_CN
+                            END, N''), NULLIF(Attribute.Description_IT, N''),
+                            NULLIF(Attribute.Description_GB, N''), NULLIF(Attribute.Description_ES, N''),
+                            Attribute.Description_CN) AS Description
+                        FROM dbo.TEventiTransizioniAzioni AS StateAction
+                        INNER JOIN dbo.TProcessiAzioni AS ProcessAction
+                            ON ProcessAction.IDProcessoAzione = StateAction.IDProcessoAzione
+                        INNER JOIN dbo.TEventiTransizioniAzioniAttributi AS Configured
+                            ON Configured.IDEventoAzione = StateAction.IDEventoAzione
+                        INNER JOIN dbo.TModelliClassiAttributi AS Attribute
+                            ON Attribute.IDAttributo = Configured.IDAttributo
+                        LEFT JOIN dbo.TModelliIstanzeRecords AS ClassRecord
+                            ON ClassRecord.IDModelloIstanza = @Record
+                            AND ClassRecord.IDClasse = Attribute.IDClasse
+                        LEFT JOIN dbo.TModelliIstanzeRecord AS FieldValue
+                            ON FieldValue.IDRecord = ClassRecord.IDRecord
+                            AND FieldValue.IDAttributo = Configured.IDAttributo
+                        WHERE StateAction.IDProcesso = @Process
+                            AND StateAction.IDEventoTransizione = @Node
+                            AND ProcessAction.Codice = 'Modifica'
+                            AND NULLIF(LTRIM(RTRIM(CONVERT(NVARCHAR(MAX), FieldValue.RecordValue))), N'') IS NULL
+                    )
+                    SELECT TOP (1) MissingField.IDAttributo, MissingField.Description,
+                        AssignedUsers.Names AS AssignedUsers
+                    FROM MissingFields AS MissingField
+                    OUTER APPLY (
+                        SELECT STUFF((
+                            SELECT DISTINCT N', ' + NULLIF(
+                                LTRIM(RTRIM(CONCAT(Login.Nome, N' ', Login.Cognome))), N'')
+                            FROM dbo.TEventiTransizioniAzioni AS AssignedAction
+                            INNER JOIN dbo.TProfiliUtente AS Profile
+                                ON Profile.IDOwner = AssignedAction.IDOwner
+                                AND Profile.IDGruppoOperativo = AssignedAction.IDGruppoOperativo
+                                AND Profile.IDProfiloUtente = AssignedAction.IDProfiloUtente
+                                AND Profile.IsVisible = 1
+                            INNER JOIN dbo.TProfiliUtenteRisorse AS ProfileAccount
+                                ON ProfileAccount.IDOwner = Profile.IDOwner
+                                AND ProfileAccount.IDGruppoOperativo = Profile.IDGruppoOperativo
+                                AND ProfileAccount.IDProfiloUtente = Profile.IDProfiloUtente
+                            INNER JOIN dbo.VW_LOGIN AS Login
+                                ON Login.IDAccount = ProfileAccount.IDAccount
+                                AND Login.IsVisible = 1
+                            WHERE AssignedAction.IDEventoAzione IN (
+                                SELECT MissingAction.IDEventoAzione
+                                FROM MissingFields AS MissingAction
+                                WHERE MissingAction.IDAttributo = MissingField.IDAttributo
+                            )
+                                AND (ISNULL(AssignedAction.IsCreator, 0) = 0
+                                    OR ProfileAccount.IDAccount = (
+                                        SELECT Instance.IDIstanziatore
+                                        FROM dbo.TModelliIstanze AS Instance
+                                        WHERE Instance.IDModelloIstanza = @Record
+                                    ))
+                            FOR XML PATH(''), TYPE
+                        ).value('.', 'NVARCHAR(MAX)'), 1, 2, N'') AS Names
+                    ) AS AssignedUsers
+                    ORDER BY MissingField.IDAttributo;
+                `);
+            if (missingField.recordset.length) {
+                const fieldName = missingField.recordset[0].Description ||
+                    ('#' + missingField.recordset[0].IDAttributo);
+                const assignedUsers = missingField.recordset[0].AssignedUsers || {
+                    IT: 'nessun utente assegnato',
+                    GB: 'no users assigned',
+                    ES: 'ningún usuario asignado',
+                    CN: '未分配用户'
+                }[myRequest.LanguageContext] || 'nessun utente assegnato';
+                const messages = {
+                    IT: 'È necessario compilare il campo (' + fieldName +
+                        ') prima di cambiare stato: l\'operazione è incarico a (' + assignedUsers + ').',
+                    GB: 'You must fill in the field (' + fieldName +
+                        ') before changing state: the operation is assigned to (' + assignedUsers + ').',
+                    ES: 'Es necesario completar el campo (' + fieldName +
+                        ') antes de cambiar el estado: la operación está asignada a (' + assignedUsers + ').',
+                    CN: '更改状态前必须填写字段（' + fieldName +
+                        '）：此操作分配给（' + assignedUsers + '）。'
+                };
+                throw new Error(messages[myRequest.LanguageContext] || messages.IT);
+            }
+        }
         const noteAvailable = [true, 1, '1', 'true'].includes(selected.IsAvailableNote);
         const note = String(myRequest.Note || '').trim();
         const attachments = Array.isArray(myRequest.Attachments) ? myRequest.Attachments : [];

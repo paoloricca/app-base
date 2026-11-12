@@ -619,7 +619,7 @@ $(function () {
 
             bootstrap.Modal.getOrCreateInstance($processDeleteModal[0]).hide();
             ControlProcessi.find('.processi-list').empty();
-            ControlProcessi.processi.load();
+            ControlProcessi.processi.load(null, ControlProcessi);
         }).fail(function (xhr, status, errorThrown) {
             showProcessDeleteError(errorThrown || status, 'processi-gestione.deleteProcess');
         }).always(function () {
@@ -898,14 +898,14 @@ $(function () {
                 var $parentContainer = ControlProcessi.find('.processo-' + parentId + '-container');
                 if ($parentContainer.length) {
                     $parentContainer.children('[class^="processo-"][class$="-container"]').remove();
-                    ControlProcessi.processi.load(parentId);
+                    ControlProcessi.processi.load(parentId, ControlProcessi);
                 } else {
                     ControlProcessi.find('.processi-list').empty();
-                    ControlProcessi.processi.load();
+                    ControlProcessi.processi.load(null, ControlProcessi);
                 }
             } else {
                 ControlProcessi.find('.processi-list').empty();
-                ControlProcessi.processi.load();
+                ControlProcessi.processi.load(null, ControlProcessi);
             }
         }).fail(function (xhr, status, errorThrown) {
             showCustomActionError(errorThrown || status, 'processi-gestione.saveProcess');
@@ -1008,5 +1008,5 @@ $(function () {
             });
         });
 
-    ControlProcessi.processi.load();
+    ControlProcessi.processi.load(null, ControlProcessi);
 });

@@ -140,7 +140,7 @@ $(function () {
             });
 
         /* Renderizza il plug-in <processi> */
-        ControlProcessi.processi.load();
+        ControlProcessi.processi.load(null, ControlProcessi);
     } else {
         ControlProcessi.closest('.col-6').addClass('d-none');
     }
@@ -325,7 +325,7 @@ $(function () {
         ControlAuthGruppiOperativi.gruppioperativi.clear(ControlAuthGruppiOperativi);
         ControlAuthProfiliUtente.profiliutente.clear(ControlAuthProfiliUtente);
         ControlAuthProcessiAzioni.processiazioni.clear(ControlAuthProcessiAzioni);
-        ControlAuthProcessi.processi.load();
+        ControlAuthProcessi.processi.load(null, ControlAuthProcessi);
         ControlAuthGruppiOperativi.gruppioperativi.load(ControlAuthGruppiOperativi, 0);
         $('#container-workflow-set-auth').modal('show');
     });
@@ -2012,6 +2012,245 @@ $(function () {
 
     /* Imposta le propriet� di default del plug-in <Pager> */
     ControlAuthProcessiAzioni.processiazioni({
+        VisibilityEnabled: true
+    });
+
+    const visibilityModal = $('#container-workflow-set-visibility');
+    const ControlVisibilityProcessi = $('#workflow-visibility-processes');
+    const workflowVisibility = {
+        versionId: null,
+        processId: null,
+        processActionId: null,
+        nodeId: null,
+        groupId: null,
+        profileId: null,
+        actionEnabled: false
+    };
+    ControlVisibilityProcessi.processi({
+        dataUrl: '/workflow/api/versions/' + encodeURIComponent(versionId || '') + '/visibility/processes',
+        selectionEnabled: true
+    });
+
+    function renderVisibilityClasses(classes) {
+        const $container = $('.workflow-visibility-classes').empty();
+        const byParent = new Map();
+        classes.forEach(function (item) {
+            const parent = item.IDClasseParent == null ? 'root' : String(item.IDClasseParent);
+            if (!byParent.has(parent)) byParent.set(parent, []);
+            byParent.get(parent).push(item);
+        });
+
+        function appendChildren(parentId, depth) {
+            (byParent.get(parentId) || []).forEach(function (item) {
+                $('<button>', {
+                    type: 'button',
+                    class: 'btn btn-sm btn-light w-100 mb-1 workflow-visibility-class',
+                    text: item.Description || ('#' + item.IDClasse)
+                }).attr({
+                    'data-idclasse': item.IDClasse,
+                    'data-depth': depth
+                }).css('padding-left', (0.5 + depth * 1.1) + 'rem').appendTo($container);
+                appendChildren(String(item.IDClasse), depth + 1);
+            });
+        }
+
+        appendChildren('root', 0);
+        if (!classes.length) {
+            $('<div>', {
+                class: 'text-secondary',
+                text: $('#LanguageContext').val() === 'IT'
+                    ? 'Nessuna sezione disponibile.'
+                    : 'No sections available.'
+            }).appendTo($container);
+        }
+    }
+
+    function renderVisibilityFields(fields) {
+        const $container = $('.workflow-visibility-fields').empty();
+        if (!fields.length) {
+            $('<div>', {
+                class: 'text-secondary',
+                text: $('#LanguageContext').val() === 'IT'
+                    ? 'Nessun campo visibile in questa sezione.'
+                    : 'No visible fields in this section.'
+            }).appendTo($container);
+            return;
+        }
+
+        const canConfigure = workflowVisibility.actionEnabled;
+        if (!canConfigure) {
+            $('<div>', {
+                class: 'alert alert-info py-2',
+                text: $('#LanguageContext').val() === 'IT'
+                    ? 'Attiva prima l’autorizzazione dell’azione per configurare i campi.'
+                    : 'Enable the action permission before configuring fields.'
+            }).appendTo($container);
+        }
+        fields.forEach(function (field) {
+            const $row = $('<div>', {
+                class: 'd-flex align-items-center border-bottom py-2 gap-2'
+            });
+            $('<span>', {
+                class: 'flex-grow-1',
+                text: field.Description || ('#' + field.IDAttributo)
+            }).appendTo($row);
+            const $switch = $('<input>', {
+                type: 'checkbox',
+                class: 'form-check-input m-0 workflow-visibility-field-toggle',
+                checked: field.IsSelected === true || field.IsSelected === 1,
+                disabled: !canConfigure,
+                'aria-label': field.Description || ('#' + field.IDAttributo)
+            }).attr('data-idattributo', field.IDAttributo);
+            $('<div>', { class: 'form-check form-switch m-0' }).append($switch).appendTo($row);
+            $container.append($row);
+        });
+    }
+
+    ControlVisibilityProcessi.bind('onselect', function () {
+        const options = JSON.parse(ControlVisibilityProcessi.attr('data-options'));
+        workflowVisibility.processId = Number(options.IDProcesso);
+        $('.workflow-visibility-class').removeClass('active');
+        $('.workflow-visibility-classes').empty();
+        $('.workflow-visibility-fields').empty();
+        const language = $('#LanguageContext').val();
+        const formLabel = {
+            IT: 'Form',
+            GB: 'Form',
+            ES: 'Formulario',
+            CN: '表单'
+        }[language] || 'Form';
+        const versionLabel = {
+            IT: 'Versione',
+            GB: 'Version',
+            ES: 'Versión',
+            CN: '版本'
+        }[language] || 'Version';
+        const formDescription = options.ModelDescription ||
+            (options.IDModello ? formLabel + ' #' + options.IDModello : '');
+        const formVersion = options.ModelVersionNumber == null
+            ? (options.IDVersione ? '#' + options.IDVersione : '')
+            : options.ModelVersionNumber;
+        $('.workflow-visibility-form-info').text(
+            formDescription + (formVersion ? ' / ' + versionLabel + ' ' + formVersion : '')
+        );
+        $.getJSON('/workflow/api/versions/' + encodeURIComponent(workflowVisibility.versionId) +
+            '/visibility/processes/' + encodeURIComponent(workflowVisibility.processId) +
+            '/classes', { nodeId: workflowVisibility.nodeId })
+            .done(function (response) {
+                if (response.status !== 'OK') {
+                    ShowError(response.error.message, 'loadWorkflowVisibilityClasses');
+                    return;
+                }
+                renderVisibilityClasses(response.data || []);
+            })
+            .fail(function (xhr, status, errorThrown) {
+                ShowError(errorThrown || status, 'loadWorkflowVisibilityClasses');
+            });
+    });
+
+    visibilityModal.on('click', '.workflow-visibility-class', function () {
+        const $selected = $(this);
+        const classId = Number($selected.attr('data-idclasse'));
+        $selected.addClass('active').siblings('.workflow-visibility-class').removeClass('active');
+        $('.workflow-visibility-fields').empty();
+        $.getJSON('/workflow/api/versions/' + encodeURIComponent(workflowVisibility.versionId) +
+            '/visibility/processes/' + encodeURIComponent(workflowVisibility.processId) +
+            '/classes/' + encodeURIComponent(classId) + '/attributes', {
+                nodeId: workflowVisibility.nodeId,
+                processActionId: workflowVisibility.processActionId,
+                groupId: workflowVisibility.groupId,
+                profileId: workflowVisibility.profileId
+            })
+            .done(function (response) {
+                if (response.status !== 'OK') {
+                    ShowError(response.error.message, 'loadWorkflowVisibilityAttributes');
+                    return;
+                }
+                renderVisibilityFields(response.data || []);
+            })
+            .fail(function (xhr, status, errorThrown) {
+                ShowError(errorThrown || status, 'loadWorkflowVisibilityAttributes');
+            });
+    });
+
+    visibilityModal.on('change', '.workflow-visibility-field-toggle', function () {
+        const $toggle = $(this);
+        const visible = $toggle.prop('checked');
+        $toggle.prop('disabled', true);
+        $.ajax({
+            url: '/workflow/api/versions/' + encodeURIComponent(workflowVisibility.versionId) +
+                '/visibility/processes/' + encodeURIComponent(workflowVisibility.processId) +
+                '/attributes/' + encodeURIComponent($toggle.attr('data-idattributo')),
+            type: 'PUT',
+            data: {
+                nodeId: workflowVisibility.nodeId,
+                processActionId: workflowVisibility.processActionId,
+                groupId: workflowVisibility.groupId,
+                profileId: workflowVisibility.profileId,
+                visible: visible
+            }
+        }).done(function (response) {
+            if (response.status === 'ERR') {
+                $toggle.prop('checked', !visible);
+                ShowError(response.error.message, 'saveWorkflowVisibilityAttribute');
+            }
+        }).fail(function (xhr, status, errorThrown) {
+            $toggle.prop('checked', !visible);
+            ShowError(errorThrown || status, 'saveWorkflowVisibilityAttribute');
+        }).always(function () {
+            $toggle.prop('disabled', !workflowVisibility.actionEnabled);
+        });
+    });
+
+    ControlAuthProcessiAzioni.on('click', '.workflow-action-visibility', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const processOptions = JSON.parse(ControlAuthProcessi.attr('data-options'));
+        const profileOptions = JSON.parse(ControlAuthProfiliUtente.attr('data-options'));
+        const groupOptions = JSON.parse(ControlAuthGruppiOperativi.attr('data-options'));
+        const $actionRow = $(this).closest('[class*="processo-azione-"]');
+        const $authorizationToggle = $actionRow.find('.form-check-input').first();
+        workflowVisibility.processId = Number(processOptions.IDProcesso);
+        workflowVisibility.processActionId = Number($(this).attr('data-idprocessoazione'));
+        workflowVisibility.nodeId = Number($('#context-menu-node #IdEventoTransizione').val());
+        const node = JSON.parse($('#context-menu-node .node').val() || 'null');
+        workflowVisibility.versionId = versionId || Number(node && node.IDVersioneWorkflow) || null;
+        workflowVisibility.groupId = Number(groupOptions.IDGruppoOperativo);
+        workflowVisibility.profileId = Number(profileOptions.IDProfiloUtente);
+        workflowVisibility.actionEnabled = $authorizationToggle.prop('checked') === true;
+
+        if (!workflowVisibility.versionId || ![
+            workflowVisibility.processId,
+            workflowVisibility.processActionId,
+            workflowVisibility.nodeId,
+            workflowVisibility.groupId,
+            workflowVisibility.profileId
+        ].every(function (value) { return Number.isSafeInteger(value) && value > 0; })) {
+            ShowError('Selezionare un processo, un profilo e un gruppo di lavoro validi.', 'workflowVisibility');
+            return;
+        }
+
+        const nodeDescription = $('#context-menu-node #DescTransizione').val() || '';
+        const actionDescription = $(this).attr('data-action-description') || '';
+        $('.workflow-visibility-header').text(nodeDescription + ' / ' + actionDescription);
+        ControlVisibilityProcessi.processi({
+            dataUrl: '/workflow/api/versions/' + encodeURIComponent(workflowVisibility.versionId) +
+                '/visibility/processes',
+            selectionEnabled: true
+        });
+        $('.workflow-visibility-classes').empty();
+        $('.workflow-visibility-fields').empty();
+        ControlVisibilityProcessi.processi.load(null, ControlVisibilityProcessi);
+        visibilityModal.modal('show');
+    });
+
+    visibilityModal.on('shown.bs.modal', function () {
+        visibilityModal.css('z-index', 1080);
+        $('.modal-backdrop').last().css('z-index', 1075);
+    });
+    visibilityModal.on('hidden.bs.modal', function () {
+        visibilityModal.css('z-index', '');
+        $('.modal-backdrop').last().css('z-index', '');
     });
 
     function loadWorkflowNodeAuthorizations() {

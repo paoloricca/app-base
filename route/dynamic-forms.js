@@ -126,11 +126,22 @@ router.get('/dynamic-forms/:IdProcesso/api/model-class-attribute/:IdClasse', fun
     if (!sessionUtil.verifyUser(req, res)) {
         return;
     }
+    const workflowRecordId = req.query.workflowRecordId == null || req.query.workflowRecordId === ''
+        ? null
+        : req.query.workflowRecordId;
+    if (workflowRecordId !== null && !isPositiveInteger(workflowRecordId)) {
+        sendError(res, { message: 'Invalid workflow record ID.' });
+        return;
+    }
     crud.getClassAttributes(
         req.params.IdProcesso,
         req.params.IdClasse,
         req.session.user.IdAccount,
-        req.session.user.LanguageContext
+        req.session.user.LanguageContext,
+        workflowRecordId,
+        req.session.user.IDProfiloUtenteDefault,
+        req.session.user.IdGruppoOperativoDefault,
+        req.query.action
     ).then(data => res.status(200).json(new response('OK', data, null)))
         .catch(error => sendError(res, error));
 });
@@ -203,7 +214,9 @@ router.post('/dynamic-forms/:IdProcesso/api/post-idmodello-istanza-record', func
         req.body.IdAttributo,
         req.body.RecordValue,
         req.session.user.IdAttore,
-        req.session.user.IdAccount
+        req.session.user.IdAccount,
+        req.session.user.IDProfiloUtenteDefault,
+        req.session.user.IdGruppoOperativoDefault
     ).then(() => res.status(200).send('OK'))
         .catch(error => sendError(res, error));
 });

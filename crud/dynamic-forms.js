@@ -133,12 +133,19 @@ function getModelClasses(IdProcesso, IdVersione, IdAccount, LanguageContext) {
     });
 }
 
-function getClassAttributes(IdProcesso, IdClasse, IdAccount, LanguageContext) {
+function getClassAttributes(
+    IdProcesso, IdClasse, IdAccount, LanguageContext,
+    WorkflowRecordId, WorkflowProfileId, WorkflowGroupId, ActionName
+) {
     return executeProcedure('SP_GET_PROCESS_FORM_CLASS_ATTRIBUTES', {
         IdProcesso: intInput(IdProcesso),
         IdClasse: intInput(IdClasse),
         IdAccount: intInput(IdAccount),
-        LanguageContext: stringInput(LanguageContext, 2)
+        LanguageContext: stringInput(LanguageContext, 2),
+        WorkflowRecordId: intInput(WorkflowRecordId),
+        WorkflowProfileId: intInput(WorkflowProfileId),
+        WorkflowGroupId: intInput(WorkflowGroupId),
+        ActionName: stringInput(ActionName || '', 50)
     }).then(function (result) {
         return result.recordset || [];
     });
@@ -203,14 +210,19 @@ function getRecordValue(IdProcesso, IDRecord, IDAttributo, IdAttore, IdAccount) 
     });
 }
 
-function saveRecordValue(IdProcesso, IDRecord, IDAttributo, RecordValue, IdAttore, IdAccount) {
+function saveRecordValue(
+    IdProcesso, IDRecord, IDAttributo, RecordValue, IdAttore, IdAccount,
+    IdProfiloUtente, IdGruppoOperativo
+) {
     return executeProcedure('SP_PUT_PROCESS_FORM_VALUE', {
         IdProcesso: intInput(IdProcesso),
         IDRecord: intInput(IDRecord),
         IDAttributo: intInput(IDAttributo),
         RecordValue: stringInput(RecordValue, sql.MAX),
         IdAttore: intInput(IdAttore),
-        IdAccount: intInput(IdAccount)
+        IdAccount: intInput(IdAccount),
+        IdProfiloUtente: intInput(IdProfiloUtente),
+        IdGruppoOperativo: intInput(IdGruppoOperativo)
     }).then(function () {
         return true;
     });

@@ -676,7 +676,7 @@ $(function () {
 
         });
     /* Renderizza il plug-in <processi> */
-    ControlProcessi.processi.load();
+    ControlProcessi.processi.load(null, ControlProcessi);
 
 
 

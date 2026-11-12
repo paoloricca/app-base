@@ -229,6 +229,263 @@ function getVersionEditorDetails(IDVersioneWorkflow, IDAttore, languageContext) 
     });
 }
 
+function getVisibilityProcesses(IDVersioneWorkflow, IDAttore, languageContext, IDProcessoParent) {
+    const processDescriptionField = {
+        IT: 'Text_IT',
+        GB: 'Text_GB',
+        ES: 'Text_ES',
+        CN: 'Text_CN'
+    }[languageContext];
+    const modelDescriptionField = {
+        IT: 'Description_IT',
+        GB: 'Description_GB',
+        ES: 'Description_ES',
+        CN: 'Description_CN'
+    }[languageContext];
+    if (!processDescriptionField || !modelDescriptionField) {
+        return Promise.reject(new Error('Unsupported language context.'));
+    }
+
+    return execute(`
+        ;WITH WorkflowVersion AS (
+            SELECT Version.IDWorkflow
+            FROM dbo.TWorkflowVersioni AS Version
+            INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
+                AND Workflow.IDAttore = @IDAttore
+            WHERE Version.IDVersioneWorkflow = @IDVersioneWorkflow
+        ),
+        LinkedProcesses AS (
+            SELECT P.IDProcesso
+            FROM dbo.TProcessi AS P
+            INNER JOIN WorkflowVersion AS Version ON Version.IDWorkflow = P.IDWorkflow
+            WHERE P.IDVersioneWorkflow = @IDVersioneWorkflow
+        )
+        SELECT P.IDProcesso AS IDProc,
+            CASE WHEN Parent.IDProcesso IS NULL THEN NULL ELSE P.IDProcessoParent END AS IDProcessoParent,
+            COALESCE(NULLIF(Culture.[${processDescriptionField}], N''), NULLIF(P.Descrizione, N'')) AS Description,
+            CAST(1 AS BIT) AS HasWorkflow,
+            P.IDModello, P.IDVersione,
+            COALESCE(NULLIF(Model.[${modelDescriptionField}], N''), NULLIF(Model.Description_IT, N''),
+                NULLIF(Model.Description_GB, N''), NULLIF(Model.Description_ES, N''), Model.Description_CN) AS ModelDescription,
+            ModelVersion.Numero AS ModelVersionNumber
+        FROM dbo.TProcessi AS P
+        INNER JOIN LinkedProcesses AS Linked ON Linked.IDProcesso = P.IDProcesso
+        LEFT JOIN dbo.TProcessi AS Parent ON Parent.IDProcesso = P.IDProcessoParent
+            AND Parent.IDWorkflow = P.IDWorkflow
+            AND Parent.IDVersioneWorkflow = @IDVersioneWorkflow
+        LEFT JOIN dbo.TProcessiCulture AS Culture ON Culture.IDProcesso = P.IDProcesso
+        LEFT JOIN dbo.TModelli AS Model ON Model.IDModello = P.IDModello
+        LEFT JOIN dbo.TModelliVersioni AS ModelVersion
+            ON ModelVersion.IDVersione = P.IDVersione
+            AND ModelVersion.IDModello = P.IDModello
+        INNER JOIN dbo.TWorkflowVersioni AS Version ON Version.IDVersioneWorkflow = @IDVersioneWorkflow
+        INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
+            AND Workflow.IDAttore = @IDAttore
+        WHERE (@IDProcessoParent IS NOT NULL AND P.IDProcessoParent = @IDProcessoParent)
+            OR (@IDProcessoParent IS NULL AND Parent.IDProcesso IS NULL)
+        ORDER BY P.IDProcesso;
+    `, {
+        IDVersioneWorkflow: intInput(IDVersioneWorkflow),
+        IDAttore: intInput(IDAttore),
+        IDProcessoParent: intInput(IDProcessoParent)
+    }).then(function (result) {
+        return result.recordset;
+    });
+}
+
+function getVisibilityClasses(
+    IDVersioneWorkflow, IDAttore, IDProcesso, IDEventoTransizione, languageContext
+) {
+    const descriptionField = {
+        IT: 'Description_IT',
+        GB: 'Description_GB',
+        ES: 'Description_ES',
+        CN: 'Description_CN'
+    }[languageContext];
+    if (!descriptionField) {
+        return Promise.reject(new Error('Unsupported language context.'));
+    }
+
+    return execute(`
+        SELECT P.IDProcesso, P.IDModello, P.IDVersione,
+            C.IDClasse, C.IDClasseParent, C.Ordine,
+            COALESCE(NULLIF(C.[${descriptionField}], N''), NULLIF(C.Description_IT, N''),
+                NULLIF(C.Description_GB, N''), NULLIF(C.Description_ES, N''), C.Description_CN) AS Description
+        FROM dbo.TProcessi AS P
+        INNER JOIN dbo.TEventiTransizioni AS Node
+            ON Node.IDVersioneWorkflow = P.IDVersioneWorkflow
+            AND Node.IDEventoTransizione = @IDEventoTransizione
+        INNER JOIN dbo.TWorkflowVersioni AS Version ON Version.IDVersioneWorkflow = @IDVersioneWorkflow
+        INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
+            AND Workflow.IDAttore = @IDAttore
+        INNER JOIN dbo.TModelliClassi AS C ON C.IDVersione = P.IDVersione
+        WHERE P.IDProcesso = @IDProcesso
+            AND P.IDWorkflow = Version.IDWorkflow
+            AND P.IDVersioneWorkflow = @IDVersioneWorkflow
+            AND C.IsVisible = 1 AND C.Visibile = 1
+        ORDER BY C.Ordine, C.IDClasse;
+    `, {
+        IDVersioneWorkflow: intInput(IDVersioneWorkflow),
+        IDEventoTransizione: intInput(IDEventoTransizione),
+        IDAttore: intInput(IDAttore),
+        IDProcesso: intInput(IDProcesso)
+    }).then(function (result) {
+        return result.recordset;
+    });
+}
+
+function getVisibilityAttributes(
+    IDVersioneWorkflow, IDAttore, IDProcesso, IDEventoTransizione,
+    IDProcessoAzione, IDGruppoOperativo, IDProfiloUtente, IDClasse, languageContext
+) {
+    const descriptionField = {
+        IT: 'Description_IT',
+        GB: 'Description_GB',
+        ES: 'Description_ES',
+        CN: 'Description_CN'
+    }[languageContext];
+    if (!descriptionField) {
+        return Promise.reject(new Error('Unsupported language context.'));
+    }
+
+    return execute(`
+        ;WITH WorkflowAction AS (
+            SELECT TOP (1) Action.IDEventoAzione
+            FROM dbo.TEventiTransizioniAzioni AS Action
+            INNER JOIN dbo.TEventiTransizioni AS Node
+                ON Node.IDEventoTransizione = Action.IDEventoTransizione
+            INNER JOIN dbo.TProcessi AS Process
+                ON Process.IDProcesso = Action.IDProcesso
+            INNER JOIN dbo.TWorkflowVersioni AS Version
+                ON Version.IDVersioneWorkflow = Node.IDVersioneWorkflow
+            INNER JOIN dbo.TWorkflow AS Workflow
+                ON Workflow.IDWorkflow = Version.IDWorkflow
+            WHERE Workflow.IDAttore = @IDAttore
+                AND Node.IDVersioneWorkflow = @IDVersioneWorkflow
+                AND Node.IDEventoTransizione = @IDEventoTransizione
+                AND Process.IDProcesso = @IDProcesso
+                AND Process.IDWorkflow = Version.IDWorkflow
+                AND Process.IDVersioneWorkflow = @IDVersioneWorkflow
+                AND Action.IDOwner = @IDAttore
+                AND Action.IDProcessoAzione = @IDProcessoAzione
+                AND Action.IDGruppoOperativo = @IDGruppoOperativo
+                AND Action.IDProfiloUtente = @IDProfiloUtente
+            ORDER BY Action.IDEventoAzione
+        )
+        SELECT Attribute.IDAttributo,
+            COALESCE(NULLIF(Attribute.[${descriptionField}], N''), NULLIF(Attribute.Description_IT, N''),
+                NULLIF(Attribute.Description_GB, N''), NULLIF(Attribute.Description_ES, N''),
+                Attribute.Description_CN) AS Description,
+            CAST(CASE WHEN EXISTS (SELECT 1 FROM WorkflowAction) THEN 1 ELSE 0 END AS BIT) AS CanConfigure,
+            CAST(CASE WHEN EXISTS (
+                SELECT 1
+                FROM WorkflowAction
+                INNER JOIN dbo.TEventiTransizioniAzioniAttributi AS Configured
+                    ON Configured.IDEventoAzione = WorkflowAction.IDEventoAzione
+                WHERE Configured.IDAttributo = Attribute.IDAttributo
+            ) THEN 1 ELSE 0 END AS BIT) AS IsSelected
+        FROM dbo.TProcessi AS Process
+        INNER JOIN dbo.TWorkflowVersioni AS Version
+            ON Version.IDVersioneWorkflow = @IDVersioneWorkflow
+        INNER JOIN dbo.TWorkflow AS Workflow
+            ON Workflow.IDWorkflow = Version.IDWorkflow AND Workflow.IDAttore = @IDAttore
+        INNER JOIN dbo.TModelliClassi AS Class
+            ON Class.IDVersione = Process.IDVersione
+        INNER JOIN dbo.TModelliClassiAttributi AS Attribute
+            ON Attribute.IDClasse = Class.IDClasse
+        WHERE Process.IDProcesso = @IDProcesso
+            AND Process.IDWorkflow = Version.IDWorkflow
+            AND Process.IDVersioneWorkflow = @IDVersioneWorkflow
+            AND Class.IDClasse = @IDClasse
+            AND Attribute.IsVisible = 1 AND Attribute.Visibile = 1
+        ORDER BY Attribute.Ordine, Attribute.IDAttributo;
+    `, {
+        IDVersioneWorkflow: intInput(IDVersioneWorkflow),
+        IDAttore: intInput(IDAttore),
+        IDProcesso: intInput(IDProcesso),
+        IDEventoTransizione: intInput(IDEventoTransizione),
+        IDProcessoAzione: intInput(IDProcessoAzione),
+        IDGruppoOperativo: intInput(IDGruppoOperativo),
+        IDProfiloUtente: intInput(IDProfiloUtente),
+        IDClasse: intInput(IDClasse)
+    }).then(function (result) {
+        return result.recordset;
+    });
+}
+
+function setVisibilityAttribute(
+    IDVersioneWorkflow, IDAttore, IDProcesso, IDEventoTransizione,
+    IDProcessoAzione, IDGruppoOperativo, IDProfiloUtente, IDAttributo, isVisible
+) {
+    return execute(`
+        SET XACT_ABORT ON;
+        BEGIN TRY
+            BEGIN TRANSACTION;
+            DECLARE @IDEventoAzione INT;
+            SELECT TOP (1) @IDEventoAzione = Action.IDEventoAzione
+            FROM dbo.TEventiTransizioniAzioni AS Action WITH (UPDLOCK, HOLDLOCK)
+            INNER JOIN dbo.TEventiTransizioni AS Node ON Node.IDEventoTransizione = Action.IDEventoTransizione
+            INNER JOIN dbo.TProcessi AS Process ON Process.IDProcesso = Action.IDProcesso
+            INNER JOIN dbo.TWorkflowVersioni AS Version ON Version.IDVersioneWorkflow = Node.IDVersioneWorkflow
+            INNER JOIN dbo.TWorkflow AS Workflow ON Workflow.IDWorkflow = Version.IDWorkflow
+            WHERE Workflow.IDAttore = @IDAttore
+                AND Node.IDVersioneWorkflow = @IDVersioneWorkflow
+                AND Node.IDEventoTransizione = @IDEventoTransizione
+                AND Process.IDProcesso = @IDProcesso
+                AND Process.IDWorkflow = Version.IDWorkflow
+                AND Process.IDVersioneWorkflow = @IDVersioneWorkflow
+                AND Action.IDOwner = @IDAttore
+                AND Action.IDProcessoAzione = @IDProcessoAzione
+                AND Action.IDGruppoOperativo = @IDGruppoOperativo
+                AND Action.IDProfiloUtente = @IDProfiloUtente;
+            IF @IDEventoAzione IS NULL
+                THROW 51001, 'The workflow action must be enabled before configuring field visibility.', 1;
+            IF NOT EXISTS (
+                SELECT 1 FROM dbo.TProcessi AS Process
+                INNER JOIN dbo.TModelliClassi AS Class ON Class.IDVersione = Process.IDVersione
+                INNER JOIN dbo.TModelliClassiAttributi AS Attribute ON Attribute.IDClasse = Class.IDClasse
+                WHERE Process.IDProcesso = @IDProcesso
+                    AND Process.IDWorkflow = (SELECT IDWorkflow FROM dbo.TWorkflowVersioni
+                        WHERE IDVersioneWorkflow = @IDVersioneWorkflow)
+                    AND Process.IDVersioneWorkflow = @IDVersioneWorkflow
+                    AND Attribute.IDAttributo = @IDAttributo
+                    AND Attribute.IsVisible = 1 AND Attribute.Visibile = 1
+            )
+                THROW 51002, 'The field does not belong to this workflow process form.', 1;
+
+            IF @IsVisible = 1
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM dbo.TEventiTransizioniAzioniAttributi WITH (UPDLOCK, HOLDLOCK)
+                    WHERE IDEventoAzione = @IDEventoAzione AND IDAttributo = @IDAttributo
+                )
+                    INSERT INTO dbo.TEventiTransizioniAzioniAttributi (IDEventoAzione, IDAttributo)
+                    VALUES (@IDEventoAzione, @IDAttributo);
+            END
+            ELSE
+                DELETE FROM dbo.TEventiTransizioniAzioniAttributi
+                WHERE IDEventoAzione = @IDEventoAzione AND IDAttributo = @IDAttributo;
+            COMMIT TRANSACTION;
+        END TRY
+        BEGIN CATCH
+            IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+            THROW;
+        END CATCH;
+    `, {
+        IDVersioneWorkflow: intInput(IDVersioneWorkflow),
+        IDAttore: intInput(IDAttore),
+        IDProcesso: intInput(IDProcesso),
+        IDEventoTransizione: intInput(IDEventoTransizione),
+        IDProcessoAzione: intInput(IDProcessoAzione),
+        IDGruppoOperativo: intInput(IDGruppoOperativo),
+        IDProfiloUtente: intInput(IDProfiloUtente),
+        IDAttributo: intInput(IDAttributo),
+        IsVisible: bitInput(isVisible)
+    }).then(function () {
+        return true;
+    });
+}
+
 function getVersionGraph(IDVersioneWorkflow, IDAttore, LanguageContext) {
     return execute(`
         SET NOCOUNT ON;
@@ -792,6 +1049,10 @@ module.exports = {
     getRecords,
     getVersions,
     getVersionEditorDetails,
+    getVisibilityProcesses,
+    getVisibilityClasses,
+    getVisibilityAttributes,
+    setVisibilityAttribute,
     getVersionGraph,
     getVersionGraphStates,
     getNodeTiming,

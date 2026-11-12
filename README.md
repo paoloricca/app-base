@@ -1,5 +1,14 @@
 # app-base
 
+## Visibilita dei campi del workflow
+
+Applicare [workflow-field-visibility.sql](sql/workflow-field-visibility.sql)
+dopo gli script delle procedure dynamic-forms. L'editor di workflow usa la
+migrazione per restituire i campi modificabili nell'azione «Modifica» e per
+rifiutare lato database il salvataggio dei campi non autorizzati. Se per
+l'azione e lo stato correnti non e configurato alcun campo, resta valido il
+comportamento precedente: tutti i campi sono modificabili.
+
 ## Profili owner e collegamenti del workflow
 
 Per aggiornare un database esistente, applicare nell'ordine
