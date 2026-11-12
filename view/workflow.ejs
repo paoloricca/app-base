@@ -464,44 +464,148 @@
                         <div class="container-fluid p-0">
                             <div class="workflow-owner-option form-switch">
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsCreator" name="rb-IsCreator">
-                                <span>Utente che ha creato l'oggetto</span>
+                                <span>
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Utente che ha creato l'oggetto
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        User who created the object
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Usuario que creó el objeto
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        建立該物件的用戶
+                                    <% } %>
+                                </span>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsAdminOfCreator" name="rb-IsAdminOfCreator">
-                                <span>Responsabile dell'utente che ha creato l'oggetto</span>
+                                <span>
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Responsabile dell'utente che ha creato l'oggetto
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Responsible for the user who created the object
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Responsable del usuario que creó el objeto
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        Responsabile del creatore dell'oggetto
+                                    <% } %>
+                                </span>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsAdminOwnerSelectedNode_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsAdminOwnerSelectedNode" name="rb-IsAdminOwnerSelectedNode">
-                                <span>Responsabile del proprietario dello stato <span id="IsAdminOwnerSelectedNode_Desc"></span></span>
+                                <span>                                     
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Responsabile del proprietario dello stato
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Responsible of the selected state owner
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Responsable del propietario del estado
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        状态所有者的负责人
+                                    <% } %>
+                                    <span id="IsAdminOwnerSelectedNode_Desc"></span></span>
                                 <i class="bi bi-gear btn btn-secondary btn-sm bi-gear-is-admin-ownwer-selected-node"></i>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsOwnerSelectedNode_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsOwnerSelectedNode" name="rb-IsOwnerSelectedNode">
-                                <span>Proprietario dello stato <span id="IsOwnerSelectedNode_Desc"></span></span>
+                                <span> 
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Proprietario dello stato selezionato
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Owner of the selected state
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Propietario del estado seleccionado
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        所選狀態的所有者
+                                    <% } %>
+                                    <span id="IsOwnerSelectedNode_Desc"></span></span>
                                 <i class="bi bi-gear btn btn-secondary btn-sm bi-gear-is-ownwer-selected-node"></i>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsCreatorSelectedNode_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsCreatorSelectedNode" name="rb-IsCreatorSelectedNode">
-                                <span>Utente che ha registrato lo stato <span id="IsCreatorSelectedNode_Desc"></span></span>
+                                <span>
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Utente che ha registrato lo stato
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        User who recorded the status
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Usuario que registró el estado
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        記錄該狀態的用戶
+                                    <% } %>
+                                    <span id="IsCreatorSelectedNode_Desc"></span></span>
                                 <i class="bi bi-gear btn btn-secondary btn-sm bi-gear-is-creator-selected-node"></i>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input type="hidden" id="IsSelectedProfile_Id" />
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsSelectedProfile" name="rb-IsSelectedProfile">
-                                <span>Utenti del profilo <span id="IsSelectedProfile_Desc"></span></span>
+                                <span>
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Utenti del profilo selezionato
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Users of the selected profile
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Usuarios del perfil seleccionado
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        所選設定檔的用戶
+                                    <% } %>
+                                     <span id="IsSelectedProfile_Desc"></span></span>
                                 <i class="bi bi-gear btn btn-secondary btn-sm bi-gear-is-selected-profile"></i>
                             </div>
                             <div class="workflow-owner-option form-switch">
                                 <input class="form-check-input btn-toggle-" type="checkbox" id="rb-IsUsersFromAdminProfileCreator" name="rb-IsUsersFromAdminProfileCreator">
-                                <span>Utenti del profilo associato all'utente che ha creato l'oggetto</span>
+                                <span>
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Utenti con lo stesso profilo del creatore
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Users with the same profile as the creator
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Usuarios con el mismo perfil que el creador
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        與創作者俱有相同個人資料的用戶
+                                    <% } %>
+                                </span>
                             </div>
                             <hr>
                             <div class="workflow-owner-option form-switch">
                                 <input class="form-check-input" type="checkbox" id="rb-ChatAllParticipants">
-                                <label for="rb-ChatAllParticipants">Abilita chat per tutti i partecipanti</label>
+                                <label for="rb-ChatAllParticipants">
+                                    <% if (user.LanguageContext == "IT") { %>
+                                        Abilita chat per tutti i partecipanti
+                                    <% } %>
+                                    <% if (user.LanguageContext == "GB") { %>
+                                        Enable chat for all participants
+                                    <% } %>
+                                    <% if (user.LanguageContext == "ES") { %>
+                                        Habilitar el chat para todos los participantes
+                                    <% } %>
+                                    <% if (user.LanguageContext == "CN") { %>
+                                        允許所有參與者進行聊天
+                                    <% } %>
+                                </label>
                             </div>
                         </div>
                     </div>
