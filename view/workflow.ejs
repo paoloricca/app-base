@@ -667,13 +667,35 @@
                                     <div class="form-switch workflow-link-option">
                                         <input class="form-check-input btn-toggle-link" type="checkbox" id="rb-is-available-note" name="rb-is-available-note">
                                         <span class="workflow-link-option-label text-secondary f-roboto" data-idprocessoazione="">
-                                            Abilita inserimento testo
+                                            <% if (user.LanguageContext == "IT") { %>
+                                                Abilita inserimento testo
+                                            <% } %>
+                                            <% if (user.LanguageContext == "GB") { %>
+                                                Enable text entry
+                                            <% } %>
+                                            <% if (user.LanguageContext == "ES") { %>
+                                                Habilitar la entrada de texto
+                                            <% } %>
+                                            <% if (user.LanguageContext == "CN") { %>
+                                                啟用文字輸入
+                                            <% } %>
                                         </span>
                                     </div>
                                     <div class="form-switch workflow-link-option">
                                         <input class="form-check-input btn-toggle-link" type="checkbox" id="rb-required-confirmation" name="rb-required-confirmation">
                                         <span class="workflow-link-option-label text-secondary f-roboto" data-idprocessoazione="">
-                                            Abilita richiesta conferma
+                                            <% if (user.LanguageContext == "IT") { %>
+                                                Abilita richiesta conferma
+                                            <% } %>
+                                            <% if (user.LanguageContext == "GB") { %>
+                                                Enable confirmation request
+                                            <% } %>
+                                            <% if (user.LanguageContext == "ES") { %>
+                                                Habilitar solicitud de confirmación
+                                            <% } %>
+                                            <% if (user.LanguageContext == "CN") { %>
+                                                啟用確認請求
+                                            <% } %>
                                         </span>
                                     </div>
                                 </div>
