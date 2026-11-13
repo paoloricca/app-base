@@ -105,6 +105,18 @@ async function execute(node, actor, profile, group, language, operation, enabled
                             AND P.IDGruppoOperativo = @Group AND P.IDProfiloUtente = @Profile);
             END;
             SELECT OP.IDProfiloUtente, OP.IDGruppoOperativo,
+                G.Supervisor AS SupervisorID,
+                (SELECT COUNT(DISTINCT R.IDAccount) FROM dbo.TProfiliUtenteRisorse R
+                    WHERE R.IDOwner = OP.IDOwner AND R.IDGruppoOperativo = OP.IDGruppoOperativo
+                      AND R.IDProfiloUtente = OP.IDProfiloUtente) AS UserCount,
+                CAST(CASE WHEN G.Supervisor IS NOT NULL
+                    AND (SELECT COUNT(DISTINCT R.IDAccount) FROM dbo.TProfiliUtenteRisorse R
+                        WHERE R.IDOwner = OP.IDOwner AND R.IDGruppoOperativo = OP.IDGruppoOperativo
+                          AND R.IDProfiloUtente = OP.IDProfiloUtente) = 1
+                    AND EXISTS (SELECT 1 FROM dbo.TProfiliUtenteRisorse R
+                        WHERE R.IDOwner = OP.IDOwner AND R.IDGruppoOperativo = OP.IDGruppoOperativo
+                          AND R.IDProfiloUtente = OP.IDProfiloUtente AND R.IDAccount = G.Supervisor)
+                    THEN 1 ELSE 0 END AS BIT) AS SupervisorIsOnlyUser,
                 COALESCE(CASE @Language WHEN 'GB' THEN G.Text_GB ELSE G.Text_IT END, N'')
                     + N' - ' +
                 COALESCE(CASE @Language WHEN 'GB' THEN P.Text_GB ELSE P.Text_IT END, N'')
@@ -117,14 +129,18 @@ async function execute(node, actor, profile, group, language, operation, enabled
                 AND G.IDGruppoOperativo = OP.IDGruppoOperativo
             WHERE OP.IDEventoTransizione = @Node AND OP.IDOwner = @Actor
             ORDER BY G.Text_IT, P.Text_IT, OP.IDGruppoOperativo, OP.IDProfiloUtente;
-            SELECT D.IDEventoDirezione,
+            SELECT OP.IDGruppoOperativo, OP.IDProfiloUtente, D.IDEventoDirezione,
                 CASE @Language WHEN 'GB' THEN D.Text_GB WHEN 'ES' THEN D.Text_ES
                     WHEN 'CN' THEN D.Text_CN ELSE D.Text_IT END AS Description,
                 CASE WHEN EXISTS (SELECT 1 FROM dbo.TEventiTransizioniDirezioniProfili P
-                    WHERE P.IDEventoDirezione = D.IDEventoDirezione AND P.IDOwner = @Actor
-                      AND P.IDGruppoOperativo = @Group AND P.IDProfiloUtente = @Profile)
+                    WHERE P.IDEventoDirezione = D.IDEventoDirezione AND P.IDOwner = OP.IDOwner
+                      AND P.IDGruppoOperativo = OP.IDGruppoOperativo
+                      AND P.IDProfiloUtente = OP.IDProfiloUtente)
                     THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS Enabled
             FROM dbo.TEventiTransizioniDirezioni D
+            JOIN dbo.TEventiTransizioniOwnerProfili OP ON OP.IDEventoTransizione = D.IDTransizioneStart
+                AND OP.IDOwner = @Actor
+                AND (@Profile IS NULL OR (OP.IDGruppoOperativo = @Group AND OP.IDProfiloUtente = @Profile))
             WHERE D.IDTransizioneStart = @Node AND D.IsVisible = 1 ORDER BY D.IDEventoDirezione;
         `);
         await transaction.commit();

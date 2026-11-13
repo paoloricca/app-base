@@ -17,6 +17,7 @@
     <script type="text/javascript" src="/control-profili-utente-script"></script>
     <script type="text/javascript" src="/control-gruppi-operativi-script"></script>
     <script type="text/javascript" src="/utility-script"></script>
+    <script type="text/javascript" src="/xlsx-script"></script>
     <script src="https://cdn.jsdelivr.net/npm/cytoscape/dist/cytoscape.min.js"></script>
     <script type="text/javascript" src="/workflow-script?<%= Date.now() %>"></script>
     <% if (versionId) { %>
@@ -49,6 +50,136 @@
             font-size: 15px;
             line-height: 1;
             pointer-events: none;
+        }
+        #container-workflow-raci .workflow-raci-table th,
+        #container-workflow-raci .workflow-raci-table td {
+            border: 1px solid #c8cdd2;
+            padding: .55rem;
+            vertical-align: middle;
+        }
+        #container-workflow-raci .workflow-raci-table .workflow-raci-state-header-row td {
+            background: #f8f9fa;
+            border-top: 2px solid #9da5ad;
+            position: relative;
+        }
+        #container-workflow-raci .workflow-raci-table tbody > tr > td {
+            border-bottom: 0;
+        }
+        #container-workflow-raci .workflow-raci-table tbody > tr:last-child > td {
+            border-bottom: 1px solid #c8cdd2;
+        }
+        #container-workflow-raci .workflow-raci-table tbody > tr > td:not(:first-child) {
+            text-align: center;
+            vertical-align: middle !important;
+        }
+        #container-workflow-raci .workflow-raci-table .workflow-raci-direction-row > td {
+            border-top: 1px dashed #7d858d !important;
+        }
+        #container-workflow-raci .workflow-raci-state-heading {
+            align-items: center;
+            display: flex;
+            font-size: 1.05rem;
+            gap: .15rem;
+            margin-bottom: .15rem;
+            padding-bottom: .2rem;
+            white-space: nowrap;
+        }
+        #container-workflow-raci .workflow-raci-state-heading .badge {
+            color: #fff;
+            font-size: .85rem;
+        }
+        #container-workflow-raci .workflow-raci-direction {
+            background: #e9ecef;
+            border-radius: .25rem;
+            display: block;
+            font-size: .9rem;
+            line-height: 1.3;
+            margin-top: .15rem;
+            padding: .1rem .35rem;
+        }
+        #container-workflow-raci .workflow-raci-direction .bi-arrow-return-right {
+            margin-right: .25rem;
+        }
+        #container-workflow-raci .workflow-raci-direction .bi-arrow-right {
+            margin: 0 .25rem;
+        }
+        #container-workflow-raci .workflow-raci-table thead th {
+            background: #f1f3f5;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        #container-workflow-raci .workflow-raci-table th:first-child {
+            left: 0;
+            min-width: 240px;
+            position: sticky;
+            z-index: 3;
+        }
+        #container-workflow-raci .workflow-raci-table td:first-child {
+            background: #f8f9fa;
+            left: 0;
+            min-width: 240px;
+            position: sticky;
+            z-index: 1;
+        }
+        #container-workflow-raci .workflow-raci-role {
+            align-items: center;
+            border-radius: 50%;
+            color: #fff;
+            display: inline-flex;
+            font-weight: 700;
+            height: 32px;
+            justify-content: center;
+            margin: 0 2px;
+            min-width: 32px;
+            padding: 0 5px;
+        }
+        #container-workflow-raci .workflow-raci-inherited-check {
+            background: #ced4da;
+            border-radius: 50%;
+            display: inline-block;
+            height: 32px;
+            margin: 0 2px;
+            position: relative;
+            vertical-align: middle;
+            width: 32px;
+        }
+        #container-workflow-raci .workflow-raci-inherited-check::after {
+            border: solid #6c757d;
+            border-width: 0 4px 4px 0;
+            content: "";
+            height: 15px;
+            left: 10px;
+            position: absolute;
+            top: 7px;
+            transform: rotate(45deg);
+            width: 9px;
+        }
+        #container-workflow-raci .workflow-raci-role-r { background: #0876d1; }
+        #container-workflow-raci .workflow-raci-role-a { background: #e66c5e; }
+        #container-workflow-raci .workflow-raci-role-c { background: #f0ad27; color: #212529; }
+        #container-workflow-raci .workflow-raci-role-i { background: #7d8287; }
+        #container-workflow-raci .workflow-raci-legend {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        #container-workflow-raci .workflow-raci-legend-item {
+            align-items: center;
+            display: inline-flex;
+            gap: .4rem;
+        }
+        #container-workflow-raci .workflow-raci-table-wrap {
+            max-height: 70vh;
+            overflow: auto;
+        }
+        @media print {
+            #container-workflow-raci .workflow-raci-table thead th,
+            #container-workflow-raci .workflow-raci-table td:first-child,
+            #container-workflow-raci .workflow-raci-table th:first-child {
+                position: static;
+            }
         }
         #container-workflow-node-states.workflow-timing-picker {
             z-index: 1080;
@@ -300,6 +431,7 @@
                         </button>
                         <button class="btn btn-secondary bi bi-printer workflow-stampa" style="margin:10px; left:60px; top:20px; position: absolute; z-index:1000;"></button>
                         <button class="btn btn-secondary bi bi-download workflow-download" style="margin:10px; left:105px; top:20px; position: absolute; z-index:1000;"></button>
+                        <button type="button" class="btn btn-secondary bi bi-grid-3x3 workflow-raci" title="<%= user.LanguageContext === 'IT' ? 'Matrice RACI' : user.LanguageContext === 'ES' ? 'Matriz RACI' : user.LanguageContext === 'CN' ? 'RACI 矩陣' : 'RACI Matrix' %>" aria-label="<%= user.LanguageContext === 'IT' ? 'Matrice RACI' : user.LanguageContext === 'ES' ? 'Matriz RACI' : user.LanguageContext === 'CN' ? 'RACI 矩陣' : 'RACI Matrix' %>" style="margin:10px; left:150px; top:20px; position: absolute; z-index:1000;"></button>
                         <div id="context-menu-node">
                             <input type="hidden" class="node" />
                             <input type="hidden" id="IdEventoTransizione" />
@@ -1279,6 +1411,47 @@
 
 
     <%- include('partials/system-message'); %>
+
+    <div class="modal" id="container-workflow-raci" tabindex="-1" aria-labelledby="workflow-raci-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-lg-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title f-roboto b" id="workflow-raci-title"></h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                        <div class="workflow-raci-legend">
+                            <span class="workflow-raci-legend-item"><span class="workflow-raci-role workflow-raci-role-r">R</span><span><b>Responsible</b><br><%= user.LanguageContext === 'IT' ? 'Chi esegue l’azione' : user.LanguageContext === 'ES' ? 'Quién ejecuta la acción' : user.LanguageContext === 'CN' ? '執行動作的人' : 'Who performs the action' %></span></span>
+                            <span class="workflow-raci-legend-item"><span class="workflow-raci-role workflow-raci-role-a">A</span><span><b>Accountable</b><br><%= user.LanguageContext === 'IT' ? 'Chi risponde dell’azione' : user.LanguageContext === 'ES' ? 'Quién responde de la acción' : user.LanguageContext === 'CN' ? '對行動負責的人' : 'Who is accountable for the action' %></span></span>
+                            <span class="workflow-raci-legend-item"><span class="workflow-raci-role workflow-raci-role-c">C</span><span><b>Consulted</b><br><%= user.LanguageContext === 'IT' ? 'Coinvolto nelle transizioni di ritorno/rifiuto' : user.LanguageContext === 'ES' ? 'Consultado en devoluciones/rechazos' : user.LanguageContext === 'CN' ? '退回／拒絕時諮詢' : 'Consulted on return/rejection transitions' %></span></span>
+                            <span class="workflow-raci-legend-item"><span class="workflow-raci-role workflow-raci-role-i">I</span><span><b>Informed</b><br><%= user.LanguageContext === 'IT' ? 'Riceve il passaggio o l’avviso' : user.LanguageContext === 'ES' ? 'Recibe el paso o aviso' : user.LanguageContext === 'CN' ? '接收交接或通知' : 'Receives the handoff or notification' %></span></span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-success workflow-raci-export">
+                                <i class="bi bi-file-earmark-spreadsheet"></i>
+                                <%= user.LanguageContext === 'IT' ? 'Esporta Excel' : user.LanguageContext === 'ES' ? 'Exportar Excel' : user.LanguageContext === 'CN' ? '匯出 Excel' : 'Export Excel' %>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary workflow-raci-print">
+                                <i class="bi bi-printer"></i>
+                                <%= user.LanguageContext === 'IT' ? 'Stampa' : user.LanguageContext === 'ES' ? 'Imprimir' : user.LanguageContext === 'CN' ? '列印' : 'Print' %>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="workflow-raci-table-wrap">
+                        <div class="workflow-raci-loading text-muted text-center py-4">
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <%= user.LanguageContext === 'IT' ? 'Caricamento matrice...' : user.LanguageContext === 'ES' ? 'Cargando matriz...' : user.LanguageContext === 'CN' ? '正在載入矩陣...' : 'Loading matrix...' %>
+                        </div>
+                        <table class="table table-sm mb-0 workflow-raci-table">
+                            <thead><tr class="workflow-raci-header"></tr></thead>
+                            <tbody class="workflow-raci-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

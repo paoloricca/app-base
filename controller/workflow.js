@@ -95,9 +95,10 @@ $(function () {
         if (node.IsStartNode === true || Number(node.IsStartNode) === 1) {
             return true;
         }
-        return ['Code_IT', 'Code_GB', 'Code_ES', 'Code_CN', 'Text_IT', 'Text_GB', 'Text_ES', 'Text_CN']
+        const startLabels = ['INIZIO', 'START', 'INICIO', '开始'];
+        return ['Code_IT', 'Code_GB', 'Code_ES', 'Code_CN', 'Text_IT', 'Text_GB', 'Text_ES', 'Text_CN', 'label', 'desc']
             .some(function (field) {
-                return ['INIZIO', 'START', 'INICIO', '开始'].includes(String(node[field] || '').trim().toUpperCase());
+                return startLabels.includes(String(node[field] || '').trim().toUpperCase());
             });
     }
 
@@ -105,15 +106,632 @@ $(function () {
         if (!node) {
             return false;
         }
-        return ['Code_IT', 'Code_GB', 'Code_ES', 'Code_CN', 'Text_IT', 'Text_GB', 'Text_ES', 'Text_CN']
+        const endLabels = ['FINE', 'END', 'FIN', '结束'];
+        return ['Code_IT', 'Code_GB', 'Code_ES', 'Code_CN', 'Text_IT', 'Text_GB', 'Text_ES', 'Text_CN', 'label', 'desc']
             .some(function (field) {
-                return ['FINE', 'END', 'FIN', '结束'].includes(String(node[field] || '').trim().toUpperCase());
+                return endLabels.includes(String(node[field] || '').trim().toUpperCase());
             });
     }
 
     function isProtectedWorkflowNode(node) {
         return isStartWorkflowNode(node) || isEndWorkflowNode(node);
     }
+
+    let workflowRaciMatrix = null;
+    const raciOwnerDefinitions = [
+        { field: 'IsCreator', role: 'R', key: 'creator' },
+        { field: 'IsAdminOfCreator', role: 'A', key: 'admin-creator' },
+        { field: 'IsUsersFromAdminProfileCreator', role: 'R', key: 'creator-admin-profile-users' },
+        { field: 'IsAdminOwnerSelectedNode', role: 'A', idField: 'IsAdminOwnerSelectedNode_Id', descField: 'IsAdminOwnerSelectedNode_Desc' },
+        { field: 'IsOwnerSelectedNode', role: 'R', idField: 'IsOwnerSelectedNode_Id', descField: 'IsOwnerSelectedNode_Desc' },
+        { field: 'IsCreatorSelectedNode', role: 'R', idField: 'IsCreatorSelectedNode_Id', descField: 'IsCreatorSelectedNode_Desc' }
+    ];
+
+    function raciLabel(key, fallback) {
+        const language = $('#LanguageContext').val();
+        const labels = {
+            creator: { IT: 'Utente che ha creato l’oggetto', GB: 'User who created the object', ES: 'Usuario que creó el objeto', CN: '建立物件的使用者' },
+            adminCreator: { IT: 'Responsabile del creatore dell’oggetto', GB: 'Creator’s supervisor', ES: 'Responsable del creador del objeto', CN: '物件建立者的主管' },
+            creatorAdminProfile: { IT: 'Utenti con lo stesso profilo del creatore', GB: 'Users with the same profile as the creator', ES: 'Usuarios con el mismo perfil que el creador', CN: '與建立者相同設定檔的使用者' },
+            adminOwner: { IT: 'Responsabile del proprietario dello stato', GB: 'Supervisor of the selected state owner', ES: 'Responsable del propietario del estado', CN: '所選狀態擁有者的主管' },
+            stateOwner: { IT: 'Proprietario dello stato selezionato', GB: 'Owner of the selected state', ES: 'Propietario del estado seleccionado', CN: '所選狀態的擁有者' },
+            stateCreator: { IT: 'Utente che ha registrato lo stato', GB: 'User who recorded the state', ES: 'Usuario que registró el estado', CN: '記錄該狀態的使用者' },
+            profileUsers: { IT: 'Utenti del profilo selezionato', GB: 'Users of the selected profile', ES: 'Usuarios del perfil seleccionado', CN: '所選設定檔的使用者' },
+            profileSupervisor: { IT: 'Responsabile del profilo', GB: 'Profile supervisor', ES: 'Responsable del perfil', CN: '設定檔主管' },
+            state: { IT: 'Stato', GB: 'State', ES: 'Estado', CN: '狀態' },
+            title: { IT: 'Matrice RACI - ', GB: 'RACI Matrix - ', ES: 'Matriz RACI - ', CN: 'RACI 矩陣 - ' }
+        };
+        return labels[key] && labels[key][language] || fallback || key;
+    }
+
+    function raciIsConfigured(value) {
+        if (value === null || value === undefined) return false;
+        return !['', '0', 'false', 'null'].includes(String(value).trim().toLowerCase());
+    }
+
+    function raciJson(url, method, data) {
+        return new Promise(function (resolve, reject) {
+            $.ajax({ url: url, type: method || 'GET', data: data || {} })
+                .done(function (response) {
+                    if (response.status !== 'OK') {
+                        reject(new Error(response.error && response.error.message || 'Unable to load workflow RACI data.'));
+                        return;
+                    }
+                    resolve(response.data);
+                })
+                .fail(function (xhr, status, error) {
+                    reject(new Error(xhr.responseText || error || status));
+                });
+        });
+    }
+
+    function loadWorkflowRaciGraph() {
+        const processId = getCurrentProcessId();
+        if (!isVersionEditor && !processId) {
+            return Promise.reject(new Error('Workflow process is not selected.'));
+        }
+        const graphRequest = isVersionEditor
+            ? raciJson('/workflow/api/versions/' + versionId + '/graph')
+            : raciJson('/workflow/' + encodeURIComponent(processId), 'POST');
+        return graphRequest.then(function (data) {
+            let graph = data;
+            if (!isVersionEditor && typeof graph === 'string') graph = JSON.parse(graph);
+            const states = typeof graph.states === 'string' ? JSON.parse(graph.states) : graph.states;
+            const transitions = typeof graph.transitions === 'string' ? JSON.parse(graph.transitions) : graph.transitions;
+            if (!Array.isArray(states) || !Array.isArray(transitions)) {
+                throw new Error('Workflow states or transitions are unavailable.');
+            }
+            return { states: states, transitions: transitions };
+        });
+    }
+
+    function loadWorkflowRaciOwners(states) {
+        const ownerRequests = states.map(function (state) {
+            return raciJson('/workflow-node-owner/' + encodeURIComponent(state.id)).then(function (data) {
+                return Array.isArray(data) ? data[0] || null : null;
+            });
+        });
+        return Promise.all(ownerRequests).then(function (owners) {
+            return Promise.all(states.map(function (state, index) {
+                const profileUrl = '/workflow-node-owner/' + encodeURIComponent(state.id) + '/profiles';
+                return raciJson(profileUrl).then(function (data) {
+                    const profiles = Array.isArray(data && data.profiles) ? data.profiles : [];
+                    const links = Array.isArray(data && data.links) ? data.links : [];
+                    const resolvedProfiles = profiles.map(function (profile) {
+                        profile.EnabledDirections = new Set(links.filter(function (link) {
+                            return String(link.IDGruppoOperativo) === String(profile.IDGruppoOperativo) &&
+                                String(link.IDProfiloUtente) === String(profile.IDProfiloUtente) &&
+                                isEnabled(link.Enabled);
+                        }).map(function (link) {
+                            return String(link.IDEventoDirezione);
+                        }));
+                        return profile;
+                    });
+                    const owner = owners[index];
+                    if (!resolvedProfiles.length && owner && raciIsConfigured(owner.IsSelectedProfile)) {
+                        resolvedProfiles.push({
+                            IDProfiloUtente: owner.IsSelectedProfile_Id || owner.IsSelectedProfile,
+                            IDGruppoOperativo: owner.IsSelectedProfile_Group || 0,
+                            OwnerDescription: owner.IsSelectedProfile_Desc || raciLabel('profileUsers'),
+                            LegacyProfile: true
+                        });
+                    }
+                    return { owner: owner, profiles: resolvedProfiles };
+                });
+            }));
+        });
+    }
+
+    function raciPosition(state, field) {
+        const value = Number(state[field] !== undefined ? state[field] :
+            state[field === 'x' ? 'XPos' : 'YPos']);
+        return Number.isFinite(value) ? value : null;
+    }
+
+    function raciStateDescription(state) {
+        const language = $('#LanguageContext').val();
+        return String(state['Text_' + language] || state.desc || state.Text_IT || state.label || state.Code_IT || state.id);
+    }
+
+    function raciStateCode(state) {
+        const language = $('#LanguageContext').val();
+        return String(state['Code_' + language] || state.label || state.Code_IT || state.id);
+    }
+
+    function raciStateColor(state) {
+        const color = String(state.HexColor || '').trim();
+        return /^#[0-9a-f]{3,8}$/i.test(color) ? color : '#3498db';
+    }
+
+    function raciDirectionDescription(transition, source, target) {
+        const description = raciStateDescription;
+        return '[DA] ' + description(source) + ' -> [A] ' + description(target);
+    }
+
+    function raciReturnTransition(transition, source, target) {
+        const description = String(transition.event || transition.Description || '');
+        if (/(rifiut|reject|return|back|revision|revisione|indietro|devol|refus|退回)/i.test(description)) {
+            return true;
+        }
+        const sourceX = Number(source.x !== undefined ? source.x : source.XPos);
+        const targetX = Number(target.x !== undefined ? target.x : target.XPos);
+        return Number.isFinite(sourceX) && Number.isFinite(targetX) && targetX < sourceX;
+    }
+
+    function buildWorkflowRaci(graph, ownerData) {
+        const stateOrder = new Map(graph.states.map(function (state, index) {
+            return [String(state.id), index];
+        }));
+        const statesById = new Map(graph.states.map(function (state) {
+            return [String(state.id), state];
+        }));
+        const compareByEditorPosition = function (left, right) {
+            const leftX = raciPosition(left, 'x');
+            const rightX = raciPosition(right, 'x');
+            if (leftX !== null && rightX !== null && leftX !== rightX) return leftX - rightX;
+            const leftY = raciPosition(left, 'y');
+            const rightY = raciPosition(right, 'y');
+            if (leftY !== null && rightY !== null && leftY !== rightY) return leftY - rightY;
+            return stateOrder.get(String(left.id)) - stateOrder.get(String(right.id));
+        };
+        const starts = graph.states.filter(isStartWorkflowNode).sort(compareByEditorPosition);
+        const ends = graph.states.filter(isEndWorkflowNode).sort(compareByEditorPosition);
+        const startIds = new Set(starts.map(function (state) { return String(state.id); }));
+        const endIds = new Set(ends.map(function (state) { return String(state.id); }));
+        const transitionsByStart = new Map();
+        graph.transitions.forEach(function (transition) {
+            const sourceId = String(transition.from !== undefined ? transition.from : transition.IDTransizioneStart);
+            const targetId = String(transition.to !== undefined ? transition.to : transition.IDTransizioneEnd);
+            if (!transitionsByStart.has(sourceId)) transitionsByStart.set(sourceId, []);
+            transitionsByStart.get(sourceId).push(targetId);
+        });
+        const orderedMiddle = [];
+        const visited = new Set();
+        const followFlow = function (initialStates) {
+            const queue = initialStates.slice();
+            for (let cursor = 0; cursor < queue.length; cursor++) {
+                const state = queue[cursor];
+                const stateId = String(state.id);
+                if (visited.has(stateId) || endIds.has(stateId)) continue;
+                visited.add(stateId);
+                orderedMiddle.push(state);
+                (transitionsByStart.get(stateId) || []).map(function (id) {
+                    return statesById.get(id);
+                }).filter(Boolean).sort(compareByEditorPosition).forEach(function (next) {
+                    if (!visited.has(String(next.id)) && !endIds.has(String(next.id))) queue.push(next);
+                });
+            }
+        };
+        starts.forEach(function (state) {
+            visited.add(String(state.id));
+        });
+        const firstFlowStates = [];
+        starts.forEach(function (state) {
+            (transitionsByStart.get(String(state.id)) || []).map(function (id) {
+                return statesById.get(id);
+            }).filter(Boolean).sort(compareByEditorPosition).forEach(function (next) {
+                if (!visited.has(String(next.id)) && !endIds.has(String(next.id))) firstFlowStates.push(next);
+            });
+        });
+        followFlow(firstFlowStates);
+        graph.states.filter(function (state) {
+            return !startIds.has(String(state.id)) && !endIds.has(String(state.id)) && !visited.has(String(state.id));
+        }).sort(compareByEditorPosition).forEach(function (state) {
+            followFlow([state]);
+        });
+        const orderedStates = starts.concat(orderedMiddle, ends);
+        const ownerDataByState = new Map(graph.states.map(function (state, index) {
+            return [String(state.id), ownerData[index]];
+        }));
+        const columns = [];
+        const columnsByKey = new Map();
+        const ownersByState = new Map();
+        const profilesByState = new Map();
+
+        function addColumn(key, label, type, metadata) {
+            if (!columnsByKey.has(key)) {
+                const column = Object.assign({ key: key, label: label, type: type }, metadata || {});
+                columnsByKey.set(key, column);
+                columns.push(column);
+            }
+            return columnsByKey.get(key);
+        }
+
+        function addRole(row, columnKey, role) {
+            if (!row.has(columnKey)) row.set(columnKey, new Set());
+            row.get(columnKey).add(role);
+        }
+
+        addColumn('creator', raciLabel('creator'), 'static');
+        orderedStates.forEach(function (state) {
+            const stateOwnerData = ownerDataByState.get(String(state.id)) || {};
+            const owner = stateOwnerData.owner;
+            const stateOwners = [];
+            raciOwnerDefinitions.forEach(function (definition) {
+                if (!owner || !raciIsConfigured(owner[definition.field])) return;
+                let key = definition.key;
+                let label;
+                if (definition.field === 'IsAdminOfCreator') {
+                    label = raciLabel('adminCreator');
+                } else if (definition.field === 'IsUsersFromAdminProfileCreator') {
+                    label = raciLabel('creatorAdminProfile');
+                    key = definition.key;
+                } else if (definition.field === 'IsCreator') {
+                    label = raciLabel('creator');
+                } else {
+                    const targetId = owner[definition.idField] || owner[definition.field];
+                    const target = targetId == null ? null : statesById.get(String(targetId));
+                    const targetDescription = owner[definition.descField] ||
+                        (target ? raciStateDescription(target) : '');
+                    const labelKey = definition.field === 'IsAdminOwnerSelectedNode'
+                        ? 'adminOwner'
+                        : definition.field === 'IsOwnerSelectedNode' ? 'stateOwner' : 'stateCreator';
+                    label = raciLabel(labelKey) + (targetDescription ? ' - ' + targetDescription : '');
+                    key = definition.field + ':' + (targetId == null ? targetDescription : targetId);
+                }
+                const column = addColumn(key, label, 'static', { role: definition.role });
+                stateOwners.push({
+                    key: column.key,
+                    role: definition.role,
+                    field: definition.field,
+                    targetStateId: definition.idField
+                        ? owner[definition.idField] || owner[definition.field]
+                        : null
+                });
+            });
+            ownersByState.set(String(state.id), stateOwners);
+
+            const profiles = stateOwnerData.profiles || [];
+            profiles.forEach(function (profile) {
+                const groupId = profile.IDGruppoOperativo == null ? 0 : profile.IDGruppoOperativo;
+                const profileKey = 'profile:' + groupId + ':' + profile.IDProfiloUtente;
+                const profileDescription = profile.OwnerDescription || raciLabel('profileUsers');
+                const profileColumn = addColumn(profileKey,
+                    profileDescription, 'profile', profile);
+                profile.ColumnKey = profileColumn.key;
+                if (raciIsConfigured(profile.SupervisorID)) {
+                    profile.SupervisorColumnKey = 'supervisor:' + groupId + ':' + profile.SupervisorID;
+                    if (!isEnabled(profile.SupervisorIsOnlyUser)) {
+                        const groupDescription = profileDescription.split(' - ')[0];
+                        addColumn(profile.SupervisorColumnKey,
+                            raciLabel('profileSupervisor') + ' - ' + groupDescription, 'supervisor', profile);
+                    }
+                }
+            });
+            profilesByState.set(String(state.id), profiles);
+        });
+
+        const outgoingByStart = new Map();
+        graph.transitions.forEach(function (transition) {
+            const sourceId = String(transition.from !== undefined ? transition.from : transition.IDTransizioneStart);
+            if (!outgoingByStart.has(sourceId)) outgoingByStart.set(sourceId, []);
+            outgoingByStart.get(sourceId).push(transition);
+        });
+        const displayRows = [];
+        orderedStates.forEach(function (state) {
+            const stateKey = String(state.id);
+            const transitions = outgoingByStart.get(stateKey) || [];
+            const sourceOwners = ownersByState.get(stateKey) || [];
+            const sourceProfiles = profilesByState.get(stateKey) || [];
+            const ownerCount = sourceOwners.length + sourceProfiles.length;
+            if (!transitions.length) {
+                displayRows.push({ state: state, roles: new Map(), showStateDetails: true, directions: [] });
+                return;
+            }
+            const hasMultipleOwners = ownerCount > 1;
+            if (hasMultipleOwners) {
+                displayRows.push({ state: state, roles: new Map(), stateHeaderOnly: true });
+            }
+            const combinedRoles = new Map();
+            const combinedDirections = [];
+            const directionRows = [];
+            transitions.forEach(function (transition) {
+                const sourceId = transition.from !== undefined ? transition.from : transition.IDTransizioneStart;
+                const targetId = transition.to !== undefined ? transition.to : transition.IDTransizioneEnd;
+                const targetKey = String(targetId);
+                const source = statesById.get(stateKey);
+                const target = statesById.get(targetKey);
+                if (!source || !target) return;
+                const roles = new Map();
+                const returnTransition = raciReturnTransition(transition, source, target);
+                const targetOwners = ownersByState.get(targetKey) || [];
+                const targetProfiles = profilesByState.get(targetKey) || [];
+                sourceOwners.forEach(function (owner) {
+                    addRole(roles, owner.key, owner.role);
+                    if (owner.role === 'R' && owner.targetStateId != null &&
+                        ['IsCreatorSelectedNode', 'IsOwnerSelectedNode'].includes(owner.field)) {
+                        const relatedStateOwners = ownersByState.get(String(owner.targetStateId)) || [];
+                        relatedStateOwners.filter(function (relatedOwner) {
+                            return relatedOwner.field === 'IsAdminOwnerSelectedNode';
+                        }).forEach(function (accountable) {
+                            addRole(roles, accountable.key, 'A');
+                        });
+                    }
+                });
+                sourceProfiles.forEach(function (profile) {
+                    const isEnabledForTransition = profile.LegacyProfile ||
+                        profile.EnabledDirections && profile.EnabledDirections.has(String(transition.IDEventoDirezione));
+                    if (!isEnabledForTransition) return;
+                    addRole(roles, profile.ColumnKey, 'R');
+                    if (profile.SupervisorColumnKey) {
+                        if (isEnabled(profile.SupervisorIsOnlyUser)) {
+                            addRole(roles, profile.ColumnKey, 'A');
+                        } else {
+                            addRole(roles, profile.SupervisorColumnKey, 'A');
+                        }
+                    }
+                });
+                const sourceResponsibleKeys = new Set(Array.from(roles.entries())
+                    .filter(function (entry) { return entry[1].has('R'); })
+                    .map(function (entry) { return entry[0]; }));
+                targetOwners.forEach(function (owner) {
+                    if (sourceResponsibleKeys.has(owner.key)) return;
+                    addRole(roles, owner.key, 'I');
+                    if (returnTransition) addRole(roles, owner.key, 'C');
+                });
+                targetProfiles.forEach(function (profile) {
+                    if (sourceResponsibleKeys.has(profile.ColumnKey)) return;
+                    addRole(roles, profile.ColumnKey, 'I');
+                    if (returnTransition) addRole(roles, profile.ColumnKey, 'C');
+                });
+                const direction = raciDirectionDescription(transition, source, target);
+                if (hasMultipleOwners) {
+                    displayRows.push({
+                        state: state,
+                        transition: transition,
+                        roles: roles,
+                        direction: direction,
+                        directionOnly: true
+                    });
+                    return;
+                }
+                roles.forEach(function (roleSet, columnKey) {
+                    roleSet.forEach(function (role) { addRole(combinedRoles, columnKey, role); });
+                });
+                combinedDirections.push(direction);
+                const notificationRoles = new Map();
+                const inheritedRoles = new Map();
+                roles.forEach(function (roleSet, columnKey) {
+                    roleSet.forEach(function (role) {
+                        if (role === 'R' || role === 'A') {
+                            addRole(notificationRoles, columnKey, role);
+                            addRole(inheritedRoles, columnKey, role);
+                        } else if (role === 'C' || role === 'I') {
+                            addRole(notificationRoles, columnKey, role);
+                        }
+                    });
+                });
+                directionRows.push({
+                    state: state,
+                    transition: transition,
+                    roles: notificationRoles,
+                    inheritedRoles: inheritedRoles,
+                    direction: direction,
+                    directionOnly: true
+                });
+            });
+            if (!hasMultipleOwners) {
+                displayRows.push({
+                    state: state,
+                    roles: combinedRoles,
+                    directions: directionRows.length > 1 ? [] : combinedDirections,
+                    showStateDetails: true
+                });
+                if (directionRows.length > 1) {
+                    displayRows.push.apply(displayRows, directionRows);
+                }
+            }
+        });
+
+        const title = raciLabel('title') + $('#container-workflow .modal-title').text().trim();
+        return {
+            title: title,
+            states: orderedStates,
+            columns: columns,
+            displayRows: displayRows,
+            stateDescription: raciStateDescription
+        };
+    }
+
+    function raciStateCell(row, matrix) {
+        const cell = $('<td>');
+        if (row.directionOnly) {
+            raciAppendDirection(cell, row.direction);
+            return cell;
+        }
+        if (row.stateHeaderOnly) {
+            cell.append($('<span class="badge rounded-pill me-2">')
+                .text(raciStateCode(row.state))
+                .css('background-color', raciStateColor(row.state)));
+            cell.append($('<strong>').text(matrix.stateDescription(row.state)));
+            return cell;
+        }
+        if (row.showStateDetails) {
+            const heading = $('<div class="workflow-raci-state-heading">');
+            heading.append($('<span class="badge rounded-pill me-2">')
+                .text(raciStateCode(row.state))
+                .css('background-color', raciStateColor(row.state)));
+            heading.append($('<strong>').text(matrix.stateDescription(row.state)));
+            cell.append(heading);
+        }
+        if (row.directions && row.directions.length) {
+            row.directions.forEach(function (direction) {
+                raciAppendDirection(cell, direction);
+            });
+        } else if (row.direction) {
+            raciAppendDirection(cell, row.direction);
+        } else if (!row.showStateDetails) {
+            cell.append($('<span class="text-muted">').text('—'));
+        }
+        return cell;
+    }
+
+    function raciAppendDirection(cell, direction) {
+        const parts = direction.split(' -> [A] ');
+        const line = $('<div class="workflow-raci-direction">');
+        line.append($('<i class="bi bi-arrow-return-right" aria-hidden="true">'));
+        line.append($('<span>').text('[DA] ' + parts[0].replace(/^\[DA\]\s*/, '')));
+        line.append($('<i class="bi bi-arrow-right" aria-hidden="true">'));
+        line.append($('<span>').text('[A] ' + parts[1]));
+        cell.append(line);
+    }
+
+    function renderWorkflowRaci(matrix) {
+        const header = $('#container-workflow-raci .workflow-raci-header').empty();
+        const body = $('#container-workflow-raci .workflow-raci-body').empty();
+        header.append($('<th scope="col">').text(raciLabel('state')));
+        matrix.columns.forEach(function (column) {
+            header.append($('<th scope="col">').text(column.label));
+        });
+        matrix.displayRows.forEach(function (displayRow) {
+            const row = $('<tr>');
+            if (displayRow.stateHeaderOnly) row.addClass('workflow-raci-state-header-row');
+            if (displayRow.directionOnly) row.addClass('workflow-raci-direction-row');
+            row.append(raciStateCell(displayRow, matrix));
+            matrix.columns.forEach(function (column) {
+                const cell = $('<td class="text-center">');
+                const roles = displayRow.roles && displayRow.roles.get(column.key);
+                if (!roles || !roles.size) {
+                    cell.text('-');
+                } else {
+                    ['R', 'A', 'C', 'I'].filter(function (role) {
+                        return roles.has(role);
+                    }).forEach(function (role) {
+                        const inherited = displayRow.inheritedRoles &&
+                            displayRow.inheritedRoles.get(column.key) &&
+                            displayRow.inheritedRoles.get(column.key).has(role);
+                        if (inherited) {
+                            cell.append($('<span class="workflow-raci-inherited-check" aria-hidden="true">'));
+                        } else {
+                            cell.append($('<span>').addClass('workflow-raci-role workflow-raci-role-' + role.toLowerCase())
+                                .text(role).attr('aria-label', role));
+                        }
+                    });
+                }
+                row.append(cell);
+            });
+            body.append(row);
+        });
+        $('#workflow-raci-title').text(matrix.title);
+        $('#container-workflow-raci .workflow-raci-loading').addClass('d-none');
+        $('#container-workflow-raci .workflow-raci-table').removeClass('d-none');
+    }
+
+    function workflowRaciExcelRows(matrix) {
+        const language = $('#LanguageContext').val();
+        const legend = {
+            IT: ['R - Responsible: chi esegue l’azione', 'A - Accountable: chi risponde dell’azione',
+                'C - Consulted: coinvolto nelle transizioni di ritorno/rifiuto', 'I - Informed: riceve il passaggio o l’avviso'],
+            GB: ['R - Responsible: performs the action', 'A - Accountable: accountable for the action',
+                'C - Consulted: involved in return/rejection transitions', 'I - Informed: receives the handoff or notification'],
+            ES: ['R - Responsible: ejecuta la acción', 'A - Accountable: responde de la acción',
+                'C - Consulted: participa en devoluciones/rechazos', 'I - Informed: recibe el paso o aviso'],
+            CN: ['R - Responsible: 執行動作', 'A - Accountable: 對行動負責',
+                'C - Consulted: 退回／拒絕時諮詢', 'I - Informed: 接收交接或通知']
+        }[language] || [];
+        return [
+            [matrix.title],
+            [legend.join(' | ')],
+            [],
+            [raciLabel('state'), ...matrix.columns.map(function (column) { return column.label; })]
+        ].concat(matrix.displayRows.map(function (displayRow) {
+            const directions = displayRow.directions || (displayRow.direction ? [displayRow.direction] : []);
+            const stateLabel = displayRow.directionOnly
+                ? displayRow.direction
+                : (displayRow.showStateDetails
+                ? raciStateCode(displayRow.state) + ' ' + matrix.stateDescription(displayRow.state)
+                : '') + (directions.length ? (displayRow.showStateDetails ? '\n' : '') + directions.join('\n') : '');
+            return [stateLabel].concat(matrix.columns.map(function (column) {
+                const roles = displayRow.roles && displayRow.roles.get(column.key);
+                return roles ? ['R', 'A', 'C', 'I'].filter(function (role) {
+                    return roles.has(role);
+                }).map(function (role) {
+                    const inherited = displayRow.inheritedRoles &&
+                        displayRow.inheritedRoles.get(column.key) &&
+                        displayRow.inheritedRoles.get(column.key).has(role);
+                    return inherited ? '✓' : role;
+                }).join(' / ') : '-';
+            }));
+        }));
+    }
+
+    $('.workflow-raci').on('click', function () {
+        const button = $(this).prop('disabled', true);
+        const modal = $('#container-workflow-raci');
+        workflowRaciMatrix = null;
+        modal.find('.workflow-raci-loading').removeClass('d-none');
+        modal.find('.workflow-raci-table').addClass('d-none');
+        modal.modal('show');
+        loadWorkflowRaciGraph()
+            .then(function (graph) {
+                return loadWorkflowRaciOwners(graph.states).then(function (owners) {
+                    return buildWorkflowRaci(graph, owners);
+                });
+            })
+            .then(function (matrix) {
+                workflowRaciMatrix = matrix;
+                renderWorkflowRaci(matrix);
+            })
+            .catch(function (error) {
+                modal.modal('hide');
+                ShowError(error.message, 'workflow-raci');
+            })
+            .finally(function () {
+                button.prop('disabled', false);
+            });
+    });
+
+    $('.workflow-raci-export').on('click', function () {
+        if (!workflowRaciMatrix || !window.XLSX) {
+            ShowError('RACI matrix or Excel export library is unavailable.', 'workflow-raci-export');
+            return;
+        }
+        const worksheet = window.XLSX.utils.aoa_to_sheet(workflowRaciExcelRows(workflowRaciMatrix));
+        worksheet['!cols'] = [{ wch: 36 }].concat(workflowRaciMatrix.columns.map(function (column) {
+            return { wch: Math.min(Math.max(column.label.length, 18), 42) };
+        }));
+        const workbook = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(workbook, worksheet, 'Matrice RACI');
+        window.XLSX.writeFile(workbook, 'matrice-raci.xlsx');
+    });
+
+    $('.workflow-raci-print').on('click', function () {
+        if (!workflowRaciMatrix) {
+            ShowError('RACI matrix is not available for printing.', 'workflow-raci-print');
+            return;
+        }
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            ShowError('The print window was blocked by the browser.', 'workflow-raci-print');
+            return;
+        }
+        printWindow.document.open();
+        printWindow.document.write('<!doctype html><html><head><meta charset="utf-8"><title></title><style>' +
+            'body{font-family:Arial,sans-serif;margin:20px}h1{font-size:20px}table{border-collapse:collapse;width:100%}' +
+            'th,td{border:1px solid #adb5bd;padding:6px;text-align:center}th{background:#f1f3f5}' +
+            'th:first-child,td:first-child{text-align:left;min-width:180px}.workflow-raci-role{display:inline-flex;' +
+            'align-items:center;justify-content:center;border-radius:50%;width:28px;height:28px;color:#fff;' +
+            'font-weight:bold;margin:0 2px}.workflow-raci-role-r{background:#0876d1}.workflow-raci-role-a{background:#e66c5e}' +
+            '.workflow-raci-role-c{background:#f0ad27;color:#212529}.workflow-raci-role-i{background:#7d8287}' +
+            '.workflow-raci-inherited-check{display:inline-block;position:relative;vertical-align:middle;width:28px;height:28px;' +
+            'border-radius:50%;background:#ced4da;margin:0 2px}.workflow-raci-inherited-check:after{content:"";position:absolute;' +
+            'left:8px;top:6px;width:8px;height:13px;border:solid #6c757d;border-width:0 4px 4px 0;transform:rotate(45deg)}' +
+            '.workflow-raci-state-heading{font-size:1.05rem;margin-bottom:3px}.badge{display:inline-block;border-radius:10rem;' +
+            'color:#fff;padding:.25em .6em}.workflow-raci-direction{display:block;background:#e9ecef;border-radius:4px;padding:2px 5px;margin-top:3px}' +
+            '.workflow-raci-direction .bi-arrow-return-right{margin-right:4px}.workflow-raci-direction .bi-arrow-right{margin:0 4px}' +
+            '@media print{body{margin:8mm}thead{display:table-header-group}}</style></head><body></body></html>');
+        printWindow.document.close();
+        printWindow.document.title = workflowRaciMatrix.title;
+        const title = printWindow.document.createElement('h1');
+        title.textContent = workflowRaciMatrix.title;
+        printWindow.document.body.appendChild(title);
+        printWindow.document.body.appendChild(
+            document.querySelector('#container-workflow-raci .workflow-raci-table').cloneNode(true)
+        );
+        printWindow.onafterprint = function () { printWindow.close(); };
+        printWindow.focus();
+        printWindow.print();
+    });
 
     function reloadWorkflow() {
         initializeWorkflow(versionId || getCurrentProcessId());
