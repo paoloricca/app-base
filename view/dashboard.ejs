@@ -1,25 +1,128 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>Web APP DC - Dashboard</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <%- include('partials/head'); %>
+    <script type="text/javascript" src="/utility-script"></script>
     <script type="text/javascript" src="/processi-script"></script>
+    <script type="text/javascript" src="/workflow-screensaver-script"></script>
+    <script type="text/javascript" src="/dashboard-script"></script>
     <script type="text/javascript" src="/logout-script"></script>
 </head>
 <body>
-    <form name="frmDashboard" class="was-validated">
-        <%- include('partials/header'); %>
-        <div class="container-fluid">
-            <h5>
-                <span class="bi bi-house fs-2"></span>&nbsp;
-                Dashboard <span class="badge bg-info" style="float:right;">
-                    <%= new Date().getDate() %>/<%= new Date().getMonth()+1 %>/<%= new Date().getFullYear() %> </span>
-                <hr style="border: 1px solid #d1d1d1;" />
-            </h5>
-            LanguageContext: <%= user.LanguageContext %>
-        </div>
-    </form>
+    <%- include('partials/header'); %>
+    <input type="hidden" id="LanguageContext" value="<%= user.LanguageContext %>">
+    <main class="container-fluid p-3 dashboard-layout">
+        <div class="alert alert-danger dashboard-error d-none" role="alert"></div>
+        <section class="dashboard-process-page">
+            <header class="dashboard-page-heading dashboard-process-heading d-none">
+                <div class="forms-heading dashboard-list-breadcrumb">
+                    <span class="bi bi-compass dynamic-process-compass" aria-hidden="true"></span>
+                    <div class="dynamic-process-path">
+                        <% if (user.LanguageContext == 'IT') { %>Sei in:<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>You are in:<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Estás en:<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>您位于：<% } %>
+                        <strong>
+                            <span class="dynamic-process-path-current">
+                                <% if (user.LanguageContext == 'IT') { %>Dashboard<% } %>
+                                <% if (user.LanguageContext == 'GB') { %>Dashboard<% } %>
+                                <% if (user.LanguageContext == 'ES') { %>Panel<% } %>
+                                <% if (user.LanguageContext == 'CN') { %>仪表板<% } %>
+                            </span>
+                        </strong>
+                    </div>
+                </div>
+                <div class="spinner-border spinner-border-sm text-primary dashboard-loading d-none" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </header>
+            <div class="dashboard-process-cards"></div>
+            <%- include('partials/workflow-screensaver', { LanguageContext: user.LanguageContext }); %>
+        </section>
+
+        <section class="dashboard-operation-page d-none">
+            <header class="dashboard-page-heading">
+                <div>
+                    <div class="forms-heading dashboard-operation-breadcrumb">
+                        <span class="bi bi-compass dynamic-process-compass" aria-hidden="true"></span>
+                        <span class="dashboard-breadcrumb-prefix">
+                            <% if (user.LanguageContext == 'IT') { %>Sei in:<% } %>
+                            <% if (user.LanguageContext == 'GB') { %>You are in:<% } %>
+                            <% if (user.LanguageContext == 'ES') { %>Estás en:<% } %>
+                            <% if (user.LanguageContext == 'CN') { %>您位于：<% } %>
+                        </span>
+                        <div class="dynamic-process-path">
+                            <strong class="dashboard-process-title"></strong>
+                        </div>
+                    </div>
+                    <div class="text-secondary dashboard-process-subtitle"></div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm dashboard-back">
+                        <% if (user.LanguageContext == 'IT') { %><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Tutti i processi<% } %>
+                        <% if (user.LanguageContext == 'GB') { %><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>All processes<% } %>
+                        <% if (user.LanguageContext == 'ES') { %><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Todos los procesos<% } %>
+                        <% if (user.LanguageContext == 'CN') { %><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>所有流程<% } %>
+                    </button>
+                    <div class="spinner-border spinner-border-sm text-primary dashboard-loading d-none" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </header>
+            <div class="dashboard-state-cards"></div>
+            <div class="card dashboard-records-card">
+                <div class="card-header dashboard-records-header">
+                    <div class="dashboard-records-heading">
+                        <strong>
+                            <% if (user.LanguageContext == 'IT') { %>Richieste che prevedono il tuo intervento<% } %>
+                            <% if (user.LanguageContext == 'GB') { %>Requests that need your attention<% } %>
+                            <% if (user.LanguageContext == 'ES') { %>Solicitudes que requieren tu intervención<% } %>
+                            <% if (user.LanguageContext == 'CN') { %>需要您处理的请求<% } %>
+                        </strong>
+                    </div>
+                    <div class="dashboard-state-filters" role="group" aria-label="<%= user.LanguageContext == 'IT' ? 'Filtra per stato' : user.LanguageContext == 'ES' ? 'Filtrar por estado' : user.LanguageContext == 'CN' ? '按状态筛选' : 'Filter by state' %>"></div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 dashboard-records-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">
+                                    <% if (user.LanguageContext == 'IT') { %>Creato da<% } %>
+                                    <% if (user.LanguageContext == 'GB') { %>Created by<% } %>
+                                    <% if (user.LanguageContext == 'ES') { %>Creado por<% } %>
+                                    <% if (user.LanguageContext == 'CN') { %>创建者<% } %>
+                                </th>
+                                <th scope="col">
+                                    <% if (user.LanguageContext == 'IT') { %>Stato attuale<% } %>
+                                    <% if (user.LanguageContext == 'GB') { %>Current state<% } %>
+                                    <% if (user.LanguageContext == 'ES') { %>Estado actual<% } %>
+                                    <% if (user.LanguageContext == 'CN') { %>当前状态<% } %>
+                                </th>
+                                <th scope="col"><%= user.LanguageContext == 'IT' ? 'Permanenza' : user.LanguageContext == 'ES' ? 'Permanencia' : user.LanguageContext == 'CN' ? '停留时间' : 'Time in state' %></th>
+                                <th scope="col"><%= user.LanguageContext == 'IT' ? 'Reazione' : user.LanguageContext == 'ES' ? 'Reacción' : user.LanguageContext == 'CN' ? '响应时间' : 'Reaction' %></th>
+                                <th scope="col">
+                                    <% if (user.LanguageContext == 'IT') { %>Possibili azioni<% } %>
+                                    <% if (user.LanguageContext == 'GB') { %>Actions<% } %>
+                                    <% if (user.LanguageContext == 'ES') { %>Acciones posibles<% } %>
+                                    <% if (user.LanguageContext == 'CN') { %>可执行操作<% } %>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="dashboard-records"></tbody>
+                    </table>
+                </div>
+                <div class="dashboard-empty text-center text-secondary p-4 d-none"></div>
+                <div class="d-flex justify-content-between align-items-center p-2 dashboard-pager d-none">
+                    <button type="button" class="btn btn-outline-secondary btn-sm dashboard-previous"></button>
+                    <span class="small text-secondary dashboard-page-info"></span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm dashboard-next"></button>
+                </div>
+            </div>
+        </section>
+    </main>
 </body>
 </html>

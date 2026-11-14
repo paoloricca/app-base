@@ -312,7 +312,7 @@ $(function () {
         $('.dynamic-form-workflow-file-error').prop('hidden', true).text('');
     }
 
-    function openWorkflow(workflowRecordId, $workflowAction) {
+    function openWorkflow(workflowRecordId, $workflowAction, requestedDirectionId) {
         if (!workflowRecordId) {
             return;
         }
@@ -371,6 +371,16 @@ $(function () {
                             .append($input, $label)
                             .appendTo($transitions);
                     });
+
+                    if (requestedDirectionId != null) {
+                        var $requestedTransition = $('.dynamic-form-workflow-transition').filter(function () {
+                            return String($(this).val()) === String(requestedDirectionId);
+                        });
+                        if (!$requestedTransition.length) {
+                            throw new Error(text('recordUnavailable'));
+                        }
+                        $requestedTransition.prop('checked', true).trigger('change');
+                    }
 
                     $('.dynamic-form-workflow-apply').data('workflow-record-id', workflowRecordId);
                     finishActionLoading('#dynamic-form-workflow-modal');
@@ -999,6 +1009,9 @@ $(function () {
             renderActions();
             var url = new URL(window.location.href);
             var target = url.searchParams.get('chatRecord');
+            var requestedRecordId = url.searchParams.get('recordId');
+            var requestedDirectionId = url.searchParams.get('directionId');
+            var requestedStateId = url.searchParams.get('stateId');
             if (target !== null) {
                 url.searchParams.delete('chatRecord');
                 window.history.replaceState(null, '', url.pathname + url.search + url.hash);
@@ -1022,7 +1035,54 @@ $(function () {
                         ShowError(error.message, 'openHistory');
                     }
                 });
+            } else if (requestedRecordId !== null) {
+                if (!/^[1-9]\d*$/.test(requestedRecordId) ||
+                    Number(requestedRecordId) > 2147483647 ||
+                    (requestedDirectionId !== null &&
+                        (!/^[1-9]\d*$/.test(requestedDirectionId) ||
+                            Number(requestedDirectionId) > 2147483647))) {
+                    throw new Error(text('invalidId'));
+                }
+                $('.dynamic-filter-id').val(requestedRecordId);
+                activeFilter = collectFilter();
+                url.searchParams.delete('recordId');
+                url.searchParams.delete('directionId');
+                window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+                loadRecords().done(function (response) {
+                    try {
+                        var result = unwrap(response);
+                        var row = (result.rows || []).find(function (item) {
+                            return Number(item.IDModelloIstanza) === Number(requestedRecordId);
+                        });
+                        if (!row || !(row.CanSwitchState === true || row.CanSwitchState === 1)) {
+                            throw new Error(text('recordUnavailable'));
+                        }
+                        var $workflowAction = $('.dynamic-form-workflow-action').filter(function () {
+                            return String($(this).attr('data-workflow-record-id')) ===
+                                String(row.WorkflowRecordId);
+                        }).first();
+                        if (!$workflowAction.length) {
+                            throw new Error(text('recordUnavailable'));
+                        }
+                        openWorkflow(row.WorkflowRecordId, $workflowAction, requestedDirectionId);
+                    } catch (error) {
+                        ShowError(error.message, 'openAssignedWorkflow');
+                    }
+                });
+            } else if (requestedDirectionId !== null) {
+                throw new Error(text('invalidId'));
             } else {
+                if (requestedStateId !== null) {
+                    if (!/^[1-9]\d*$/.test(requestedStateId) ||
+                        Number(requestedStateId) > 2147483647 ||
+                        !states.some(function (state) {
+                            return Number(state.IDEventoTransizione) === Number(requestedStateId);
+                        })) {
+                        throw new Error(text('invalidId'));
+                    }
+                    $('.dynamic-filter-current-state').val(requestedStateId);
+                    activeFilter = collectFilter();
+                }
                 loadRecords();
             }
         } catch (error) {

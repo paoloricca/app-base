@@ -1,0 +1,59 @@
+<div class="workflow-screensaver d-none" aria-hidden="true">
+    <div class="workflow-screensaver-radar" aria-hidden="true">
+        <canvas class="workflow-screensaver-particles" width="300" height="300"></canvas>
+        <svg class="workflow-screensaver-svg" viewBox="0 0 240 240">
+            <defs>
+                <radialGradient id="workflow-screensaver-core-glow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#3b82f6" stop-opacity=".28" />
+                    <stop offset="70%" stop-color="#06b6d4" stop-opacity=".08" />
+                    <stop offset="100%" stop-color="#fff" stop-opacity="0" />
+                </radialGradient>
+                <linearGradient id="workflow-screensaver-sweep-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#2563eb" stop-opacity=".32" />
+                    <stop offset="100%" stop-color="#06b6d4" stop-opacity="0" />
+                </linearGradient>
+            </defs>
+            <circle cx="120" cy="120" r="105" fill="url(#workflow-screensaver-core-glow)" />
+            <circle class="workflow-screensaver-ring-cw" cx="120" cy="120" r="102" fill="none"
+                stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 8" />
+            <circle class="workflow-screensaver-ring-ccw" cx="120" cy="120" r="84" fill="none"
+                stroke="#3b82f6" stroke-width="2" stroke-opacity=".45" stroke-dasharray="28 14 6 14" />
+            <g class="workflow-screensaver-sweep">
+                <path d="M120,120 L120,24 A96,96 0 0,1 203,72 Z"
+                    fill="url(#workflow-screensaver-sweep-gradient)" />
+                <line x1="120" y1="120" x2="120" y2="24" stroke="#2563eb"
+                    stroke-width="1.5" stroke-opacity=".55" />
+            </g>
+            <circle class="workflow-screensaver-ring-cw" cx="120" cy="120" r="58" fill="none"
+                stroke="#0891b2" stroke-width="2.5" stroke-opacity=".6" stroke-dasharray="45 22 10 22" />
+            <circle cx="120" cy="120" r="40" fill="#fff" stroke="#e2e8f0" stroke-width="1.5" />
+            <g class="workflow-screensaver-core-pulse">
+                <circle cx="120" cy="120" r="24" fill="#eff6ff" stroke="#3b82f6" stroke-width="2" />
+                <circle cx="120" cy="120" r="9" fill="#2563eb" />
+            </g>
+        </svg>
+    </div>
+    <div class="workflow-screensaver-text">
+        <h2>
+            <% if (LanguageContext == 'IT') { %>Tutto aggiornato<% } %>
+            <% if (LanguageContext == 'GB') { %>All caught up<% } %>
+            <% if (LanguageContext == 'ES') { %>Todo al día<% } %>
+            <% if (LanguageContext == 'CN') { %>一切正常<% } %>
+        </h2>
+        <p>
+            <span class="workflow-screensaver-live-dot" aria-hidden="true"></span>
+            <% if (LanguageContext == 'IT') { %>Nessuna azione richiesta al momento. In ascolto di nuovi eventi workflow dal server...<% } %>
+            <% if (LanguageContext == 'GB') { %>No action is required right now. Listening for new workflow events from the server...<% } %>
+            <% if (LanguageContext == 'ES') { %>No se requiere ninguna acción por ahora. Esperando nuevos eventos de workflow del servidor...<% } %>
+            <% if (LanguageContext == 'CN') { %>目前无需处理任何事项。正在等待服务器发送新的工作流事件...<% } %>
+        </p>
+        <div class="workflow-screensaver-hint d-none">
+            <span>
+                <% if (LanguageContext == 'IT') { %>Muovi il mouse per visualizzare la dashboard<% } %>
+                <% if (LanguageContext == 'GB') { %>Move the mouse to view the dashboard<% } %>
+                <% if (LanguageContext == 'ES') { %>Mueve el ratón para ver el panel<% } %>
+                <% if (LanguageContext == 'CN') { %>移动鼠标以查看仪表板<% } %>
+            </span>
+        </div>
+    </div>
+</div>

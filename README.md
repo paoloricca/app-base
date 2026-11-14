@@ -76,6 +76,23 @@ $env:WORKFLOW_SQL_TEST = '1'
 node --test tests\workflow-timing-sql.test.js
 ```
 
+## Dashboard operativa workflow
+
+Per abilitare la dashboard dei processi con attività assegnate all'utente,
+eseguire [workflow-dashboard.sql](sql/workflow-dashboard.sql) dopo gli script
+di dynamic-forms e [workflow-owner-profiles.sql](sql/workflow-owner-profiles.sql).
+La dashboard mostra una card aggregata per processo e considera assegnabili
+solo le richieste il cui stato corrente autorizza l'account tramite
+`FN_WORKFLOW_NODE_ACCOUNTS`. Se non ci sono richieste, mostra lo screensaver
+riutilizzabile del workflow. Per aprire direttamente
+la richiesta selezionata dalla dashboard, applicare anche
+[dynamic-forms-record-id-filter.sql](sql/dynamic-forms-record-id-filter.sql).
+La permanenza misura il tempo nello stato corrente e la reazione il tempo tra
+l'ingresso nello stato precedente e quello corrente. I riepiloghi per stato
+sommano entrambi i valori; i filtri nell'header limitano l'elenco al codice di
+stato selezionato. Le direzioni mostrate sono quelle autorizzate per l'Owner
+in sessione e aprono il popup workflow con la direzione selezionata.
+
 ## Chat nella storia del workflow
 
 Eseguire [workflow-chat-notifications.sql](sql/workflow-chat-notifications.sql),
