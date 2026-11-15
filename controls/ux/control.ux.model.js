@@ -1,6 +1,10 @@
 (function ($) {
     /* Questo controllo utente consente di interagire con un processo di sistema */
 
+    var attributeTemplateRequests = Object.create(null);
+    var attributeValuesTemplateRequest = null;
+    var attributeTypesRequest = null;
+
     let labelNuovo = {
         Description_IT: "Nuovo",
         Description_GB: "New",
@@ -22,6 +26,13 @@
         }, options);
 
         var plugin = $(this);
+        function bindFileUploadValueEvents($fileUpload, IDAttributo) {
+            $fileUpload.off('onupload.modelRecordValues ondelete.modelRecordValues')
+                .on('onupload.modelRecordValues ondelete.modelRecordValues', function () {
+                    var fileOptions = JSON.parse($fileUpload.attr('data-options'));
+                    plugin.find('#control_' + IDAttributo).val(fileOptions.filelist);
+                });
+        }
         function selectMultipleEntryRecord($row) {
             var IDClasse = Number($row.data('idclasse'));
             var IDRecord = Number($row.data('idrecord'));
@@ -35,7 +46,13 @@
                 $summary,
                 JSON.parse(plugin.attr('data-options')).user.LanguageContext
             );
-            plugin.model.loadAttributes(IDClasse, IDRecord);
+            loadMultipleEntryRecordValues(IDClasse, IDRecord).fail(function (xhr, status, errorThrown) {
+                ShowError(
+                    xhr && (xhr.responseText || xhr.message) || errorThrown || status ||
+                        'Unable to load the selected class record.',
+                    'model.loadMultipleEntryRecordValues'
+                );
+            });
         }
 
         plugin.off('.modelMultipleEntry')
@@ -91,7 +108,18 @@
                             $container.removeData('selected-record-id');
                             $confirm.removeData('args');
                             loadingRefresh = true;
-                            plugin.model.loadAttributes(args.IDClasse, null);
+                            $.when(
+                                refreshMultipleEntrySummary(args.IDClasse),
+                                loadMultipleEntryRecordValues(args.IDClasse, null)
+                            ).fail(function (xhr, status, errorThrown) {
+                                ShowError(
+                                    xhr && (xhr.responseText || xhr.message) || errorThrown || status ||
+                                        'Unable to refresh the class summary.',
+                                    'model.deleteClassRecord'
+                                );
+                            }).always(function () {
+                                $loader.hide();
+                            });
                         } catch (error) {
                             ShowError(error.message, 'model.deleteClassRecord');
                         } finally {
@@ -217,6 +245,14 @@
 
             return request.responseText;
         }
+        function modelApiRequestAsync(options, endpoint, method, data) {
+            return $.ajax({
+                type: method,
+                url: modelApiUrl(options, endpoint),
+                data: data,
+                dataType: 'text'
+            });
+        }
         function multipleEntryLabel(key, languageContext) {
             var labels = {
                 actions: { IT: 'Azioni', GB: 'Actions', ES: 'Acciones', CN: '操作' },
@@ -306,10 +342,97 @@
                 .find('.model-class-save')
                 .prop('disabled', maximumReached && !isEditingRecord);
         }
+
+        function loadMultipleEntryRecordValues(IdClasse, IDRecord) {
+            var $classContainer = plugin.find('.model-class-' + IdClasse + '-container');
+            var attributes = $classContainer.data('model-attributes') || [];
+            var options = JSON.parse(plugin.attr('data-options'));
+            var requestId = Number($classContainer.data('record-values-request-id') || 0) + 1;
+            $classContainer.data('record-values-request-id', requestId);
+
+            var fieldLoads = attributes.map(function (field) {
+                var valueRequest = IDRecord == null
+                    ? $.Deferred().resolve('').promise()
+                    : plugin.model.getIDModelloIstanzaRecordValueAsync(IDRecord, field.IDAttributo);
+
+                return valueRequest.then(function (value) {
+                    if (requestId !== Number($classContainer.data('record-values-request-id'))) {
+                        return;
+                    }
+
+                    var $control = $classContainer.find('#control_' + field.IDAttributo);
+                    if (Number(field.IDTipoDati) === 5) {
+                        $classContainer.find('input[name="control_' + field.IDAttributo + '"]')
+                            .prop('checked', false)
+                            .filter(function () {
+                                return this.value === String(value == null ? '' : value);
+                            })
+                            .prop('checked', true);
+                        return;
+                    }
+                    if (Number(field.IDTipoDati) === 6) {
+                        return plugin.model.loadAttributeValuesAsync(field.IDAttributo, value)
+                            .then(function (response) {
+                                if (requestId !== Number($classContainer.data('record-values-request-id'))) {
+                                    return;
+                                }
+                                var result = JSON.parse(response);
+                                if (result.status !== 'OK') {
+                                    throw new Error(result.error && result.error.message ||
+                                        'Unable to load attribute values.');
+                                }
+                                var $placeholder = $control.find('option').first().clone();
+                                $control.empty().append($placeholder);
+                                $.each(result.data || [], function (key, attributeValue) {
+                                    $control.append(new Option(
+                                        attributeValue.Description,
+                                        attributeValue.Code
+                                    ));
+                                });
+                                $control.val(value);
+                            });
+                    }
+                    if (Number(field.IDTipoDati) === 7) {
+                        var isWorkflowFieldReadOnly = options.ActionName === 'Modifica' &&
+                            (field.IsWorkflowEditable === false || field.IsWorkflowEditable === 0 ||
+                                field.IsWorkflowEditable === '0');
+                        var $fileUpload = $classContainer.find('.control_' + field.IDAttributo);
+                        $fileUpload.fileupload({
+                            user: options.user,
+                            filelist: value || '',
+                            filenumber: field.FileNumber,
+                            filetypes: field.FileTypes,
+                            fileweight: field.FileWeight,
+                            readOnly: options.ReadOnly === true || isWorkflowFieldReadOnly
+                        });
+                        bindFileUploadValueEvents($fileUpload, field.IDAttributo);
+                    }
+                    $control.val(value == null ? '' : value);
+                });
+            });
+
+            return $.when.apply($, fieldLoads).then(function () {
+                if (requestId === Number($classContainer.data('record-values-request-id'))) {
+                    updateMultipleEntryStatus(
+                        $classContainer.find('.model-multiple-entry-summary'),
+                        options.user.LanguageContext
+                    );
+                }
+            });
+        }
+
+        function refreshMultipleEntrySummary(IdClasse) {
+            var $classContainer = plugin.find('.model-class-' + IdClasse + '-container');
+            return loadMultipleEntrySummary(
+                IdClasse,
+                $classContainer.data('model-attributes') || []
+            );
+        }
+
         function loadMultipleEntrySummary(IdClasse, attributes) {
             var $summary = plugin.find('.model-class-' + IdClasse + '-container .model-multiple-entry-summary');
             if (!$summary.length) {
-                return;
+                return $.Deferred().resolve().promise();
             }
 
             var options = JSON.parse(plugin.attr('data-options'));
@@ -331,83 +454,105 @@
             }
             if (!summaryFields.length) {
                 $summary.addClass('d-none');
-                return;
+                return $.Deferred().resolve().promise();
             }
 
-            var records = [];
-            if (options.IDModelloIstanza != null) {
-                var result = JSON.parse(modelApiRequest(
+            var recordsRequest = options.IDModelloIstanza == null
+                ? $.Deferred().resolve([]).promise()
+                : modelApiRequestAsync(
                     options,
                     'class-records/' + options.IDModelloIstanza + '/' + IdClasse,
                     'GET'
-                ));
-                if (result.status !== 'OK') {
-                    throw new Error(result.error && result.error.message || 'Unable to load class records.');
-                }
-                records = result.data || [];
-            }
-
-            records.forEach(function (record) {
-                var IDRecord = Number(record.IDRecord);
-                var $row = $('<tr>');
-                if (canEdit) {
-                    $row.addClass('model-multiple-entry-record')
-                        .attr({
-                            'data-idclasse': IdClasse,
-                            'data-idrecord': IDRecord
-                        });
-                    if (Number(plugin.find('.model-class-' + IdClasse + '-container')
-                        .data('selected-record-id')) === IDRecord) {
-                        $row.addClass('model-multiple-entry-row-editing');
+                ).then(function (response) {
+                    var result = JSON.parse(response);
+                    if (result.status !== 'OK') {
+                        throw new Error(result.error && result.error.message ||
+                            'Unable to load class records.');
                     }
-                }
-                summaryFields.forEach(function (field) {
-                    var value = plugin.model.getIDModelloIstanzaRecordValue(IDRecord, field.IDAttributo);
-                    if (Number(field.IDTipoDati) === 6 && value !== '') {
-                        var choices = JSON.parse(plugin.model.loadAttributeValues(field.IDAttributo, value));
-                        var choice = (choices.data || []).find(function (item) {
-                            return String(item.Code) === String(value);
-                        });
-                        if (choice) {
-                            value = choice.Description;
+                    return result.data || [];
+                });
+
+            return recordsRequest.then(function (records) {
+                var rowLoads = [];
+                records.forEach(function (record) {
+                    var IDRecord = Number(record.IDRecord);
+                    var $row = $('<tr>');
+                    if (canEdit) {
+                        $row.addClass('model-multiple-entry-record')
+                            .attr({
+                                'data-idclasse': IdClasse,
+                                'data-idrecord': IDRecord
+                            });
+                        if (Number(plugin.find('.model-class-' + IdClasse + '-container')
+                            .data('selected-record-id')) === IDRecord) {
+                            $row.addClass('model-multiple-entry-row-editing');
                         }
                     }
-                    $('<td>', {
-                        text: summaryValue(field, value, options.user.LanguageContext)
-                    }).appendTo($row);
+
+                    var fieldLoads = summaryFields.map(function (field) {
+                        var $cell = $('<td>').appendTo($row);
+                        return plugin.model.getIDModelloIstanzaRecordValueAsync(
+                            IDRecord,
+                            field.IDAttributo
+                        ).then(function (value) {
+                            if (Number(field.IDTipoDati) === 6 && value !== '') {
+                                return plugin.model.loadAttributeValuesAsync(
+                                    field.IDAttributo,
+                                    value
+                                ).then(function (response) {
+                                    var choices = JSON.parse(response);
+                                    var choice = (choices.data || []).find(function (item) {
+                                        return String(item.Code) === String(value);
+                                    });
+                                    if (choice) {
+                                        value = choice.Description;
+                                    }
+                                    return value;
+                                });
+                            }
+                            return value;
+                        }).then(function (value) {
+                            $cell.text(summaryValue(field, value, options.user.LanguageContext));
+                        });
+                    });
+
+                    if (canEdit) {
+                        var $menu = $('<div>', { class: 'btn-group ms-auto flex-shrink-0' });
+                        $('<button>', {
+                            type: 'button',
+                            class: 'btn btn-light bi bi-three-dots-vertical btn-actions btn-circle rounded-circle p-0 d-inline-flex align-items-center justify-content-center',
+                            'data-bs-toggle': 'dropdown',
+                            'aria-expanded': 'false',
+                            'aria-label': multipleEntryLabel('actions', options.user.LanguageContext)
+                        }).appendTo($menu);
+                        var $menuItems = $('<ul>', { class: 'dropdown-menu dropdown-menu-end app-context-menu' });
+                        $('<button>', {
+                            type: 'button',
+                            class: 'dropdown-item multiple-entry-edit',
+                            'data-idclasse': IdClasse,
+                            'data-idrecord': IDRecord
+                        }).append($('<i>', { class: 'bi bi-pencil me-2' }))
+                            .append(document.createTextNode(multipleEntryLabel('edit', options.user.LanguageContext)))
+                            .wrap('<li></li>').parent().appendTo($menuItems);
+                        $('<button>', {
+                            type: 'button',
+                            class: 'dropdown-item multiple-entry-delete',
+                            'data-idclasse': IdClasse,
+                            'data-idrecord': IDRecord
+                        }).append($('<i>', { class: 'bi bi-trash me-2' }))
+                            .append(document.createTextNode(multipleEntryLabel('delete', options.user.LanguageContext)))
+                            .wrap('<li></li>').parent().appendTo($menuItems);
+                        $menu.append($menuItems).appendTo($('<td>', { class: 'text-end' }).appendTo($row));
+                    }
+                    $body.append($row);
+                    rowLoads.push($.when.apply($, fieldLoads));
                 });
-                if (canEdit) {
-                    var $menu = $('<div>', { class: 'btn-group ms-auto flex-shrink-0' });
-                    $('<button>', {
-                        type: 'button',
-                        class: 'btn btn-light bi bi-three-dots-vertical btn-actions btn-circle rounded-circle p-0 d-inline-flex align-items-center justify-content-center',
-                        'data-bs-toggle': 'dropdown',
-                        'aria-expanded': 'false',
-                        'aria-label': multipleEntryLabel('actions', options.user.LanguageContext)
-                    }).appendTo($menu);
-                    var $menuItems = $('<ul>', { class: 'dropdown-menu dropdown-menu-end app-context-menu' });
-                    $('<button>', {
-                        type: 'button',
-                        class: 'dropdown-item multiple-entry-edit',
-                        'data-idclasse': IdClasse,
-                        'data-idrecord': IDRecord
-                    }).append($('<i>', { class: 'bi bi-pencil me-2' }))
-                        .append(document.createTextNode(multipleEntryLabel('edit', options.user.LanguageContext)))
-                        .wrap('<li></li>').parent().appendTo($menuItems);
-                    $('<button>', {
-                        type: 'button',
-                        class: 'dropdown-item multiple-entry-delete',
-                        'data-idclasse': IdClasse,
-                        'data-idrecord': IDRecord
-                    }).append($('<i>', { class: 'bi bi-trash me-2' }))
-                        .append(document.createTextNode(multipleEntryLabel('delete', options.user.LanguageContext)))
-                        .wrap('<li></li>').parent().appendTo($menuItems);
-                    $menu.append($menuItems).appendTo($('<td>', { class: 'text-end' }).appendTo($row));
-                }
-                $body.append($row);
+
+                $summary.toggleClass('d-none', !summaryFields.length);
+                return $.when.apply($, rowLoads).then(function () {
+                    updateMultipleEntryStatus($summary, options.user.LanguageContext);
+                });
             });
-            $summary.toggleClass('d-none', !summaryFields.length);
-            updateMultipleEntryStatus($summary, options.user.LanguageContext);
         }
 
         $.fn.model.draw = function () {
@@ -465,7 +610,7 @@
                                 } else {
                                     /* Per ogni IDClasse, verifica l'esistenza di un record esistente */
                                     $.when(
-                                        plugin.model.getIDModelloIstanzaRecord(options.IDModelloIstanza, row.IDClasse)
+                                        plugin.model.getIDModelloIstanzaRecordAsync(options.IDModelloIstanza, row.IDClasse)
                                     ).then(function (IDRecord, textStatus, jqXHR) {
                                         plugin.model.loadAttributes(row.IDClasse, IDRecord)
                                     });
@@ -771,18 +916,37 @@
             });
         }
         $.fn.model.loadAttributeTemplate = function (IDTipoDati) {
-            return $.ajax({
-                type: "GET",
-                url: "/controls/ui/control.ui.model-class-attribute-tipo-dati-" + IDTipoDati + ".ejs?" + Date.now(),
-                async: false
-            }).responseText
+            var templateKey = String(IDTipoDati);
+            if (!attributeTemplateRequests[templateKey]) {
+                var request = $.ajax({
+                    type: "GET",
+                    url: "/controls/ui/control.ui.model-class-attribute-tipo-dati-" + IDTipoDati + ".ejs?" + Date.now()
+                });
+                attributeTemplateRequests[templateKey] = request;
+                request.fail(function (xhr, status, errorThrown) {
+                    if (attributeTemplateRequests[templateKey] === request) {
+                        delete attributeTemplateRequests[templateKey];
+                    }
+                    ShowError(xhr.responseText || errorThrown || status, 'model.loadAttributeTemplate');
+                });
+            }
+            return attributeTemplateRequests[templateKey];
         };
         $.fn.model.loadAttributeValuesTemplate = function () {
-            return $.ajax({
-                type: "GET",
-                url: "/controls/ui/control.ui.model-class-attribute-values.ejs?" + Date.now(),
-                async: false
-            }).responseText
+            if (!attributeValuesTemplateRequest) {
+                var request = $.ajax({
+                    type: "GET",
+                    url: "/controls/ui/control.ui.model-class-attribute-values.ejs?" + Date.now()
+                });
+                attributeValuesTemplateRequest = request;
+                request.fail(function (xhr, status, errorThrown) {
+                    if (attributeValuesTemplateRequest === request) {
+                        attributeValuesTemplateRequest = null;
+                    }
+                    ShowError(xhr.responseText || errorThrown || status, 'model.loadAttributeValuesTemplate');
+                });
+            }
+            return attributeValuesTemplateRequest;
         };
         $.fn.model.editAttributeValueList = function (value) {
 
@@ -968,6 +1132,21 @@
                 "GET"
             );
         };
+        $.fn.model.loadAttributeValuesAsync = function (IDAttributo, currentValue) {
+            var options = JSON.parse(plugin.attr('data-options'));
+            var endpoint = "model-class-attribute-values/" + IDAttributo;
+            var query = [];
+            if (options.ActionName) {
+                query.push("action=" + encodeURIComponent(options.ActionName));
+            }
+            if (currentValue != null && currentValue !== '') {
+                query.push("currentValue=" + encodeURIComponent(currentValue));
+            }
+            if (query.length) {
+                endpoint += "?" + query.join("&");
+            }
+            return modelApiRequestAsync(options, endpoint, "GET");
+        };
         $.fn.model.postIDModelloIstanza = function () {
             var options = JSON.parse(plugin.attr('data-options'));
             var instanceId = Number(modelApiRequest(options, "post-idmodello-istanza", "POST", {
@@ -1030,6 +1209,19 @@
             }
             return recordId;
         };
+        $.fn.model.getIDModelloIstanzaRecordAsync = function (IDModelloIstanza, IDClasse) {
+            var options = JSON.parse(plugin.attr('data-options'));
+            return modelApiRequestAsync(options, "get-idmodello-istanza-record", "POST", {
+                IDModelloIstanza: IDModelloIstanza,
+                IDClasse: IDClasse
+            }).then(function (response) {
+                var recordId = Number(response);
+                if (!Number.isSafeInteger(recordId) || recordId <= 0) {
+                    throw new Error("The server returned an invalid class record ID.");
+                }
+                return recordId;
+            });
+        };
         $.fn.model.createClassRecord = function (IDModelloIstanza, IDClasse) {
             var options = JSON.parse(plugin.attr('data-options'));
             var response = JSON.parse(modelApiRequest(options, 'class-records', 'POST', {
@@ -1050,6 +1242,13 @@
                 IdAttributo: IDAttributo
             });
         };
+        $.fn.model.getIDModelloIstanzaRecordValueAsync = function (IDRecord, IDAttributo) {
+            var options = JSON.parse(plugin.attr('data-options'));
+            return modelApiRequestAsync(options, "get-idmodello-istanza-record-value", "POST", {
+                IdRecord: IDRecord,
+                IdAttributo: IDAttributo
+            });
+        };
         $.fn.model.laodTipoDati = function () {
 
             let fnName = getFnName();
@@ -1058,11 +1257,21 @@
 
                 var options = JSON.parse(plugin.attr('data-options'));
 
-                return $.ajax({
-                    url: "/tipo-dati",
-                    type: "GET",
-                    data: {},
-                }).done(function (response) {
+                if (!attributeTypesRequest) {
+                    var request = $.ajax({
+                        url: "/tipo-dati",
+                        type: "GET",
+                        data: {},
+                    });
+                    attributeTypesRequest = request;
+                    request.fail(function () {
+                        if (attributeTypesRequest === request) {
+                            attributeTypesRequest = null;
+                        }
+                    });
+                }
+
+                return attributeTypesRequest.done(function (response) {
 
                     plugin.find(".tipo-dati").empty();
 
@@ -1518,7 +1727,7 @@
 
                     /* Caricamento valori lista */
                     $.when(
-                        plugin.model.loadAttributeValues(campo.IDAttributo)
+                        plugin.model.loadAttributeValuesAsync(campo.IDAttributo)
                     ).then(function (AttributesValues, textStatus, jqXHR) {
 
                         attributesValuesList = JSON.parse(AttributesValues).data;
@@ -1656,6 +1865,7 @@
                 plugin.find('.control_' + row.IDAttributo + ' :input').prop('disabled', true);
             }
 
+            var fieldLoads = [];
             $.when(
                 $.ajax({
                     url: modelApiUrl(JSON.parse(plugin.attr('data-options')),
@@ -1673,17 +1883,17 @@
                         );
                     } else if (response.status == "OK") {
 
+                        plugin.find('.model-class-' + IdClasse + '-container')
+                            .data('model-attributes', response.data || []);
                         plugin.find('.model-class-' + IdClasse + '-attributes').empty();
                         try {
-                            loadMultipleEntrySummary(IdClasse, response.data);
+                            fieldLoads.push(loadMultipleEntrySummary(IdClasse, response.data));
                         } catch (error) {
-                            ShowError(error.message, 'model.loadMultipleEntrySummary');
+                            fieldLoads.push($.Deferred().reject(error).promise());
                         }
 
                         if (isModelPreview(options) &&
                             plugin.find('.model-class-' + IdClasse + '-container .model-multiple-entry-summary').length) {
-                            plugin.trigger("onload");
-                            $sectionLoader.hide();
                             return;
                         }
 
@@ -1691,29 +1901,27 @@
 
                             /* Caricamento valori attributo */
                             var recordValue = '';
+                            var fieldPlaceholder = document.createComment('');
+                            plugin.find('.model-class-' + IdClasse + '-attributes')[0]
+                                .appendChild(fieldPlaceholder);
 
                             if (options.Mode == 'edit') {
 
-                                $.when(IDRecord == null
+                                var fieldLoad = $.when(IDRecord == null
                                     ? ''
-                                    : plugin.model.getIDModelloIstanzaRecordValue(IDRecord, row.IDAttributo)
-                                ).then(function (RecordValue, textStatus, jqXHR) {
+                                    : plugin.model.getIDModelloIstanzaRecordValueAsync(IDRecord, row.IDAttributo)
+                                ).then(function (RecordValue) {
 
-                                    $.when(
+                                    return $.when(
                                         plugin.model.loadAttributeTemplate(row.IDTipoDati)
-                                    ).then(function (templateString, textStatus, jqXHR) {
+                                    ).then(function (templateString) {
 
                                         var mode = options.Mode;
 
-                                        plugin.find('.model-class-' + IdClasse + '-attributes').append(
-
+                                        $(fieldPlaceholder).replaceWith(
                                             ejs.render(templateString, { row, mode, user })
                                         );
                                         lockWorkflowField(row);
-
-                                        plugin.find('.number').inputFilter(function (value) {
-                                            return /^-?\d*$/.test(value);
-                                        });
 
                                         /* TESTO */
                                         if (row.IDTipoDati == 1 || row.IDTipoDati == 11) {
@@ -1742,15 +1950,18 @@
                                         }
                                         /* BOOLEAN */
                                         if (row.IDTipoDati == 5) {
-                                            plugin.find("input[name=control_" + row.IDAttributo + "][value=" + RecordValue + "]").attr('checked', 'checked');
+                                            plugin.find('input[name="control_' + row.IDAttributo + '"]')
+                                                .filter(function () {
+                                                    return this.value === String(RecordValue == null ? '' : RecordValue);
+                                                })
+                                                .prop('checked', true);
                                         }
                                         /* LISTA COMBINATA */
                                         if (row.IDTipoDati == 6) {
 
                                             /* Caricamento valori lista */
-                                            $.when(
-                                                plugin.model.loadAttributeValues(row.IDAttributo, RecordValue)
-                                            ).then(function (AttributesValues, textStatus, jqXHR) {
+                                            return plugin.model.loadAttributeValuesAsync(row.IDAttributo, RecordValue)
+                                                .then(function (AttributesValues) {
                                                 $.each(JSON.parse(AttributesValues).data, function (key, AttributeValue) {
                                                     plugin.find("#control_" + row.IDAttributo).append(
                                                         new Option(
@@ -1780,33 +1991,21 @@
                                                 readOnly: options.ReadOnly === true || isWorkflowFieldReadOnly(row)
                                             });
 
-                                            /* Registra l'evento {onupload} */
-                                            ControlFileUpload.bind(
-                                                "onupload", function () {
-                                                    var options = JSON.parse(ControlFileUpload.attr('data-options'));
-                                                plugin.find("#control_" + row.IDAttributo).val(options.filelist);
-                                            });
-
-                                            /* Registra l'evento {ondelete} */
-                                            ControlFileUpload.bind(
-                                                "ondelete", function () {
-                                                    var options = JSON.parse(ControlFileUpload.attr('data-options'));
-                                                plugin.find("#control_" + row.IDAttributo).val(options.filelist);
-                                            });
+                                            bindFileUploadValueEvents(ControlFileUpload, row.IDAttributo);
                                         }
                                     });
                                 });
+                                fieldLoads.push(fieldLoad);
                             } else {
                                 /* design mode */
 
-                                $.when(
+                                var fieldLoad = $.when(
                                     plugin.model.loadAttributeTemplate(row.IDTipoDati)
-                                ).then(function (templateString, textStatus, jqXHR) {
+                                ).then(function (templateString) {
 
                                     var mode = options.Mode;
 
-                                    plugin.find('.model-class-' + IdClasse + '-attributes').append(
-
+                                    $(fieldPlaceholder).replaceWith(
                                         ejs.render(templateString, { row, mode, user })
                                     );
 
@@ -1841,9 +2040,8 @@
                                     if (row.IDTipoDati == 6) {
 
                                         /* Caricamento valori lista */
-                                        $.when(
-                                            plugin.model.loadAttributeValues(row.IDAttributo)
-                                        ).then(function (AttributesValues, textStatus, jqXHR) {
+                                        return plugin.model.loadAttributeValuesAsync(row.IDAttributo)
+                                            .then(function (AttributesValues) {
                                             $.each(JSON.parse(AttributesValues).data, function (key, AttributeValue) {
                                                 plugin.find("#control_" + row.IDAttributo).append(
                                                     new Option(
@@ -1868,19 +2066,7 @@
                                             fileweight: row.FileWeight
                                         });
 
-                                        /* Registra l'evento {onupload} */
-                                        ControlFileUpload.bind(
-                                            "onupload", function () {
-                                                var options = JSON.parse(ControlFileUpload.attr('data-options'));
-                                                plugin.find("#control_" + row.IDAttributo).val(options.filelist);
-                                            });
-
-                                        /* Registra l'evento {ondelete} */
-                                        ControlFileUpload.bind(
-                                            "ondelete", function () {
-                                                var options = JSON.parse(ControlFileUpload.attr('data-options'));
-                                                plugin.find("#control_" + row.IDAttributo).val(options.filelist);
-                                            });
+                                        bindFileUploadValueEvents(ControlFileUpload, row.IDAttributo);
                                     }
 
                                     plugin.find('.btn-attribute-' + row.IDAttributo + '-edit').click(function () {
@@ -1905,28 +2091,36 @@
                                     });
 
                                 });
+                                fieldLoads.push(fieldLoad);
 
 
                             }
 
                         });
 
-                        plugin.find(".btn-configura-lista").click(function () {
-                            $('#container-attribute-edit-values').modal('show');
-                        });
-                        plugin.find(".btn-salva-lista").click(function () {
-                            plugin.model.applyAttributeValueList(plugin.find('#IDValue').val());
-                        });
-
-                        plugin.find(".btn-delete-lista").click(function () {
-                            plugin.model.delAttributeValueList(plugin.find('#IDValue').val());
-                        });
                     }
                     return fieldlist;
                 }).fail(function (xhr, status, errorThrown) {
 
                 })
             ).then(function (response) {
+                return $.when.apply($, fieldLoads).then(function () {
+
+                plugin.find(".btn-configura-lista")
+                    .off('click.modelAttributeList')
+                    .on('click.modelAttributeList', function () {
+                        $('#container-attribute-edit-values').modal('show');
+                    });
+                plugin.find(".btn-salva-lista")
+                    .off('click.modelAttributeList')
+                    .on('click.modelAttributeList', function () {
+                        plugin.model.applyAttributeValueList(plugin.find('#IDValue').val());
+                    });
+                plugin.find(".btn-delete-lista")
+                    .off('click.modelAttributeList')
+                    .on('click.modelAttributeList', function () {
+                        plugin.model.delAttributeValueList(plugin.find('#IDValue').val());
+                    });
 
                 if (options.Mode == 'design') {
 
@@ -2015,7 +2209,19 @@
                                         if ($classContainer.find('.model-multiple-entry-summary').length) {
                                             $classContainer.removeData('selected-record-id');
                                             loadingRefresh = true;
-                                            plugin.model.loadAttributes(IdClasse, null);
+                                            $.when(
+                                                refreshMultipleEntrySummary(IdClasse),
+                                                loadMultipleEntryRecordValues(IdClasse, null)
+                                            ).fail(function (xhr, status, errorThrown) {
+                                                ShowError(
+                                                    xhr && (xhr.responseText || xhr.message) ||
+                                                        errorThrown || status ||
+                                                        'Unable to refresh the class summary.',
+                                                    'model.saveClassRecord'
+                                                );
+                                            }).always(function () {
+                                                $sectionLoader.hide();
+                                            });
                                         }
                                         plugin.trigger("onsave");
                                         $classContainer[0].scrollIntoView({
@@ -2039,9 +2245,14 @@
                 }
                 plugin.trigger("onload");
                 $sectionLoader.hide();
+                });
             }).fail(function (xhr, status, errorThrown) {
                 $sectionLoader.hide();
-                ShowError(xhr.responseText || errorThrown || status, 'model.loadAttributes');
+                ShowError(
+                    xhr && (xhr.responseText || xhr.message) || errorThrown || status ||
+                        'Unable to load model attributes.',
+                    'model.loadAttributes'
+                );
             });
         }
         $.fn.model.salvaClasse = function (IdClasse, FieldList) {

@@ -964,6 +964,17 @@ div, span, h1, h2, h3, h4, h5, h6, .col-12, label {
     border: 1px solid #e1e1e1;
     background-color: #f1f1f1;
 }
+#container-class-edit,
+#container-attribute-edit,
+#container-attribute-edit-values {
+    z-index: 2010;
+}
+#dynamic-form-editor {
+    z-index: 2010;
+}
+#dynamic-form-editor.show ~ .modal-backdrop {
+    z-index: 2005;
+}
 .model-section-header {
     display: flex;
     align-items: center;

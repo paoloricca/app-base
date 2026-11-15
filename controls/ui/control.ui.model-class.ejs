@@ -1,8 +1,5 @@
 ﻿<form id="frm-class-<%= row.IDClasse %>" class="was-validated" novalidate>
 	<div data-fieldlist="" class="col-12 border border-1 p-2 mt-2 rounded model-class-<%= row.IDClasse %>-container">
-		<div class="spinner-border text-primary mt-3 model-section-loader" role="status"
-			aria-label="<%= { IT: 'Caricamento', GB: 'Loading', ES: 'Cargando', CN: '正在加载' }[LanguageContext] || 'Loading' %>"
-			style="display:none;"></div>
 		<div class="card border-success mb-0 mt-3" style="display:none;">
 			<div class="card-header text-bg-success">
                 <% if (LanguageContext == "IT") { %>
@@ -21,6 +18,9 @@
 		</div>
 		<div class="col-12 text-start p-0 f-roboto b p-2 mb-2 mt-2 ps-3 process-bg model-section-header"
             role="button" tabindex="0" aria-controls="model-class-attributes-<%= row.IDClasse %>" aria-expanded="true">
+            <span class="spinner-border spinner-border-sm text-primary me-2 model-section-loader" role="status"
+                aria-label="<%= { IT: 'Caricamento', GB: 'Loading', ES: 'Cargando', CN: '正在加载' }[LanguageContext] || 'Loading' %>"
+                style="display:none;"></span>
             <span class="model-section-title"><%= row.Description %></span>
             <a style="display: none;" class="btn btn-light bi bi-three-dots-vertical btn-actions workflow-context-menu-trigger m-0 ms-2 btn-edit-class-<%= row.IDClasse %> model-editor-menu-trigger"
 		        data-bs-toggle="dropdown"
