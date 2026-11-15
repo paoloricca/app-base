@@ -190,6 +190,66 @@ router.post('/dynamic-forms/:IdProcesso/api/get-idmodello-istanza-record', funct
         .catch(error => sendError(res, error));
 });
 
+router.get('/dynamic-forms/:IdProcesso/api/class-records/:IDModelloIstanza/:IDClasse', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    if (!isPositiveInteger(req.params.IdProcesso) ||
+        !isPositiveInteger(req.params.IDModelloIstanza) ||
+        !isPositiveInteger(req.params.IDClasse)) {
+        sendError(res, { message: 'Invalid process, instance or class ID.' });
+        return;
+    }
+    crud.getClassRecords(
+        req.params.IdProcesso,
+        req.params.IDModelloIstanza,
+        req.params.IDClasse,
+        req.session.user.IdAttore,
+        req.session.user.IdAccount
+    ).then(data => res.status(200).json(new response('OK', data, null)))
+        .catch(error => sendError(res, error));
+});
+
+router.post('/dynamic-forms/:IdProcesso/api/class-records', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    if (!isPositiveInteger(req.params.IdProcesso) ||
+        !isPositiveInteger(req.body.IDModelloIstanza) ||
+        !isPositiveInteger(req.body.IDClasse)) {
+        sendError(res, { message: 'Invalid process, instance or class ID.' });
+        return;
+    }
+    crud.createClassRecord(
+        req.params.IdProcesso,
+        req.body.IDModelloIstanza,
+        req.body.IDClasse,
+        req.session.user.IdAttore,
+        req.session.user.IdAccount
+    ).then(id => res.status(200).json(new response('OK', id, null)))
+        .catch(error => sendError(res, error));
+});
+
+router.delete('/dynamic-forms/:IdProcesso/api/class-records/:IDRecord', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    if (!isPositiveInteger(req.params.IdProcesso) ||
+        !isPositiveInteger(req.params.IDRecord) ||
+        !isPositiveInteger(req.body.IDClasse)) {
+        sendError(res, { message: 'Invalid process, class or record ID.' });
+        return;
+    }
+    crud.deleteClassRecord(
+        req.params.IdProcesso,
+        req.params.IDRecord,
+        req.body.IDClasse,
+        req.session.user.IdAttore,
+        req.session.user.IdAccount
+    ).then(() => res.status(200).json(new response('OK', null, null)))
+        .catch(error => sendError(res, error));
+});
+
 router.post('/dynamic-forms/:IdProcesso/api/get-idmodello-istanza-record-value', function (req, res) {
     if (!sessionUtil.verifyUser(req, res)) {
         return;

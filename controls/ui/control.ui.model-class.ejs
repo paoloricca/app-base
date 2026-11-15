@@ -1,6 +1,8 @@
 ﻿<form id="frm-class-<%= row.IDClasse %>" class="was-validated" novalidate>
 	<div data-fieldlist="" class="col-12 border border-1 p-2 mt-2 rounded model-class-<%= row.IDClasse %>-container">
-		<div class="spinner-border text-primary mt-3" role="status"></div>
+		<div class="spinner-border text-primary mt-3 model-section-loader" role="status"
+			aria-label="<%= { IT: 'Caricamento', GB: 'Loading', ES: 'Cargando', CN: '正在加载' }[LanguageContext] || 'Loading' %>"
+			style="display:none;"></div>
 		<div class="card border-success mb-0 mt-3" style="display:none;">
 			<div class="card-header text-bg-success">
                 <% if (LanguageContext == "IT") { %>
@@ -73,7 +75,16 @@
 	        </ul>
             <span class="model-section-toggle btn btn-light btn-minus-plus-<%= row.IDClasse %>" aria-hidden="true"><i class="bi bi-folder-minus"></i></span>
 		</div>
-        <div id="model-class-attributes-<%= row.IDClasse %>" class="model-class-<%= row.IDClasse %>-attributes"></div>
+		<% if (row.NumeroCicliMin > 1) { %>
+		<div class="table-responsive model-multiple-entry-summary d-none" data-class-id="<%= row.IDClasse %>" data-minimum="<%= row.NumeroCicliMin %>" data-maximum="<%= row.NumeroCicli == null ? '' : row.NumeroCicli %>">
+			<div class="alert alert-info py-2 mb-2 model-multiple-entry-info d-none" role="status" aria-live="polite"></div>
+		    <table class="table table-sm table-hover align-middle mb-3 model-multiple-entry-table">
+		        <thead><tr></tr></thead>
+		        <tbody></tbody>
+		    </table>
+		</div>
+		<% } %>
+		<div id="model-class-attributes-<%= row.IDClasse %>" class="model-class-<%= row.IDClasse %>-attributes"></div>
 	</div>
 
 </form>

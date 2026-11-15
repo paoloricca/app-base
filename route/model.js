@@ -9,10 +9,16 @@ var requestBase = require('../model/request-base');
 var requestModel = require('../model/request-model');
 var response = require('../model/response');
 const crud = require('../crud/model');
+const dynamicFormsCrud = require('../crud/dynamic-forms');
 const fs = require('fs');
 const path = require('path');
 const sessionUtil = require('../utils/session')
 const session = require('express-session');
+
+function isPositiveInteger(value) {
+    const number = Number(value);
+    return Number.isSafeInteger(number) && number > 0;
+}
 
 model.get('/model-script', (req, res) => {
     const filePath = path.resolve(__dirname, '../controller/model.js');
@@ -363,6 +369,56 @@ model.post('/get-idmodello-istanza-record', function (req, res) {
 
         });
     }
+});
+model.get('/class-records/:IDModelloIstanza/:IDClasse', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    if (!isPositiveInteger(req.params.IDModelloIstanza) ||
+        !isPositiveInteger(req.params.IDClasse)) {
+        res.status(200).json(new response('ERR', null, { message: 'Invalid instance or class ID.' }));
+        return;
+    }
+    dynamicFormsCrud.getInstanceClassRecords(
+        req.params.IDModelloIstanza,
+        req.params.IDClasse,
+        req.session.user.IdAttore,
+        req.session.user.IdAccount
+    ).then(data => res.status(200).json(new response('OK', data, null)))
+        .catch(error => res.status(200).json(new response('ERR', null, error)));
+});
+model.post('/class-records', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    if (!isPositiveInteger(req.body.IDModelloIstanza) ||
+        !isPositiveInteger(req.body.IDClasse)) {
+        res.status(200).json(new response('ERR', null, { message: 'Invalid instance or class ID.' }));
+        return;
+    }
+    dynamicFormsCrud.createInstanceClassRecord(
+        req.body.IDModelloIstanza,
+        req.body.IDClasse,
+        req.session.user.IdAttore,
+        req.session.user.IdAccount
+    ).then(data => res.status(200).json(new response('OK', data, null)))
+        .catch(error => res.status(200).json(new response('ERR', null, error)));
+});
+model.delete('/class-records/:IDRecord', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    if (!isPositiveInteger(req.params.IDRecord) || !isPositiveInteger(req.body.IDClasse)) {
+        res.status(200).json(new response('ERR', null, { message: 'Invalid class or record ID.' }));
+        return;
+    }
+    dynamicFormsCrud.deleteInstanceClassRecord(
+        req.params.IDRecord,
+        req.body.IDClasse,
+        req.session.user.IdAttore,
+        req.session.user.IdAccount
+    ).then(() => res.status(200).json(new response('OK', null, null)))
+        .catch(error => res.status(200).json(new response('ERR', null, error)));
 });
 model.post('/get-idmodello-istanza-record-value', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {

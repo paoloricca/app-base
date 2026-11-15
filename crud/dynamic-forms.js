@@ -198,6 +198,75 @@ function getClassRecord(IdProcesso, IDModelloIstanza, IDClasse, IdAttore, IdAcco
     });
 }
 
+function getClassRecords(IdProcesso, IDModelloIstanza, IDClasse, IdAttore, IdAccount) {
+    return executeProcedure('SP_GET_PROCESS_FORM_CLASS_RECORDS', {
+        IdProcesso: intInput(IdProcesso),
+        IDModelloIstanza: intInput(IDModelloIstanza),
+        IDClasse: intInput(IDClasse),
+        IdAttore: intInput(IdAttore),
+        IdAccount: intInput(IdAccount)
+    }).then(function (result) {
+        return result.recordset || [];
+    });
+}
+
+function createClassRecord(IdProcesso, IDModelloIstanza, IDClasse, IdAttore, IdAccount) {
+    return executeProcedure('SP_POST_PROCESS_FORM_CLASS_RECORD', {
+        IdProcesso: intInput(IdProcesso),
+        IDModelloIstanza: intInput(IDModelloIstanza),
+        IDClasse: intInput(IDClasse),
+        IdAttore: intInput(IdAttore),
+        IdAccount: intInput(IdAccount)
+    }, { IDRecord: sql.Int }).then(function (result) {
+        return result.output.IDRecord;
+    });
+}
+
+function deleteClassRecord(IdProcesso, IDRecord, IDClasse, IdAttore, IdAccount) {
+    return executeProcedure('SP_DEL_PROCESS_FORM_CLASS_RECORD', {
+        IdProcesso: intInput(IdProcesso),
+        IDRecord: intInput(IDRecord),
+        IDClasse: intInput(IDClasse),
+        IdAttore: intInput(IdAttore),
+        IdAccount: intInput(IdAccount)
+    }).then(function () {
+        return true;
+    });
+}
+
+function getInstanceClassRecords(IDModelloIstanza, IDClasse, IdAttore, IdAccount) {
+    return executeProcedure('SP_GET_IDMODELLO_ISTANZA_CLASS_RECORDS', {
+        IDModelloIstanza: intInput(IDModelloIstanza),
+        IDClasse: intInput(IDClasse),
+        IdAttore: intInput(IdAttore),
+        IdAccount: intInput(IdAccount)
+    }).then(function (result) {
+        return result.recordset || [];
+    });
+}
+
+function createInstanceClassRecord(IDModelloIstanza, IDClasse, IdAttore, IdAccount) {
+    return executeProcedure('SP_POST_IDMODELLO_ISTANZA_CLASS_RECORD', {
+        IDModelloIstanza: intInput(IDModelloIstanza),
+        IDClasse: intInput(IDClasse),
+        IdAttore: intInput(IdAttore),
+        IdAccount: intInput(IdAccount)
+    }, { IDRecord: sql.Int }).then(function (result) {
+        return result.output.IDRecord;
+    });
+}
+
+function deleteInstanceClassRecord(IDRecord, IDClasse, IdAttore, IdAccount) {
+    return executeProcedure('SP_DEL_IDMODELLO_ISTANZA_CLASS_RECORD', {
+        IDRecord: intInput(IDRecord),
+        IDClasse: intInput(IDClasse),
+        IdAttore: intInput(IdAttore),
+        IdAccount: intInput(IdAccount)
+    }).then(function () {
+        return true;
+    });
+}
+
 function getRecordValue(IdProcesso, IDRecord, IDAttributo, IdAttore, IdAccount) {
     return executeProcedure('SP_GET_PROCESS_FORM_VALUE', {
         IdProcesso: intInput(IdProcesso),
@@ -276,6 +345,12 @@ module.exports = {
     getAttributeValues,
     createInstance,
     getClassRecord,
+    getClassRecords,
+    createClassRecord,
+    deleteClassRecord,
+    getInstanceClassRecords,
+    createInstanceClassRecord,
+    deleteInstanceClassRecord,
     getRecordValue,
     saveRecordValue,
     saveRecordMedia,

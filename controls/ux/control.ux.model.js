@@ -22,6 +22,89 @@
         }, options);
 
         var plugin = $(this);
+        function selectMultipleEntryRecord($row) {
+            var IDClasse = Number($row.data('idclasse'));
+            var IDRecord = Number($row.data('idrecord'));
+            var $summary = $row.closest('.model-multiple-entry-summary');
+            var $container = plugin.find('.model-class-' + IDClasse + '-container');
+            $container.data('selected-record-id', IDRecord);
+            $summary.find('.model-multiple-entry-record')
+                .removeClass('model-multiple-entry-row-editing');
+            $row.addClass('model-multiple-entry-row-editing');
+            updateMultipleEntryStatus(
+                $summary,
+                JSON.parse(plugin.attr('data-options')).user.LanguageContext
+            );
+            plugin.model.loadAttributes(IDClasse, IDRecord);
+        }
+
+        plugin.off('.modelMultipleEntry')
+            .on('click.modelMultipleEntry', '.multiple-entry-edit', function () {
+                selectMultipleEntryRecord($(this).closest('.model-multiple-entry-record'));
+            })
+            .on('click.modelMultipleEntry', '.multiple-entry-delete', function () {
+                var $action = $(this);
+                var IDClasse = Number($action.data('idclasse'));
+                var IDRecord = Number($action.data('idrecord'));
+                var $confirm = plugin.find('.model-multiple-entry-delete-confirm');
+                $confirm.data('args', { IDClasse: IDClasse, IDRecord: IDRecord });
+                $confirm.confirmDelete.show($confirm);
+            })
+            .on('click.modelMultipleEntry', '.model-multiple-entry-record', function (event) {
+                if ($(event.target).closest('button, a, .dropdown-menu').length) {
+                    return;
+                }
+                selectMultipleEntryRecord($(this));
+            })
+            .on('show.bs.dropdown.modelMultipleEntry', '.model-multiple-entry-summary [data-bs-toggle="dropdown"]', function () {
+                $(this).closest('.model-multiple-entry-summary')
+                    .addClass('model-multiple-entry-menu-open');
+            })
+            .on('hidden.bs.dropdown.modelMultipleEntry', '.model-multiple-entry-summary [data-bs-toggle="dropdown"]', function () {
+                var $summary = $(this).closest('.model-multiple-entry-summary');
+                if (!$summary.find('.dropdown-menu.show').length) {
+                    $summary.removeClass('model-multiple-entry-menu-open');
+                }
+            });
+
+        plugin.off('onconfirm.modelMultipleEntry')
+            .on('onconfirm.modelMultipleEntry', '.model-multiple-entry-delete-confirm', function () {
+                var $confirm = $(this);
+                var args = $confirm.data('args');
+                if (!args) {
+                    return;
+                }
+                try {
+                    var options = JSON.parse(plugin.attr('data-options'));
+                    var $container = plugin.find('.model-class-' + args.IDClasse + '-container');
+                    var $loader = $container.find('.model-section-loader').show();
+                    setTimeout(function () {
+                        var loadingRefresh = false;
+                        try {
+                            var status = modelApiRequest(options, 'class-records/' + args.IDRecord, 'DELETE', {
+                                IDClasse: args.IDClasse
+                            });
+                            var response = JSON.parse(status);
+                            if (response.status !== 'OK') {
+                                throw new Error(response.error && response.error.message || 'Unable to delete the class record.');
+                            }
+                            $container.removeData('selected-record-id');
+                            $confirm.removeData('args');
+                            loadingRefresh = true;
+                            plugin.model.loadAttributes(args.IDClasse, null);
+                        } catch (error) {
+                            ShowError(error.message, 'model.deleteClassRecord');
+                        } finally {
+                            if (!loadingRefresh) {
+                                $loader.hide();
+                            }
+                        }
+                    }, 0);
+                } catch (error) {
+                    ShowError(error.message, 'model.deleteClassRecord');
+                }
+            });
+
         function toggleModelSection($header) {
             var isExpanded = $header.attr('aria-expanded') === 'true';
             var attributesId = $header.attr('aria-controls');
@@ -134,6 +217,198 @@
 
             return request.responseText;
         }
+        function multipleEntryLabel(key, languageContext) {
+            var labels = {
+                actions: { IT: 'Azioni', GB: 'Actions', ES: 'Acciones', CN: '操作' },
+                edit: { IT: 'Modifica', GB: 'Edit', ES: 'Editar', CN: '編輯' },
+                delete: { IT: 'Elimina', GB: 'Delete', ES: 'Eliminar', CN: '刪除' }
+            };
+            return (labels[key] && labels[key][languageContext]) ||
+                (labels[key] && labels[key].IT) || '';
+        }
+        function datepickerOptions(languageContext) {
+            var locale = { IT: 'it', GB: 'en-GB', ES: 'es', CN: 'zh-CN' }[languageContext] || 'it';
+            return $.extend({}, $.datepicker.regional[locale], { dateFormat: 'dd/mm/yy' });
+        }
+        function summaryValue(field, value, languageContext) {
+            if (Number(field.IDTipoDati) === 5 && value !== '') {
+                var booleanLabels = {
+                    IT: { no: 'No', yes: 'Sì' },
+                    GB: { no: 'No', yes: 'Yes' },
+                    ES: { no: 'No', yes: 'Sí' },
+                    CN: { no: '不', yes: '是的' }
+                };
+                var labels = booleanLabels[languageContext] || booleanLabels.IT;
+                if (value === '0' || value.toLowerCase() === 'false') {
+                    return labels.no;
+                }
+                if (value === '1' || value.toLowerCase() === 'true') {
+                    return labels.yes;
+                }
+            }
+            return value || '';
+        }
+        function isModelPreview(options) {
+            return options.Mode === 'preview' || options.ActionName === 'Anteprima';
+        }
+        function updateMultipleEntryStatus($summary, languageContext) {
+            if (!$summary.length) {
+                return;
+            }
+
+            var minimum = Number($summary.data('minimum'));
+            var maximum = Number($summary.data('maximum'));
+            var recordCount = $summary.find('tbody tr').length;
+            var maximumReached = maximum > 0 && recordCount >= maximum;
+            var isEditingRecord = $summary.closest('[data-fieldlist]')
+                .data('selected-record-id') != null;
+            var minimumNotMet = recordCount < minimum;
+            var $message = $summary.find('.model-multiple-entry-info');
+            var options = JSON.parse(plugin.attr('data-options'));
+            var messages = {
+                IT: {
+                    minimum: 'Devi inserire almeno {minimum} righe',
+                    minimumAndMaximum: 'Devi inserire almeno {minimum} righe e al massimo {maximum} righe',
+                    maximumReached: 'Hai inserito il numero di righe richiesto ({maximum})'
+                },
+                GB: {
+                    minimum: 'You must enter at least {minimum} rows',
+                    minimumAndMaximum: 'You must enter at least {minimum} rows and at most {maximum} rows',
+                    maximumReached: 'You have entered the required number of rows ({maximum})'
+                },
+                ES: {
+                    minimum: 'Debes introducir al menos {minimum} filas',
+                    minimumAndMaximum: 'Debes introducir al menos {minimum} filas y como máximo {maximum} filas',
+                    maximumReached: 'Has introducido el número de filas requerido ({maximum})'
+                },
+                CN: {
+                    minimum: '至少需要輸入 {minimum} 行',
+                    minimumAndMaximum: '至少需要輸入 {minimum} 行，最多 {maximum} 行',
+                    maximumReached: '已輸入所需的行數（{maximum}）'
+                }
+            };
+            var labels = messages[languageContext] || messages.IT;
+            var message = '';
+            if (isModelPreview(options)) {
+                message = '';
+            } else if (maximumReached) {
+                message = labels.maximumReached.replace('{maximum}', maximum);
+            } else if (minimumNotMet) {
+                message = maximum > 0
+                    ? labels.minimumAndMaximum
+                        .replace('{minimum}', minimum)
+                        .replace('{maximum}', maximum)
+                    : labels.minimum.replace('{minimum}', minimum);
+            }
+
+            $message.text(message).toggleClass('d-none', !message);
+            $summary.closest('[data-fieldlist]')
+                .find('.model-class-save')
+                .prop('disabled', maximumReached && !isEditingRecord);
+        }
+        function loadMultipleEntrySummary(IdClasse, attributes) {
+            var $summary = plugin.find('.model-class-' + IdClasse + '-container .model-multiple-entry-summary');
+            if (!$summary.length) {
+                return;
+            }
+
+            var options = JSON.parse(plugin.attr('data-options'));
+            var summaryFields = (attributes || []).filter(function (attribute) {
+                return attribute.IsSummary === true || attribute.IsSummary === 1;
+            });
+            var $heading = $summary.find('thead tr').empty();
+            var $body = $summary.find('tbody').empty();
+            summaryFields.forEach(function (field) {
+                $('<th>', { scope: 'col', text: field.Description || '' }).appendTo($heading);
+            });
+            var canEdit = options.ReadOnly !== true;
+            if (canEdit) {
+                $('<th>', {
+                    scope: 'col',
+                    class: 'text-end',
+                    text: multipleEntryLabel('actions', options.user.LanguageContext)
+                }).appendTo($heading);
+            }
+            if (!summaryFields.length) {
+                $summary.addClass('d-none');
+                return;
+            }
+
+            var records = [];
+            if (options.IDModelloIstanza != null) {
+                var result = JSON.parse(modelApiRequest(
+                    options,
+                    'class-records/' + options.IDModelloIstanza + '/' + IdClasse,
+                    'GET'
+                ));
+                if (result.status !== 'OK') {
+                    throw new Error(result.error && result.error.message || 'Unable to load class records.');
+                }
+                records = result.data || [];
+            }
+
+            records.forEach(function (record) {
+                var IDRecord = Number(record.IDRecord);
+                var $row = $('<tr>');
+                if (canEdit) {
+                    $row.addClass('model-multiple-entry-record')
+                        .attr({
+                            'data-idclasse': IdClasse,
+                            'data-idrecord': IDRecord
+                        });
+                    if (Number(plugin.find('.model-class-' + IdClasse + '-container')
+                        .data('selected-record-id')) === IDRecord) {
+                        $row.addClass('model-multiple-entry-row-editing');
+                    }
+                }
+                summaryFields.forEach(function (field) {
+                    var value = plugin.model.getIDModelloIstanzaRecordValue(IDRecord, field.IDAttributo);
+                    if (Number(field.IDTipoDati) === 6 && value !== '') {
+                        var choices = JSON.parse(plugin.model.loadAttributeValues(field.IDAttributo, value));
+                        var choice = (choices.data || []).find(function (item) {
+                            return String(item.Code) === String(value);
+                        });
+                        if (choice) {
+                            value = choice.Description;
+                        }
+                    }
+                    $('<td>', {
+                        text: summaryValue(field, value, options.user.LanguageContext)
+                    }).appendTo($row);
+                });
+                if (canEdit) {
+                    var $menu = $('<div>', { class: 'btn-group ms-auto flex-shrink-0' });
+                    $('<button>', {
+                        type: 'button',
+                        class: 'btn btn-light bi bi-three-dots-vertical btn-actions btn-circle rounded-circle p-0 d-inline-flex align-items-center justify-content-center',
+                        'data-bs-toggle': 'dropdown',
+                        'aria-expanded': 'false',
+                        'aria-label': multipleEntryLabel('actions', options.user.LanguageContext)
+                    }).appendTo($menu);
+                    var $menuItems = $('<ul>', { class: 'dropdown-menu dropdown-menu-end app-context-menu' });
+                    $('<button>', {
+                        type: 'button',
+                        class: 'dropdown-item multiple-entry-edit',
+                        'data-idclasse': IdClasse,
+                        'data-idrecord': IDRecord
+                    }).append($('<i>', { class: 'bi bi-pencil me-2' }))
+                        .append(document.createTextNode(multipleEntryLabel('edit', options.user.LanguageContext)))
+                        .wrap('<li></li>').parent().appendTo($menuItems);
+                    $('<button>', {
+                        type: 'button',
+                        class: 'dropdown-item multiple-entry-delete',
+                        'data-idclasse': IdClasse,
+                        'data-idrecord': IDRecord
+                    }).append($('<i>', { class: 'bi bi-trash me-2' }))
+                        .append(document.createTextNode(multipleEntryLabel('delete', options.user.LanguageContext)))
+                        .wrap('<li></li>').parent().appendTo($menuItems);
+                    $menu.append($menuItems).appendTo($('<td>', { class: 'text-end' }).appendTo($row));
+                }
+                $body.append($row);
+            });
+            $summary.toggleClass('d-none', !summaryFields.length);
+            updateMultipleEntryStatus($summary, options.user.LanguageContext);
+        }
 
         $.fn.model.draw = function () {
             var options = JSON.parse(plugin.attr('data-options'));
@@ -145,7 +420,7 @@
 
             /* al termine di tutte le chiamate nasconde i loader rimasti visibili */
             $(document).off('ajaxStop.modelLoader').on('ajaxStop.modelLoader', function () {
-                plugin.find('.spinner-border').hide();
+                plugin.find('.spinner-border').not('.model-section-loader').hide();
             });
 
             var options = JSON.parse(plugin.attr('data-options'));
@@ -182,7 +457,10 @@
 
                             if (options.Mode == 'edit') {
 
-                                if (options.IDModelloIstanza == null) {
+                                if (options.IDModelloIstanza == null ||
+                                    Number(row.NumeroCicliMin) > 1) {
+                                    plugin.find('.model-class-' + row.IDClasse + '-container')
+                                        .removeData('selected-record-id');
                                     plugin.model.loadAttributes(row.IDClasse, null);
                                 } else {
                                     /* Per ogni IDClasse, verifica l'esistenza di un record esistente */
@@ -749,6 +1027,19 @@
             }));
             if (!Number.isSafeInteger(recordId) || recordId <= 0) {
                 throw new Error("The server returned an invalid class record ID.");
+            }
+            return recordId;
+        };
+        $.fn.model.createClassRecord = function (IDModelloIstanza, IDClasse) {
+            var options = JSON.parse(plugin.attr('data-options'));
+            var response = JSON.parse(modelApiRequest(options, 'class-records', 'POST', {
+                IDModelloIstanza: IDModelloIstanza,
+                IDClasse: IDClasse
+            }));
+            var recordId = Number(response.data);
+            if (response.status !== 'OK' || !Number.isSafeInteger(recordId) || recordId <= 0) {
+                throw new Error(response.error && response.error.message ||
+                    'The server returned an invalid class record ID.');
             }
             return recordId;
         };
@@ -1346,6 +1637,9 @@
 
             var options = JSON.parse(plugin.attr('data-options'));
             user = options.user;
+            var $sectionLoader = plugin.find(
+                '.model-class-' + IdClasse + '-container .model-section-loader'
+            ).show();
 
             var fieldlist = "";
             function isWorkflowFieldReadOnly(row) {
@@ -1372,6 +1666,7 @@
                     data: {},
                 }).done(function (response) {
                     if (response.status == "ERR") {
+                        $sectionLoader.hide();
                         ShowError(
                             response.error.message,
                             response.error.sender
@@ -1379,6 +1674,18 @@
                     } else if (response.status == "OK") {
 
                         plugin.find('.model-class-' + IdClasse + '-attributes').empty();
+                        try {
+                            loadMultipleEntrySummary(IdClasse, response.data);
+                        } catch (error) {
+                            ShowError(error.message, 'model.loadMultipleEntrySummary');
+                        }
+
+                        if (isModelPreview(options) &&
+                            plugin.find('.model-class-' + IdClasse + '-container .model-multiple-entry-summary').length) {
+                            plugin.trigger("onload");
+                            $sectionLoader.hide();
+                            return;
+                        }
 
                         $.each(response.data, function (key, row) {                            
 
@@ -1430,7 +1737,8 @@
                                         /* DATA */
                                         if (row.IDTipoDati == 4) {
                                             plugin.find("#control_" + row.IDAttributo).val(RecordValue);
-                                            plugin.find("#control_" + row.IDAttributo).datepicker();
+                                            plugin.find("#control_" + row.IDAttributo)
+                                                .datepicker(datepickerOptions(options.user.LanguageContext));
                                         }
                                         /* BOOLEAN */
                                         if (row.IDTipoDati == 5) {
@@ -1522,7 +1830,8 @@
                                     }
                                     /* DATA */
                                     if (row.IDTipoDati == 4) {
-                                        plugin.find("#control_" + row.IDAttributo).datepicker();
+                                        plugin.find("#control_" + row.IDAttributo)
+                                            .datepicker(datepickerOptions(options.user.LanguageContext));
                                     }
                                     /* BOOLEAN */
                                     if (row.IDTipoDati == 5) {
@@ -1677,219 +1986,135 @@
 
                     if (!fieldlist && options.ActionName === 'Modifica' && options.WorkflowRecordId) {
                         plugin.trigger("onload");
-                        plugin.find('.spinner-border').hide();
+                        $sectionLoader.hide();
                         return;
                     }
 
-                    plugin.find('.model-class-' + IdClasse + '-container').data('fieldlist', fieldlist.substring(1));
+                    var $classContainer = plugin.find('.model-class-' + IdClasse + '-container');
+                    $classContainer.data('fieldlist', fieldlist.substring(1));
+                    $classContainer.find('.btn-salva').remove();
                     $.get("/controls/ui/control.ui.button.salva.ejs?" + Date.now(), function (response) {
-                        plugin.find('.model-class-' + IdClasse + '-container').append(
+                        var $attributes = $classContainer.find('.model-class-' + IdClasse + '-attributes');
+                        $attributes.append(
                             ejs.render(response, { user })
                         );
-                        plugin.find('.model-class-' + IdClasse + '-container').find('.btn-salva').click(function () {
-                            plugin.find('.spinner-border').show();
-                            $.when(
-                                plugin.model.salvaClasse(IdClasse,
-                                    plugin.find('.model-class-' + IdClasse + '-container').data('fieldlist'))
-                            ).then(function (response, textStatus, jqXHR) {
-                                if (response) {
-                                    /* raise event */
-                                    plugin.trigger("onsave");
-                                    plugin.find('.spinner-border').hide();
-                                } else {
-                                    plugin.find('.spinner-border').hide();
+                        var $saveButton = $attributes.find('.btn-salva');
+                        $saveButton.addClass('model-class-save').click(function () {
+                            if (this.disabled) {
+                                return;
+                            }
+                            $sectionLoader.show();
+                            setTimeout(function () {
+                                var loadingRefresh = false;
+                                try {
+                                    var saved = plugin.model.salvaClasse(
+                                        IdClasse,
+                                        $classContainer.data('fieldlist')
+                                    );
+                                    if (saved) {
+                                        if ($classContainer.find('.model-multiple-entry-summary').length) {
+                                            $classContainer.removeData('selected-record-id');
+                                            loadingRefresh = true;
+                                            plugin.model.loadAttributes(IdClasse, null);
+                                        }
+                                        plugin.trigger("onsave");
+                                        $classContainer[0].scrollIntoView({
+                                            behavior: 'smooth',
+                                            block: 'start'
+                                        });
+                                    }
+                                } finally {
+                                    if (!loadingRefresh) {
+                                        $sectionLoader.hide();
+                                    }
                                 }
-                            });
+                            }, 0);
 
                         });
+                        updateMultipleEntryStatus(
+                            $classContainer.find('.model-multiple-entry-summary'),
+                            options.user.LanguageContext
+                        );
                     });
                 }
                 plugin.trigger("onload");
-                plugin.find('.spinner-border').hide();
+                $sectionLoader.hide();
+            }).fail(function (xhr, status, errorThrown) {
+                $sectionLoader.hide();
+                ShowError(xhr.responseText || errorThrown || status, 'model.loadAttributes');
             });
         }
         $.fn.model.salvaClasse = function (IdClasse, FieldList) {
             try {
-                /* Convalida i dati immessi dall'utente */
                 var isvalidform = true;
-                const forms = document.querySelectorAll('#frm-class-' + IdClasse + ' .form-control, #frm-class-' + IdClasse + ' .form-select')
+                var forms = document.querySelectorAll(
+                    '#frm-class-' + IdClasse + ' .form-control, #frm-class-' + IdClasse + ' .form-select'
+                );
                 Array.from(forms).forEach(form => {
-
                     if (form.offsetParent != null && !form.checkValidity()) {
                         isvalidform = false;
                     }
                 });
 
                 var options = JSON.parse(plugin.attr('data-options'));
-
                 if (!isvalidform) {
                     var form = document.getElementById('frm-class-' + IdClasse);
-                    if (form && typeof form.reportValidity === 'function') {
-                        form.reportValidity();
+                    var invalidField = form && form.querySelector(':invalid');
+                    if (invalidField) {
+                        invalidField.focus();
+                        invalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                     return false;
                 }
 
-                /* Se i dati immessi sono validi */
-                if (isvalidform) {
-
-                    /* get plugin attribute option */
-                    var options = JSON.parse(plugin.attr('data-options'));
-
-                    /* Se non esiste, creo l'identificativo di un IDModelloIstanza */
-                    if (options.IDModelloIstanza == null) {
-                        $.when(
-                            plugin.model.postIDModelloIstanza()
-                        ).done(function (IDModelloIstanza, textStatus, jqXHR) {
-
-                            /* set plugin attribute option */
-                            options.IDModelloIstanza = IDModelloIstanza;
-
-                            /* re-store plugin attribute option */
-                            plugin.attr('data-options', JSON.stringify(options));
-
-                            /* Verifico l'esistenza di un record associato alla Classe, se non esiste lo inserisco ed estraggo l'ID */
-                            $.when(
-                                plugin.model.getIDModelloIstanzaRecord(IDModelloIstanza, IdClasse)
-                            ).done(function (IDRecord, textStatus, jqXHR) {
-
-                                $.each(FieldList.split('@'), function (key, IDAttributo) {
-
-                                    var recordValue = '';
-                                    var control = plugin.find('#control_' + IDAttributo);
-
-                                    /* IdTipoDati = 5 */
-                                    if (control.data('idtipodati') == undefined) {
-                                        control = plugin.find('input[name="control_' + IDAttributo + '"]:checked');
-                                    }
-                                    var IdTipoDati = control.data('idtipodati');
-
-                                    //console.log("IdTipoDati: " + IdTipoDati);
-
-                                    /* Recupera il valore associato all'attributo */
-                                    switch (IdTipoDati) {
-                                        case 1: case 2: case 3: case 4: case 6: case 7: case 9: case 11:
-                                            recordValue = control.val();
-                                            //console.log(recordValue);
-                                            break;
-                                        case 5:
-                                            recordValue = control.val();
-                                            //console.log(recordValue);
-                                            break;
-                                    }
-                                    recordValue = recordValue == null ? '' : String(recordValue);
-
-                                    /* Salva il valore dell'attributo */
-                                    $.when(
-                                        plugin.model.postIDModelloIstanzaRecord(IDRecord, IDAttributo, recordValue)
-                                    ).done(function (status, textStatus, jqXHR) {
-                                        //console.log("postIDModelloIstanzaRecord status: " + status)
-                                        if (IdTipoDati == 7) {
-                                            var fileList = recordValue.charAt(0) === '@'
-                                                ? recordValue.substring(1)
-                                                : recordValue;
-                                            fileList.split('@').filter(Boolean).forEach(function (file) {
-                                                plugin.model.postIDModelloIstanzaRecordMedia(
-                                                    IDRecord,
-                                                    IDAttributo,
-                                                    file
-                                                );
-                                            });
-                                            var ControlFileUpload = plugin.find(".control_" + IDAttributo)
-                                            /* Elimina i file rimossi dalla lista */
-                                            plugin.model.deleteIDModelloIstanzaRecordMedia(
-                                                IDRecord,
-                                                IDAttributo,
-                                                JSON.parse(ControlFileUpload.attr('data-options')).filetodelete
-                                            )
-                                        }
-                                    })
-                                });
-                                plugin.find('.model-class-' + IdClasse + '-container .card.border-success').fadeIn('slow');
-                                setTimeout(function () {
-                                    plugin.find('.model-class-' + IdClasse + '-container .card.border-success').fadeOut('slow');
-                                }, 3000);
-                            })
-                        });
-                    } else {
-
-                        /* set plugin attribute option */
-                        IDModelloIstanza = options.IDModelloIstanza;
-
-                        /* re-store plugin attribute option */
-                        plugin.attr('data-options', JSON.stringify(options));
-
-                        /* Verifico l'esistenza di un record associato alla Classe, se non esiste lo inserisco ed estraggo l'ID */
-                        $.when(
-                            plugin.model.getIDModelloIstanzaRecord(IDModelloIstanza, IdClasse)
-                        ).done(function (IDRecord, textStatus, jqXHR) {
-
-                            $.each(FieldList.split('@'), function (key, IDAttributo) {
-
-                                var recordValue = '';
-                                var control = plugin.find('#control_' + IDAttributo);
-
-                                /* IdTipoDati = 5 */
-                                if (control.data('idtipodati') == undefined) {
-                                    control = plugin.find('input[name="control_' + IDAttributo + '"]:checked');
-                                }
-                                var IdTipoDati = control.data('idtipodati');
-
-                                //console.log("IdTipoDati: " + IdTipoDati);
-
-                                /* Recupera il valore associato all'attributo */
-                                switch (IdTipoDati) {
-                                    case 1: case 2: case 3: case 4: case 6: case 7: case 9: case 11:
-                                        recordValue = control.val();
-                                        //console.log(recordValue);
-                                        break;
-                                    case 5:
-                                        recordValue = control.val();
-                                        //console.log(recordValue);
-                                        break;
-                                    }
-                                    recordValue = recordValue == null ? '' : String(recordValue);
-
-                                    /* Salva il valore dell'attributo */
-                                    $.when(
-                                        plugin.model.postIDModelloIstanzaRecord(IDRecord, IDAttributo, recordValue)
-                                    ).done(function (status, textStatus, jqXHR) {
-                                        //console.log("postIDModelloIstanzaRecord status: " + status)
-                                        if (IdTipoDati == 7) {
-                                            var fileList = recordValue.charAt(0) === '@'
-                                                ? recordValue.substring(1)
-                                                : recordValue;
-                                            fileList.split('@').filter(Boolean).forEach(function (file) {
-                                                plugin.model.postIDModelloIstanzaRecordMedia(
-                                                    IDRecord,
-                                                    IDAttributo,
-                                                    file
-                                                );
-                                            });
-                                            /* Elimina i file rimossi dalla lista */
-                                            var ControlFileUpload = plugin.find(".control_" + IDAttributo)
-                                        plugin.model.deleteIDModelloIstanzaRecordMedia(
-                                            IDRecord,
-                                            IDAttributo,
-                                            JSON.parse(ControlFileUpload.attr('data-options')).filetodelete
-                                        )
-                                    }
-                                })
-                            });
-                            plugin.find('.model-class-' + IdClasse + '-container .card.border-success').fadeIn('slow');
-                            setTimeout(function () {
-                                plugin.find('.model-class-' + IdClasse + '-container .card.border-success').fadeOut('slow');
-                            }, 3000);
-                        })
-
-                    }
-                    return true
-                } else {
-                    return false
+                if (options.IDModelloIstanza == null) {
+                    options.IDModelloIstanza = plugin.model.postIDModelloIstanza();
+                    plugin.attr('data-options', JSON.stringify(options));
                 }
+
+                var $classContainer = plugin.find('.model-class-' + IdClasse + '-container');
+                var hasMultipleEntry = $classContainer.find('.model-multiple-entry-summary').length > 0;
+                var IDRecord = $classContainer.data('selected-record-id');
+                if (IDRecord == null) {
+                    IDRecord = hasMultipleEntry
+                        ? plugin.model.createClassRecord(options.IDModelloIstanza, IdClasse)
+                        : plugin.model.getIDModelloIstanzaRecord(options.IDModelloIstanza, IdClasse);
+                }
+
+                (FieldList || '').split('@').filter(Boolean).forEach(function (IDAttributo) {
+                    var control = plugin.find('#control_' + IDAttributo);
+                    if (control.data('idtipodati') === undefined) {
+                        control = plugin.find('input[name="control_' + IDAttributo + '"]:checked');
+                    }
+                    var IdTipoDati = control.data('idtipodati');
+                    var recordValue = control.val();
+                    recordValue = recordValue == null ? '' : String(recordValue);
+                    plugin.model.postIDModelloIstanzaRecord(IDRecord, IDAttributo, recordValue);
+
+                    if (IdTipoDati == 7) {
+                        var fileList = recordValue.charAt(0) === '@'
+                            ? recordValue.substring(1)
+                            : recordValue;
+                        fileList.split('@').filter(Boolean).forEach(function (file) {
+                            plugin.model.postIDModelloIstanzaRecordMedia(IDRecord, IDAttributo, file);
+                        });
+                        var $fileControl = plugin.find('.control_' + IDAttributo);
+                        plugin.model.deleteIDModelloIstanzaRecordMedia(
+                            IDRecord,
+                            IDAttributo,
+                            JSON.parse($fileControl.attr('data-options')).filetodelete
+                        );
+                    }
+                });
+
+                $classContainer.find('.card.border-success').fadeIn('slow');
+                setTimeout(function () {
+                    $classContainer.find('.card.border-success').fadeOut('slow');
+                }, 3000);
+                return true;
             } catch (err) {
-                ShowError(err.message, "model.salvaClasse")
-                return false
+                ShowError(err.message, 'model.salvaClasse');
+                return false;
             }
         };
         return this.each(function () {
@@ -1911,6 +2136,14 @@
 
                 /* get plugin attribute options */
                 var options = JSON.parse(plugin.attr('data-options'));
+                if (options.Mode === 'edit' && options.ReadOnly !== true) {
+                    var $confirm = $('<div>', {
+                        class: 'model-multiple-entry-delete-confirm'
+                    }).appendTo(plugin);
+                    $confirm.confirmDelete({
+                        LanguageContext: options.user.LanguageContext
+                    });
+                }
 
                 plugin.model.draw();
 
