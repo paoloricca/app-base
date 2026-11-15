@@ -110,16 +110,15 @@ $(function () {
 
             //});
 
-            $.when(
-                /* Renderizza il plug-in <Model> */
-                formEdit.model.load()
-            ).then(function () {
+            formEdit.off('onsectionsloaded.formsEditor').one('onsectionsloaded.formsEditor', function () {
                 $('#container-form-edit').modal('show');
             });
+            formEdit.model.load();
 
         }
         catch (err) {
 
+            formEdit.off('onsectionsloaded.formsEditor');
             ShowError(err.message, fnName);
         }
         
@@ -888,7 +887,10 @@ $(function () {
     });
 
     /* alla chiusura della gestione sezioni e campi aggiorna la popup Versioni */
-    $('#container-form-edit').on('hidden.bs.modal', function () {
+    $('#container-form-edit').on('hidden.bs.modal', function (event) {
+        if (event.target !== this) {
+            return;
+        }
         var versionsModal = $('#container-model-versions');
         var model = versionsModal.data('model');
         if (model && versionsModal.hasClass('show')) {

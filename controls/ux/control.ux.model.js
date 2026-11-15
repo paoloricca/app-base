@@ -571,6 +571,14 @@
             var options = JSON.parse(plugin.attr('data-options'));
 
             labelNuovo.Description = labelNuovo['Description_' + options.user.LanguageContext];
+            var sectionLoads = [];
+            function settleSectionLoad(request) {
+                var completion = $.Deferred();
+                $.when(request).always(function () {
+                    completion.resolve();
+                });
+                return completion.promise();
+            }
 
             $.ajax({
                 url: modelApiUrl(options, "model-class/" + options.IDVersione),
@@ -606,21 +614,25 @@
                                     Number(row.NumeroCicliMin) > 1) {
                                     plugin.find('.model-class-' + row.IDClasse + '-container')
                                         .removeData('selected-record-id');
-                                    plugin.model.loadAttributes(row.IDClasse, null);
+                                    sectionLoads.push(settleSectionLoad(
+                                        plugin.model.loadAttributes(row.IDClasse, null)
+                                    ));
                                 } else {
                                     /* Per ogni IDClasse, verifica l'esistenza di un record esistente */
-                                    $.when(
+                                    sectionLoads.push(settleSectionLoad($.when(
                                         plugin.model.getIDModelloIstanzaRecordAsync(options.IDModelloIstanza, row.IDClasse)
                                     ).then(function (IDRecord, textStatus, jqXHR) {
-                                        plugin.model.loadAttributes(row.IDClasse, IDRecord)
-                                    });
+                                        return plugin.model.loadAttributes(row.IDClasse, IDRecord);
+                                    })));
                                 }
                             } else {
 
                                 plugin.find('.btn-edit-class-' + row.IDClasse).show();
 
                                 /* design mode */
-                                plugin.model.loadAttributes(row.IDClasse, null);
+                                sectionLoads.push(settleSectionLoad(
+                                    plugin.model.loadAttributes(row.IDClasse, null)
+                                ));
 
                                 plugin.find('.btn-class-' + row.IDClasse + '-edit').click(function () {
                                     plugin.model.editClass(row);
@@ -640,6 +652,11 @@
                                 });
                             }
 
+                        });
+
+                        $.when.apply($, sectionLoads).done(function () {
+                            plugin.find('.model-section-loader').hide();
+                            plugin.trigger('onsectionsloaded');
                         });
 
                         /* Carica il template per l'inserimento e la modifica di una sezione */
@@ -720,12 +737,21 @@
                                 ejs.render(templateString, { LanguageContext, user: options.user })
                             );
 
+                            plugin.off('click.modelAttributeEdit')
+                                .on('click.modelAttributeEdit', '.btn-attribute-edit', function (event) {
+                                    event.preventDefault();
+                                    var attribute = $(this).data('attribute');
+                                    if (attribute) {
+                                        plugin.model.editAttribute(attribute);
+                                    }
+                                });
+
                             plugin.find('.btn-salva-attributo').click(function () {
                                 plugin.model.saveAttribute();
                             });
 
                             plugin.find('.btn-cancel-attribute-edit').click(function () {
-                                plugin.find('#container-attribute-edit').hide();
+                                plugin.find('#container-attribute-edit').removeClass('show').hide();
                             });
 
                             var visibilityModal = plugin.find('#container-attribute-value-visibility');
@@ -1755,8 +1781,8 @@
                 plugin.find('#IDClasse').val(campo.IDClasse);
                 plugin.find('#IDAttributo').val(campo.IDAttributo);
 
-                modal.show();
-                plugin.find('.spinner-border').hide();
+                modal.addClass('show').show();
+                modal.find('.spinner-border').hide();
 
             });
             
@@ -1866,7 +1892,7 @@
             }
 
             var fieldLoads = [];
-            $.when(
+            return $.when(
                 $.ajax({
                     url: modelApiUrl(JSON.parse(plugin.attr('data-options')),
                         "model-class-attribute/" + IdClasse) +
@@ -2009,6 +2035,24 @@
                                         ejs.render(templateString, { row, mode, user })
                                     );
 
+                                    plugin.find('.btn-attribute-' + row.IDAttributo + '-edit')
+                                        .data('attribute', row);
+
+                                    plugin.find('.btn-attribute-' + row.IDAttributo + '-del').click(function () {
+
+                                        var CtlDeleteAttribute = plugin.find('#confirm-delete-attribute');
+
+                                        /* get plugin attribute option */
+                                        var option = JSON.parse(CtlDeleteAttribute.attr('data-options'));
+                                        /* set plugin args option */
+                                        option.args = { IDAttributo: $(this).data('idattributo') };
+                                        /* re-store plugin attribute option */
+                                        CtlDeleteAttribute.attr('data-options', JSON.stringify(option));
+                                        /* open plugin */
+                                        CtlDeleteAttribute.confirmDelete.show(CtlDeleteAttribute);
+
+                                    });
+
 
                                     /* TESTO */
                                     if (row.IDTipoDati == 1 || row.IDTipoDati == 11) {
@@ -2068,27 +2112,6 @@
 
                                         bindFileUploadValueEvents(ControlFileUpload, row.IDAttributo);
                                     }
-
-                                    plugin.find('.btn-attribute-' + row.IDAttributo + '-edit').click(function () {
-
-                                        plugin.model.editAttribute(row);
-
-                                    });
-
-                                    plugin.find('.btn-attribute-' + row.IDAttributo + '-del').click(function () {
-
-                                        var CtlDeleteAttribute = plugin.find('#confirm-delete-attribute');
-
-                                        /* get plugin attribute option */
-                                        var option = JSON.parse(CtlDeleteAttribute.attr('data-options'));
-                                        /* set plugin args option */
-                                        option.args = { IDAttributo: $(this).data('idattributo') };
-                                        /* re-store plugin attribute option */
-                                        CtlDeleteAttribute.attr('data-options', JSON.stringify(option));
-                                        /* open plugin */
-                                        CtlDeleteAttribute.confirmDelete.show(CtlDeleteAttribute);
-
-                                    });
 
                                 });
                                 fieldLoads.push(fieldLoad);
