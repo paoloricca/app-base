@@ -36,6 +36,63 @@
                     ? '<i class="bi bi-folder-plus"></i>'
                     : '<i class="bi bi-folder-minus"></i>');
         }
+        function updateMultipleEntryValidation(modal, languageContext) {
+            var enabled = modal.find('#class-InserimentoMultiplo').prop('checked');
+            var indicator = modal.find('.multiple-entry-minimum-indicator');
+            var warning = modal.find('.multiple-entry-validation-warning');
+
+            if (!enabled) {
+                indicator.hide();
+                warning.addClass('d-none').text('');
+                return true;
+            }
+
+            indicator.show();
+            var minimumValue = modal.find('#class-NumeroCicliMin').val();
+            var maximumValue = modal.find('#class-NumeroCicli').val();
+            var minimum = Number(minimumValue);
+            var maximum = Number(maximumValue);
+            var minimumValid = minimumValue !== '' && Number.isInteger(minimum) && minimum >= 2;
+            var maximumBelowMinimum = minimumValue !== '' && maximumValue !== '' &&
+                Number.isInteger(minimum) && Number.isInteger(maximum) && maximum < minimum;
+            var messages = [];
+            var labels = {
+                IT: [
+                    'La ripetizione minima è obbligatoria e deve essere almeno 2.',
+                    'La ripetizione massima non può essere inferiore alla ripetizione minima.'
+                ],
+                GB: [
+                    'Minimum repetitions is required and must be at least 2.',
+                    'Maximum repetitions cannot be lower than minimum repetitions.'
+                ],
+                ES: [
+                    'La repetición mínima es obligatoria y debe ser al menos 2.',
+                    'La repetición máxima no puede ser inferior a la repetición mínima.'
+                ],
+                CN: [
+                    '最少重複次數為必填，且不得小於 2。',
+                    '最大重複次數不得小於最少重複次數。'
+                ]
+            };
+            var validationLabels = labels[languageContext] || labels.IT;
+
+            indicator.toggleClass('text-success', minimumValid)
+                .toggleClass('text-danger', !minimumValid)
+                .html(minimumValid
+                    ? '<i class="bi bi-check-circle-fill"></i>'
+                    : '<i class="bi bi-x-circle-fill"></i>');
+
+            if (!minimumValid) {
+                messages.push(validationLabels[0]);
+            }
+            if (maximumBelowMinimum) {
+                messages.push(validationLabels[1]);
+            }
+
+            warning.toggleClass('d-none', messages.length === 0)
+                .text(messages.join(' '));
+            return minimumValid && !maximumBelowMinimum;
+        }
         plugin.off('.modelSectionToggle');
         plugin.on('click.modelSectionToggle', '.model-section-header', function (event) {
             if ($(event.target).closest('.model-editor-menu-trigger, .model-editor-context-menu').length) {
@@ -176,6 +233,20 @@
                             plugin.find('.btn-salva-classe').click(function () {
                                 plugin.model.saveClass();
                             });
+
+                            plugin.find('#class-InserimentoMultiplo').off('change.multipleEntry').on('change.multipleEntry', function () {
+                                var modal = plugin.find('#container-class-edit');
+                                modal.find('#class-multiple-entry-settings').toggle(this.checked);
+                                updateMultipleEntryValidation(modal, options.user.LanguageContext);
+                            });
+                            plugin.find('#class-NumeroCicliMin, #class-NumeroCicli')
+                                .off('input.multipleEntry change.multipleEntry')
+                                .on('input.multipleEntry change.multipleEntry', function () {
+                                    updateMultipleEntryValidation(
+                                        plugin.find('#container-class-edit'),
+                                        options.user.LanguageContext
+                                    );
+                                });
 
                             plugin.find('.btn-cancel-class-edit').click(function () {
                                 plugin.find('#container-class-edit').hide();
@@ -841,18 +912,24 @@
 
             try {
 
-                plugin.find('#IDClasse').val(classe.IDClasse);
-                plugin.find('#IDVersione').val(classe.IDVersione);
-
                 var options = JSON.parse(plugin.attr('data-options'));
 
                 var modal = plugin.find('#container-class-edit');
+
+                modal.find('#IDClasse').val(classe.IDClasse);
+                modal.find('#IDVersione').val(classe.IDVersione);
 
                 /* Inizializza il controllo per gestire la descrizione del campo */
                 modal.find('.class-header').html(classe.Description);
 
                 /* Valorizza il campo <Visibile> */
                 modal.find("#class-Visibile").prop("checked", classe.Visibile);
+                var multipleEntryEnabled = classe.NumeroCicliMin != null || classe.NumeroCicli != null;
+                modal.find('#class-InserimentoMultiplo').prop('checked', multipleEntryEnabled);
+                modal.find('#class-multiple-entry-settings').toggle(multipleEntryEnabled);
+                modal.find('#class-NumeroCicliMin').val(classe.NumeroCicliMin == null ? '' : classe.NumeroCicliMin);
+                modal.find('#class-NumeroCicli').val(classe.NumeroCicli == null ? '' : classe.NumeroCicli);
+                updateMultipleEntryValidation(modal, options.user.LanguageContext);
 
                 modal.find(".container-control-class-culture-textbox-descrizione").multiLanguageTextBox({
                     Title: null,
@@ -892,8 +969,8 @@
 
             try {
 
-                plugin.find('#IDClasse').val('');
-                plugin.find('#IDVersione').val(IDVersione);
+                plugin.find('#container-class-edit #IDClasse').val('');
+                plugin.find('#container-class-edit #IDVersione').val(IDVersione);
 
                 var classe = {
                     "Description": labelNuovo.Description,
@@ -934,8 +1011,10 @@
 
                 var options = JSON.parse(plugin.attr('data-options'));
 
-                var IDClasse = plugin.find('#IDClasse').val();
-                var IDVersione = plugin.find('#IDVersione').val();
+                var modal = plugin.find('#container-class-edit');
+                var IDClasse = modal.find('#IDClasse').val();
+                var IDVersione = modal.find('#IDVersione').val();
+                var multipleEntryEnabled = modal.find('#class-InserimentoMultiplo').prop('checked');
 
                 /* Convalida i dati immessi dall'utente */
                 var isvalidform = true;
@@ -946,6 +1025,13 @@
                         isvalidform = false;
                     }
                 })
+
+                if (!updateMultipleEntryValidation(modal, options.user.LanguageContext)) {
+                    isvalidform = false;
+                }
+                if (!isvalidform) {
+                    return;
+                }
 
                 const CtlTxtDescrizione = plugin.find(".container-control-class-culture-textbox-descrizione").data("mltextbox");
 
@@ -966,6 +1052,12 @@
                         Description_GB: CtlTxtDescrizione.value.GB,
                         Description_ES: CtlTxtDescrizione.value.ES,
                         Description_CN: CtlTxtDescrizione.value.CN,
+                        NumeroCicliMin: multipleEntryEnabled && modal.find('#class-NumeroCicliMin').val() !== ''
+                            ? Number(modal.find('#class-NumeroCicliMin').val())
+                            : null,
+                        NumeroCicli: multipleEntryEnabled && modal.find('#class-NumeroCicli').val() !== ''
+                            ? Number(modal.find('#class-NumeroCicli').val())
+                            : null,
                         Ordine: Ordine,
                     },
                     async: false

@@ -353,10 +353,26 @@ function PostClass(myRequest) {
     var myIdAttore = myRequest.IdAttore;
     var myIdAccount = myRequest.IdAccount;
     var myLanguageContext = myRequest.LanguageContext;
-    var myRequestBody = JSON.stringify(myRequest.RequestBody);
 
     const customPromise = new Promise((resolve, reject) => {
         try {
+            var requestBody = Object.assign({}, myRequest.RequestBody);
+            ['NumeroCicliMin', 'NumeroCicli'].forEach(function (field) {
+                var value = requestBody[field];
+                if (value === undefined || value === null || value === '') {
+                    requestBody[field] = null;
+                    return;
+                }
+
+                var parsedValue = Number(value);
+                if (!Number.isSafeInteger(parsedValue) || parsedValue < 0) {
+                    throw new Error(field + ' must be a non-negative integer or null.');
+                }
+                requestBody[field] = parsedValue;
+            });
+
+            var myRequestBody = JSON.stringify(requestBody);
+
             sql.connect(connection, function (err) {
                 if (err) {
                     reject(JSON.stringify(
