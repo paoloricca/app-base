@@ -2,7 +2,6 @@ const express = require('express');
 const app = express();
 app.set('views', __dirname + '/view');
 app.set('view engine', 'ejs');
-
 const config = require('./utils/config');
 const sessionUtil = require('./utils/session');
 const session = require('express-session');
@@ -50,15 +49,20 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+app.set('trust proxy', 1);
+
 const sessionMiddleware = session({
     store: redisStore,
     secret: config.SecretKey,
+	name: 'dcgroup.sid',
     resave: false,
     saveUninitialized: false,
     cookie: {
         maxAge: 14400000, // 4 ore
         httpOnly: true,
-        secure: false
+        secure: false,
+        sameSite: 'lax',
+        path: '/' // Serve la condivisione con gli altri moduli nodejs *
     }
 });
 app.use(sessionMiddleware);

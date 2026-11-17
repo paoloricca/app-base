@@ -733,7 +733,9 @@ function CreateProcessiManagement(myRequest) {
         ));
     }
 
-    const parentId = Number(process.IDProcessoParent);
+    const parentId = process.IDProcessoParent == null || process.IDProcessoParent === ''
+        ? null
+        : Number(process.IDProcessoParent);
     const modelId = process.IDModello == null || process.IDModello === ''
         ? null
         : Number(process.IDModello);
@@ -743,13 +745,13 @@ function CreateProcessiManagement(myRequest) {
     const order = process.Ordine == null || process.Ordine === ''
         ? null
         : Number(process.Ordine);
-    if (!Number.isInteger(parentId) || parentId <= 0 ||
+    if ((parentId !== null && (!Number.isInteger(parentId) || parentId <= 0)) ||
         (modelId !== null && (!Number.isInteger(modelId) || modelId <= 0)) ||
         (versionId !== null && (!Number.isInteger(versionId) || versionId <= 0)) ||
         (versionId !== null && modelId === null) ||
         (order !== null && !Number.isInteger(order))) {
         return Promise.reject(JSON.stringify(
-            new exception(sender, 'A valid parent process, model, version, and order are required', 'ValidationError', '')
+            new exception(sender, 'Parent process, model, version, and order must be valid when provided', 'ValidationError', '')
         ));
     }
     const workflowIds = parseWorkflowIds(process);
@@ -851,7 +853,7 @@ function CreateProcessiManagement(myRequest) {
                     `SET XACT_ABORT ON;
                      BEGIN TRANSACTION;
 
-                     IF NOT EXISTS (
+                     IF @IdProcessoParent IS NOT NULL AND NOT EXISTS (
                          SELECT 1 FROM dbo.TProcessi WITH (UPDLOCK, HOLDLOCK)
                          WHERE IDProcesso = @IdProcessoParent
                      )

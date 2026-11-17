@@ -4,6 +4,7 @@ $(function () {
         IT: {
             actions: 'Azioni',
             new: 'Nuovo',
+            newProcess: 'Nuovo processo',
             newProcessIn: 'Nuovo processo in ',
             noParent: 'Nessun processo padre',
             edit: 'Modifica',
@@ -18,6 +19,7 @@ $(function () {
         GB: {
             actions: 'Actions',
             new: 'New',
+            newProcess: 'New process',
             newProcessIn: 'New process in ',
             noParent: 'No parent process',
             edit: 'Edit',
@@ -32,6 +34,7 @@ $(function () {
         ES: {
             actions: 'Acciones',
             new: 'Nuevo',
+            newProcess: 'Nuevo proceso',
             newProcessIn: 'Nuevo proceso en ',
             noParent: 'Sin proceso padre',
             edit: 'Editar',
@@ -46,6 +49,7 @@ $(function () {
         CN: {
             actions: '操作',
             new: '新建',
+            newProcess: '新建流程',
             newProcessIn: '在此处新建流程：',
             noParent: '无父流程',
             edit: '修改',
@@ -732,19 +736,28 @@ $(function () {
 
     function createProcessForParent(parentId, parentDescription, parentParentDescription) {
         var $parentSelect = $processEditModal.find('#processi-edit-parent');
+        var hasParent = parentId != null;
         $processEditModal.data('mode', 'create').removeData('processId');
-        $parentSelect.prop('required', true).removeClass('is-invalid');
-        $processEditModal.find('.processi-edit-parent-label').addClass('processi-required-label');
+        $parentSelect.prop('required', hasParent).prop('disabled', false).removeClass('is-invalid');
+        $processEditModal.find('.processi-edit-parent-label')
+            .toggleClass('processi-required-label', hasParent);
         $processEditModal.find('.processi-edit-title-label')
-            .text(contextMenus[languageContext].newProcessIn);
+            .text(hasParent
+                ? contextMenus[languageContext].newProcessIn
+                : contextMenus[languageContext].newProcess);
         $processEditModal.find('.processi-edit-description-title').text(
-            parentDescription + (parentParentDescription ? ' (' + parentParentDescription + ')' : '')
+            hasParent
+                ? parentDescription + (parentParentDescription ? ' (' + parentParentDescription + ')' : '')
+                : ''
         );
         $parentSelect.find('option:not(:first)').remove();
-        $parentSelect.append($('<option>', {
-            value: parentId,
-            text: parentId + ' - ' + parentDescription
-        })).val(String(parentId)).prop('disabled', true);
+        $parentSelect.val('');
+        if (hasParent) {
+            $parentSelect.append($('<option>', {
+                value: parentId,
+                text: parentId + ' - ' + parentDescription
+            })).val(String(parentId)).prop('disabled', true);
+        }
         $descriptionControl.multiLanguageTextBox('load', {
             IT: '',
             GB: '',
@@ -776,6 +789,10 @@ $(function () {
         $processEditLoading.hide();
         bootstrap.Modal.getOrCreateInstance($processEditModal[0]).show();
     }
+
+    $(document).on('click.processi-new-root', '.processi-new-root', function () {
+        createProcessForParent(null, null, null);
+    });
 
     $(document).on('click.processi-new', '#processi-container .processi-new', function (event) {
         event.preventDefault();
@@ -842,7 +859,8 @@ $(function () {
         }
 
         var $parentSelect = $processEditModal.find('#processi-edit-parent');
-        if ($processEditModal.data('mode') === 'create' && !$parentSelect.val()) {
+        if ($processEditModal.data('mode') === 'create' &&
+            $parentSelect.prop('required') && !$parentSelect.val()) {
             $parentSelect.addClass('is-invalid');
             $parentSelect.trigger('focus');
             return;
@@ -854,7 +872,7 @@ $(function () {
         }
 
         var process = {
-            IDProcessoParent: $processEditModal.find('#processi-edit-parent').val(),
+            IDProcessoParent: $processEditModal.find('#processi-edit-parent').val() || null,
             IDModello: $modelSelect.val() || null,
             IDVersione: $versionSelect.val() || null,
             IDWorkflow: $workflowSwitch.prop('checked') ? $workflowSelect.val() || null : null,
@@ -894,9 +912,13 @@ $(function () {
 
             bootstrap.Modal.getOrCreateInstance($processEditModal[0]).hide();
             if (isCreating) {
-                var parentId = Number(process.IDProcessoParent);
-                var $parentContainer = ControlProcessi.find('.processo-' + parentId + '-container');
-                if ($parentContainer.length) {
+                var parentId = process.IDProcessoParent == null
+                    ? null
+                    : Number(process.IDProcessoParent);
+                var $parentContainer = parentId == null
+                    ? $()
+                    : ControlProcessi.find('.processo-' + parentId + '-container');
+                if (parentId != null && $parentContainer.length) {
                     $parentContainer.children('[class^="processo-"][class$="-container"]').remove();
                     ControlProcessi.processi.load(parentId, ControlProcessi);
                 } else {
