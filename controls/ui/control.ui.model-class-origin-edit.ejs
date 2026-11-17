@@ -1,0 +1,143 @@
+<div id="container-class-origin-edit" class="modal modal-origin-config" tabindex="-1" role="dialog"
+    aria-labelledby="class-origin-title" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title f-roboto b" id="class-origin-title">
+                    <% if (LanguageContext == "IT") { %>CONFIGURA ORIGINE<% } %>
+                    <% if (LanguageContext == "GB") { %>CONFIGURE SOURCE<% } %>
+                    <% if (LanguageContext == "ES") { %>CONFIGURAR ORIGEN<% } %>
+                    <% if (LanguageContext == "CN") { %>設定來源<% } %>
+                </h5>
+                <button type="button" class="btn-close btn-close-class-origin" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="class-origin-description" class="form-label fw-semibold">
+                        <% if (LanguageContext == "IT") { %>DESCRIZIONE<% } %>
+                        <% if (LanguageContext == "GB") { %>DESCRIPTION<% } %>
+                        <% if (LanguageContext == "ES") { %>DESCRIPCIÓN<% } %>
+                        <% if (LanguageContext == "CN") { %>描述<% } %>
+                    </label>
+                    <input id="class-origin-description" type="text" class="form-control is-invalid" maxlength="50" required>
+                </div>
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <section class="card h-100">
+                            <div class="card-header fw-semibold">
+                                <% if (LanguageContext == "IT") { %>SELEZIONA ORIGINE<% } %>
+                                <% if (LanguageContext == "GB") { %>SELECT SOURCE<% } %>
+                                <% if (LanguageContext == "ES") { %>SELECCIONAR ORIGEN<% } %>
+                                <% if (LanguageContext == "CN") { %>選擇來源<% } %>
+                            </div>
+                            <div class="card-body">
+                                <ul class="nav nav-tabs class-origin-tabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" type="button" role="tab" id="class-origin-query-tab" aria-controls="class-origin-query-panel" data-origin-type="1" aria-selected="true">QUERY</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" type="button" role="tab" id="class-origin-api-tab" aria-controls="class-origin-api-panel" data-origin-type="2" aria-selected="false">API</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" type="button" role="tab" id="class-origin-system-tab" aria-controls="class-origin-system-panel" data-origin-type="3" aria-selected="false">
+                                            <% if (LanguageContext == "IT") { %>SISTEMA<% } %>
+                                            <% if (LanguageContext == "GB") { %>SYSTEM<% } %>
+                                            <% if (LanguageContext == "ES") { %>SISTEMA<% } %>
+                                            <% if (LanguageContext == "CN") { %>系統<% } %>
+                                        </button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content class-origin-tab-panels">
+                                    <div class="tab-pane active pt-3" id="class-origin-query-panel" role="tabpanel" aria-labelledby="class-origin-query-tab">
+                                        <label for="class-origin-connection" class="form-label fw-semibold">
+                                            <span class="origin-validation-indicator text-danger me-2" aria-hidden="true"><i class="bi bi-x-circle-fill"></i></span>
+                                            <% if (LanguageContext == "IT") { %>CONNESSIONE<% } %>
+                                            <% if (LanguageContext == "GB") { %>CONNECTION<% } %>
+                                            <% if (LanguageContext == "ES") { %>CONEXIÓN<% } %>
+                                            <% if (LanguageContext == "CN") { %>連線<% } %>
+                                        </label>
+                                        <div class="input-group">
+                                            <input id="class-origin-connection" type="password" class="form-control" autocomplete="off" required>
+                                            <button type="button" class="btn btn-outline-secondary btn-toggle-origin-connection-visibility"
+                                                aria-label="<% if (LanguageContext == "IT") { %>Mostra connessione<% } %><% if (LanguageContext == "GB") { %>Show connection<% } %><% if (LanguageContext == "ES") { %>Mostrar conexión<% } %><% if (LanguageContext == "CN") { %>顯示連線<% } %>"
+                                                aria-pressed="false">
+                                                <i class="bi bi-eye" aria-hidden="true"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary btn-test-origin-connection">
+                                                <% if (LanguageContext == "IT") { %>TEST<% } %>
+                                                <% if (LanguageContext == "GB") { %>TEST<% } %>
+                                                <% if (LanguageContext == "ES") { %>PROBAR<% } %>
+                                                <% if (LanguageContext == "CN") { %>測試<% } %>
+                                            </button>
+                                        </div>
+                                <div class="mt-3">
+                                    <label for="class-origin-text" class="form-label fw-semibold">
+                                        <span class="origin-validation-indicator text-danger me-2" aria-hidden="true"><i class="bi bi-x-circle-fill"></i></span>
+                                        <% if (LanguageContext == "IT") { %>TESTO<% } %>
+                                        <% if (LanguageContext == "GB") { %>TEXT<% } %>
+                                        <% if (LanguageContext == "ES") { %>TEXTO<% } %>
+                                        <% if (LanguageContext == "CN") { %>文字<% } %>
+                                    </label>
+                                    <textarea id="class-origin-text" class="form-control class-origin-query" rows="9" required></textarea>
+                                    <div class="d-flex justify-content-end mt-2">
+                                        <button type="button" class="btn btn-outline-secondary btn-test-origin-query">
+                                            <% if (LanguageContext == "IT") { %>TEST<% } %>
+                                            <% if (LanguageContext == "GB") { %>TEST<% } %>
+                                            <% if (LanguageContext == "ES") { %>PROBAR<% } %>
+                                            <% if (LanguageContext == "CN") { %>測試<% } %>
+                                        </button>
+                                    </div>
+                                    </div>
+                                    <div class="tab-pane pt-3" id="class-origin-api-panel" role="tabpanel" aria-labelledby="class-origin-api-tab" hidden></div>
+                                    <div class="tab-pane pt-3" id="class-origin-system-panel" role="tabpanel" aria-labelledby="class-origin-system-tab" hidden></div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="col-lg-6">
+                        <section class="card h-100">
+                            <div class="card-header fw-semibold">
+                                <% if (LanguageContext == "IT") { %>IMPOSTAZIONE CAMPI<% } %>
+                                <% if (LanguageContext == "GB") { %>FIELD MAPPING<% } %>
+                                <% if (LanguageContext == "ES") { %>CONFIGURACIÓN DE CAMPOS<% } %>
+                                <% if (LanguageContext == "CN") { %>欄位設定<% } %>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive class-origin-fields-scroll">
+                                    <table class="table table-bordered table-sm mb-0 class-origin-fields-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th scope="col">
+                                                    <% if (LanguageContext == "IT") { %>CAMPO DI SISTEMA<% } %>
+                                                    <% if (LanguageContext == "GB") { %>SYSTEM FIELD<% } %>
+                                                    <% if (LanguageContext == "ES") { %>CAMPO DEL SISTEMA<% } %>
+                                                    <% if (LanguageContext == "CN") { %>系統欄位<% } %>
+                                                </th>
+                                                <th scope="col">
+                                                    <% if (LanguageContext == "IT") { %>COLONNA DINAMICA<% } %>
+                                                    <% if (LanguageContext == "GB") { %>DYNAMIC COLUMN<% } %>
+                                                    <% if (LanguageContext == "ES") { %>COLUMNA DINÁMICA<% } %>
+                                                    <% if (LanguageContext == "CN") { %>動態欄位<% } %>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="class-origin-fields-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+                <div class="class-origin-feedback mt-3" role="alert" aria-live="assertive"></div>
+                <div class="d-flex justify-content-end border-top mt-3 pt-3">
+                    <button type="button" class="btn btn-success btn-save-class-origin">
+                        <% if (LanguageContext == "IT") { %>SALVA<% } %>
+                        <% if (LanguageContext == "GB") { %>SAVE<% } %>
+                        <% if (LanguageContext == "ES") { %>GUARDAR<% } %>
+                        <% if (LanguageContext == "CN") { %>儲存<% } %>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

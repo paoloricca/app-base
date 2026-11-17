@@ -8,11 +8,26 @@ var requestBase = require('../../model/request-base.js');
 // var deleteRichiestaAssistenza = require('../../model/ticket/delete-richiesta-assistenza');
 var response = require('../../model/response');
 const crud = require('../../crud/forms/forms.js');
+const classOrigin = require('../../crud/forms/class-origin.js');
 const breadcrumb = require('../../crud/breadcrumb.js');
 const fs = require('fs');
 const path = require('path');
 const sessionUtil = require('../../utils/session')
 const session = require('express-session');
+
+function handleClassOriginRequest(req, res, action) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+
+    res.set('Access-Control-Allow-Origin', '*');
+    Promise.resolve()
+        .then(() => action(req.session.user))
+        .then(data => res.status(200).json(new response('OK', data, null)))
+        .catch(error => res.status(200).json(new response('ERR', null, {
+            message: error && error.message ? error.message : String(error)
+        })));
+}
 
 forms.get('/forms-script', (req, res) => {
     const filePath = path.resolve(__dirname, '../../controller/forms/forms.js');
@@ -29,6 +44,33 @@ forms.get('/control-processi-filter-script', (req, res) => {
 forms.get('/utility-script', (req, res) => {
     const filePath = path.resolve(__dirname, '../../utils/utility.js');
     res.sendFile(filePath);
+});
+forms.get('/model-class-origin/:IDClasse', function (req, res) {
+    handleClassOriginRequest(req, res, user =>
+        classOrigin.getClassOrigin(user.IdAttore, req.params.IDClasse, user.LanguageContext)
+    );
+});
+forms.post('/model-class-origin/:IDClasse/test-connection', function (req, res) {
+    handleClassOriginRequest(req, res, async user => {
+        await classOrigin.getClassOrigin(user.IdAttore, req.params.IDClasse, user.LanguageContext);
+        return classOrigin.testConnection(req.body.Connessione);
+    });
+});
+forms.post('/model-class-origin/:IDClasse/query-columns', function (req, res) {
+    handleClassOriginRequest(req, res, async user => {
+        await classOrigin.getClassOrigin(user.IdAttore, req.params.IDClasse, user.LanguageContext);
+        return classOrigin.getQueryColumns(req.body.Connessione, req.body.TestoOrigine);
+    });
+});
+forms.post('/model-class-origin/:IDClasse', function (req, res) {
+    handleClassOriginRequest(req, res, user =>
+        classOrigin.saveClassOrigin(user.IdAttore, req.params.IDClasse, req.body)
+    );
+});
+forms.delete('/model-class-origin/:IDClasse', function (req, res) {
+    handleClassOriginRequest(req, res, user =>
+        classOrigin.deleteClassOrigin(user.IdAttore, req.params.IDClasse)
+    );
 });
 forms.post('/forms-version', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {

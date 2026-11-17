@@ -3,6 +3,7 @@ const path = require('path');
 const router = express.Router();
 const response = require('../model/response');
 const crud = require('../crud/dynamic-forms');
+const classOrigin = require('../crud/forms/class-origin');
 const sessionUtil = require('../utils/session');
 
 function isPositiveInteger(value) {
@@ -12,6 +13,32 @@ function isPositiveInteger(value) {
 
 function sendError(res, error) {
     res.status(200).json(new response('ERR', null, error));
+}
+
+function getEditableClassAttributes(req) {
+    const workflowRecordId = req.query.workflowRecordId == null || req.query.workflowRecordId === ''
+        ? null
+        : req.query.workflowRecordId;
+    if (!isPositiveInteger(req.params.IdProcesso) ||
+        !isPositiveInteger(req.params.IDClasse) ||
+        (workflowRecordId !== null && !isPositiveInteger(workflowRecordId))) {
+        return Promise.reject(new Error('Invalid process, class or workflow record ID.'));
+    }
+
+    return crud.getClassAttributes(
+        req.params.IdProcesso,
+        req.params.IDClasse,
+        req.session.user.IdAccount,
+        req.session.user.LanguageContext,
+        workflowRecordId,
+        req.session.user.IDProfiloUtenteDefault,
+        req.session.user.IdGruppoOperativoDefault,
+        'Modifica'
+    ).then(attributes => attributes.filter(attribute =>
+        attribute.IsWorkflowEditable !== false &&
+        attribute.IsWorkflowEditable !== 0 &&
+        attribute.IsWorkflowEditable !== '0'
+    ));
 }
 
 router.get('/dynamic-forms/:IdProcesso', function (req, res) {
@@ -143,6 +170,49 @@ router.get('/dynamic-forms/:IdProcesso/api/model-class-attribute/:IdClasse', fun
         req.session.user.IdGruppoOperativoDefault,
         req.query.action
     ).then(data => res.status(200).json(new response('OK', data, null)))
+        .catch(error => sendError(res, error));
+});
+
+router.get('/dynamic-forms/:IdProcesso/api/class-origin/:IDClasse', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    getEditableClassAttributes(req)
+        .then(attributes => classOrigin.getClassOrigin(
+            req.session.user.IdAttore,
+            req.params.IDClasse,
+            req.session.user.LanguageContext
+        ).then(config => {
+            const allowedIds = new Set(attributes.map(attribute => Number(attribute.IDAttributo)));
+            return {
+                configured: Boolean(config.origin),
+                columns: config.origin
+                    ? config.attributes
+                        .filter(attribute => allowedIds.has(Number(attribute.IDAttributo)) &&
+                            attribute.CampoDinamico)
+                        .map(attribute => ({
+                            name: attribute.CampoDinamico,
+                            IDAttributo: Number(attribute.IDAttributo)
+                        }))
+                    : []
+            };
+        }))
+        .then(data => res.status(200).json(new response('OK', data, null)))
+        .catch(error => sendError(res, error));
+});
+
+router.get('/dynamic-forms/:IdProcesso/api/class-origin/:IDClasse/rows', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) {
+        return;
+    }
+    getEditableClassAttributes(req)
+        .then(attributes => classOrigin.getClassOriginRows(
+            req.session.user.IdAttore,
+            req.params.IDClasse,
+            req.session.user.LanguageContext,
+            attributes.map(attribute => attribute.IDAttributo)
+        ))
+        .then(data => res.status(200).json(new response('OK', data, null)))
         .catch(error => sendError(res, error));
 });
 

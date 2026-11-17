@@ -120,6 +120,54 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="dynamic-form-origin-select-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title dynamic-form-origin-select-title">
+                        <% if (user.LanguageContext == 'IT') { %>Seleziona dati<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Select data<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Seleccionar datos<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>選擇資料<% } %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger dynamic-form-origin-select-error d-none" role="alert"></div>
+                    <div class="dynamic-form-origin-select-loading d-none mb-3" role="status" aria-live="polite">
+                        <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+                        <span>
+                            <% if (user.LanguageContext == 'IT') { %>Caricamento in corso...<% } %>
+                            <% if (user.LanguageContext == 'GB') { %>Loading...<% } %>
+                            <% if (user.LanguageContext == 'ES') { %>Cargando...<% } %>
+                            <% if (user.LanguageContext == 'CN') { %>載入中...<% } %>
+                        </span>
+                    </div>
+                    <div class="table-responsive dynamic-form-origin-select-table-container">
+                        <table class="table table-hover table-sm align-middle dynamic-form-origin-select-table">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="text-center py-3 dynamic-form-origin-select-empty d-none">
+                        <% if (user.LanguageContext == 'IT') { %>Nessun dato trovato<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>No data found<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>No se encontraron datos<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>未找到資料<% } %>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <% if (user.LanguageContext == 'IT') { %>Annulla<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>Cancel<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>Cancelar<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>取消<% } %>
+                    </button>
+                    <button type="button" class="btn btn-primary dynamic-form-origin-select-confirm" disabled>OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="modal fade" id="dynamic-form-delete-confirm" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">

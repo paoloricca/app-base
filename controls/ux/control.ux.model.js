@@ -204,6 +204,519 @@
                 .text(messages.join(' '));
             return minimumValid && !maximumBelowMinimum;
         }
+        function originMessage(key, languageContext) {
+            var messages = {
+                connectionOk: {
+                    IT: 'Connessione stabilita correttamente.',
+                    GB: 'Connection established successfully.',
+                    ES: 'Conexión establecida correctamente.',
+                    CN: '連線成功。'
+                },
+                columnsOk: {
+                    IT: 'Verifica completata. Elenco colonne aggiornato.',
+                    GB: 'Test completed. Column list updated.',
+                    ES: 'Prueba completada. Lista de columnas actualizada.',
+                    CN: '測試完成，欄位清單已更新。'
+                },
+                descriptionRequired: {
+                    IT: 'Inserire la descrizione dell’origine.',
+                    GB: 'Enter the source description.',
+                    ES: 'Introduzca la descripción del origen.',
+                    CN: '請輸入來源描述。'
+                },
+                connectionRequired: {
+                    IT: 'La connessione è obbligatoria.',
+                    GB: 'Connection is required.',
+                    ES: 'La conexión es obligatoria.',
+                    CN: '連線為必填。'
+                },
+                connectionAndTextRequired: {
+                    IT: 'Inserire una connessione e una query per verificare le colonne.',
+                    GB: 'Enter a connection and query to test the columns.',
+                    ES: 'Introduzca una conexión y una consulta para probar las columnas.',
+                    CN: '請輸入連線與查詢以測試欄位。'
+                },
+                textRequired: {
+                    IT: 'Il testo è obbligatorio.',
+                    GB: 'Text is required.',
+                    ES: 'El texto es obligatorio.',
+                    CN: '文字為必填。'
+                },
+                mappingsRequired: {
+                    IT: 'Associare una colonna dinamica a ogni campo di sistema.',
+                    GB: 'Map a dynamic column to every system field.',
+                    ES: 'Asocie una columna dinámica a cada campo del sistema.',
+                    CN: '請為每個系統欄位指定動態欄位。'
+                },
+                duplicateMapping: {
+                    IT: 'Attenzione: più campi di sistema sono associati alla stessa colonna dinamica.',
+                    GB: 'Warning: multiple system fields are mapped to the same dynamic column.',
+                    ES: 'Atención: varios campos del sistema están asociados a la misma columna dinámica.',
+                    CN: '警告：多個系統欄位對應到同一個動態欄位。'
+                }
+            };
+            return messages[key][languageContext] || messages[key].IT;
+        }
+        function showOriginFeedback($modal, message, feedbackType) {
+            var $feedback = $modal.find('.class-origin-feedback');
+            $feedback.removeClass('alert alert-success alert-danger alert-warning')
+                .empty();
+            if (!message) {
+                return;
+            }
+            var alertClass = feedbackType === true
+                ? 'alert-success'
+                : 'alert-danger';
+            $feedback.addClass('alert ' + alertClass)
+                .text(message);
+        }
+        function updateOriginInputStatus($modal, selector) {
+            var $field = $modal.find(selector);
+            var isValid = String($field.val() || '').trim().length > 0;
+            if (selector === '#class-origin-description') {
+                $field.toggleClass('is-valid', isValid)
+                    .toggleClass('is-invalid', !isValid);
+                return;
+            }
+            $field.closest('.mb-3, .pt-3, .mt-3')
+                .find('.origin-validation-indicator')
+                .first()
+                .toggleClass('text-success', isValid)
+                .toggleClass('text-danger', !isValid)
+                .html(isValid
+                    ? '<i class="bi bi-check-circle-fill"></i>'
+                    : '<i class="bi bi-x-circle-fill"></i>');
+        }
+        function updateOriginFormValidation($modal) {
+            updateOriginInputStatus($modal, '#class-origin-description');
+            updateOriginInputStatus($modal, '#class-origin-connection');
+            updateOriginInputStatus($modal, '#class-origin-text');
+        }
+        function showOriginPanel($modal, originType) {
+            var $tab = $modal.find('[data-origin-type="' + originType + '"]');
+            $modal.find('[data-origin-type]')
+                .removeClass('active')
+                .attr('aria-selected', 'false');
+            $tab.addClass('active').attr('aria-selected', 'true');
+            $modal.find('.class-origin-tab-panels .tab-pane')
+                .removeClass('active')
+                .prop('hidden', true);
+            $modal.find('#' + $tab.attr('aria-controls'))
+                .addClass('active')
+                .prop('hidden', false);
+        }
+        function updateOriginFieldStatus($row, languageContext, savedValue) {
+            var labels = {
+                linked: { IT: 'Campo associato', GB: 'Field mapped', ES: 'Campo asociado', CN: '欄位已對應' },
+                missing: { IT: 'Campo non associato', GB: 'Field not mapped', ES: 'Campo no asociado', CN: '欄位未對應' }
+            };
+            if (savedValue === undefined) {
+                savedValue = $row.find('.class-origin-dynamic-field').val() || '';
+            }
+            var isMapped = Boolean(savedValue);
+            $row.find('.class-origin-field-status')
+                .toggleClass('bi-check-circle-fill text-success', isMapped)
+                .toggleClass('bi-x-circle-fill text-danger', !isMapped)
+                .attr('aria-label', (isMapped ? labels.linked : labels.missing)[languageContext] ||
+                    (isMapped ? labels.linked.IT : labels.missing.IT));
+        }
+        function populateOriginColumns($modal, columns) {
+            var languageContext = JSON.parse(plugin.attr('data-options')).user.LanguageContext;
+            var placeholder = {
+                IT: 'Seleziona colonna',
+                GB: 'Select column',
+                ES: 'Seleccionar columna',
+                CN: '選擇欄位'
+            }[languageContext] || 'Seleziona colonna';
+            $modal.find('.class-origin-dynamic-field').each(function () {
+                var $select = $(this);
+                var selectedValue = String($select.val() || '');
+                var selectedColumn = (columns || []).some(function (column) {
+                    return String(column) === selectedValue;
+                }) ? selectedValue : '';
+                $select.empty().append(new Option(placeholder, ''));
+                (columns || []).forEach(function (column) {
+                    $select.append(new Option(column, column));
+                });
+                $select.val(selectedColumn);
+                updateOriginFieldStatus($select.closest('tr'), languageContext);
+            });
+        }
+        function renderOriginFields($modal, attributes, languageContext) {
+            var $body = $modal.find('.class-origin-fields-body').empty();
+            (attributes || []).forEach(function (attribute) {
+                var mappedValue = attribute.CampoDinamico || '';
+                var $row = $('<tr>');
+                var $systemField = $('<td>').appendTo($row);
+                $('<i>', {
+                    class: 'bi class-origin-field-status me-2',
+                    role: 'img'
+                }).appendTo($systemField);
+                $('<span>').text(attribute.Descrizione || '').appendTo($systemField);
+                var $select = $('<select>', {
+                    class: 'form-select form-select-sm class-origin-dynamic-field',
+                    'data-idattributo': attribute.IDAttributo,
+                    'data-saved-value': mappedValue
+                }).appendTo($('<td>').appendTo($row));
+                $select.append(new Option(
+                    languageContext === 'GB' ? 'Select column' :
+                        languageContext === 'ES' ? 'Seleccionar columna' :
+                            languageContext === 'CN' ? '選擇欄位' : 'Seleziona colonna',
+                    ''
+                ));
+                if (mappedValue) {
+                    $select.append(new Option(mappedValue, mappedValue));
+                }
+                $select.val(mappedValue);
+                updateOriginFieldStatus($row, languageContext, mappedValue);
+                $body.append($row);
+            });
+        }
+        function openClassOrigin(idClasse, languageContext) {
+            var $originModal = plugin.find('#container-class-origin-edit');
+            var $sectionModal = plugin.find('#container-class-edit');
+            var classId = Number(idClasse);
+            if (!Number.isSafeInteger(classId) || classId <= 0) {
+                ShowError(
+                    languageContext === 'GB'
+                        ? 'Save the section before configuring its source.'
+                        : 'Salvare la sezione prima di configurarne l’origine.',
+                    'model.openClassOrigin'
+                );
+                return;
+            }
+
+            var $button = $sectionModal.find('.btn-configura-origine').prop('disabled', true);
+            var sectionDescription = $sectionModal.find('.class-header').text().trim();
+            var configureOriginTitles = {
+                IT: 'CONFIGURA ORIGINE',
+                GB: 'CONFIGURE SOURCE',
+                ES: 'CONFIGURAR ORIGEN',
+                CN: '設定來源'
+            };
+            var originTitle = configureOriginTitles[languageContext] || configureOriginTitles.IT;
+            if (sectionDescription) {
+                originTitle += ' (' + sectionDescription + ')';
+            }
+            $originModal.find('#class-origin-title').text(originTitle);
+            $.ajax({
+                type: 'GET',
+                url: '/model-class-origin/' + classId,
+                dataType: 'json'
+            }).done(function (response) {
+                if (response.status !== 'OK') {
+                    ShowError(
+                        response.error && response.error.message || 'Impossibile caricare l’origine.',
+                        'model.openClassOrigin'
+                    );
+                    return;
+                }
+
+                var config = response.data;
+                var origin = config.origin;
+                $originModal.data('idclasse', classId);
+                $originModal.find('#class-origin-description').val(origin ? origin.Descrizione : '');
+                $originModal.find('#class-origin-connection').val(origin ? origin.Connessione : '');
+                $originModal.find('#class-origin-text').val(origin ? origin.TestoOrigine : '');
+                var showConnectionLabels = {
+                    IT: 'Mostra connessione',
+                    GB: 'Show connection',
+                    ES: 'Mostrar conexión',
+                    CN: '顯示連線'
+                };
+                $originModal.find('#class-origin-connection').attr('type', 'password');
+                $originModal.find('.btn-toggle-origin-connection-visibility')
+                    .attr('aria-pressed', 'false')
+                    .attr('aria-label', showConnectionLabels[languageContext] || showConnectionLabels.IT)
+                    .find('i').removeClass('bi-eye-slash').addClass('bi-eye');
+                var originType = origin ? Number(origin.TipoOrigine) : 1;
+                $originModal.data('origin-type', originType);
+                showOriginPanel($originModal, originType);
+                renderOriginFields($originModal, config.attributes, languageContext);
+                updateOriginFormValidation($originModal);
+                showOriginFeedback($originModal, '', false);
+                $originModal.addClass('show').show().attr('aria-hidden', 'false').trigger('focus');
+
+                if (origin && origin.Connessione && origin.TestoOrigine) {
+                    testClassOriginQuery($originModal, languageContext, true);
+                }
+            }).fail(function (xhr, status, errorThrown) {
+                var response = xhr && xhr.responseJSON;
+                ShowError(
+                    response && response.error && response.error.message ||
+                        xhr.responseText || errorThrown || status,
+                    'model.openClassOrigin'
+                );
+            }).always(function () {
+                $button.prop('disabled', false);
+            });
+        }
+        function testClassOriginConnection($modal, languageContext) {
+            var classId = Number($modal.data('idclasse'));
+            var $button = $modal.find('.btn-test-origin-connection').prop('disabled', true);
+            showOriginFeedback($modal, '', false);
+            $.ajax({
+                type: 'POST',
+                url: '/model-class-origin/' + classId + '/test-connection',
+                dataType: 'json',
+                data: { Connessione: $modal.find('#class-origin-connection').val() }
+            }).done(function (response) {
+                if (response.status !== 'OK') {
+                    showOriginFeedback($modal,
+                        response.error && response.error.message || 'Connessione non riuscita.', false);
+                    return;
+                }
+                showOriginFeedback($modal, originMessage('connectionOk', languageContext), true);
+            }).fail(function (xhr, status, errorThrown) {
+                var response = xhr && xhr.responseJSON;
+                showOriginFeedback($modal,
+                    response && response.error && response.error.message ||
+                        xhr.responseText || errorThrown || status,
+                    false);
+            }).always(function () {
+                $button.prop('disabled', false);
+            });
+        }
+        function testClassOriginQuery($modal, languageContext, isInitialLoad) {
+            var classId = Number($modal.data('idclasse'));
+            var $button = $modal.find('.btn-test-origin-query').prop('disabled', true);
+            var data = {
+                Connessione: $modal.find('#class-origin-connection').val(),
+                TestoOrigine: $modal.find('#class-origin-text').val()
+            };
+            if (!data.Connessione || !data.TestoOrigine) {
+                $button.prop('disabled', false);
+                if (!isInitialLoad) {
+                    showOriginFeedback($modal, originMessage('connectionAndTextRequired', languageContext), false);
+                }
+                return;
+            }
+
+            showOriginFeedback($modal, '', false);
+            $.ajax({
+                type: 'POST',
+                url: '/model-class-origin/' + classId + '/query-columns',
+                dataType: 'json',
+                data: data
+            }).done(function (response) {
+                if (response.status !== 'OK') {
+                    showOriginFeedback($modal,
+                        response.error && response.error.message || 'Impossibile leggere le colonne della query.',
+                        false);
+                    return;
+                }
+                populateOriginColumns($modal, response.data || []);
+                showOriginFeedback($modal, originMessage('columnsOk', languageContext), true);
+            }).fail(function (xhr, status, errorThrown) {
+                var response = xhr && xhr.responseJSON;
+                showOriginFeedback($modal,
+                    response && response.error && response.error.message ||
+                        xhr.responseText || errorThrown || status,
+                    false);
+            }).always(function () {
+                $button.prop('disabled', false);
+            });
+        }
+        function saveClassOrigin($modal, languageContext) {
+            var description = String($modal.find('#class-origin-description').val() || '').trim();
+            var connectionString = String($modal.find('#class-origin-connection').val() || '');
+            var queryText = String($modal.find('#class-origin-text').val() || '');
+            var originType = Number($modal.data('origin-type') || 1);
+            updateOriginFormValidation($modal);
+            if (!description) {
+                showOriginFeedback($modal, originMessage('descriptionRequired', languageContext), false);
+                return;
+            }
+            if (!connectionString.trim()) {
+                showOriginFeedback($modal, originMessage('connectionRequired', languageContext), false);
+                return;
+            }
+            if (!queryText.trim()) {
+                showOriginFeedback($modal, originMessage('textRequired', languageContext), false);
+                return;
+            }
+
+            var mappings = [];
+            $modal.find('.class-origin-dynamic-field').each(function () {
+                mappings.push({
+                    IDAttributo: Number($(this).data('idattributo')),
+                    CampoDinamico: $(this).val() || ''
+                });
+            });
+            if (mappings.some(function (mapping) { return !String(mapping.CampoDinamico).trim(); })) {
+                showOriginFeedback($modal, originMessage('mappingsRequired', languageContext), 'warning');
+                return;
+            }
+            var mappedColumns = Object.create(null);
+            var hasDuplicateColumn = mappings.some(function (mapping) {
+                var normalizedColumn = String(mapping.CampoDinamico).trim().toLowerCase();
+                if (mappedColumns[normalizedColumn]) {
+                    return true;
+                }
+                mappedColumns[normalizedColumn] = true;
+                return false;
+            });
+            if (hasDuplicateColumn) {
+                showOriginFeedback($modal, originMessage('duplicateMapping', languageContext), 'warning');
+                return;
+            }
+            var payload = {
+                Descrizione: description,
+                TipoOrigine: originType,
+                Connessione: connectionString,
+                TestoOrigine: queryText,
+                Mappings: mappings
+            };
+            var classId = Number($modal.data('idclasse'));
+            var $button = $modal.find('.btn-save-class-origin').prop('disabled', true);
+            $.ajax({
+                type: 'POST',
+                url: '/model-class-origin/' + classId,
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify(payload)
+            }).done(function (response) {
+                if (response.status !== 'OK') {
+                    showOriginFeedback($modal,
+                        response.error && response.error.message || 'Impossibile salvare l’origine.',
+                        false);
+                    return;
+                }
+                var $sectionModal = plugin.find('#container-class-edit');
+                $sectionModal.data('has-class-origin', true)
+                    .find('#class-CompilazioneManuale').prop('checked', false);
+                $sectionModal.find('.origin-configure-container').show();
+                $modal.find('.class-origin-dynamic-field').each(function () {
+                    var $select = $(this);
+                    var selectedValue = $select.val() || '';
+                    $select.attr('data-saved-value', selectedValue);
+                    updateOriginFieldStatus($select.closest('tr'), languageContext, selectedValue);
+                });
+                $modal.removeClass('show').hide().attr('aria-hidden', 'true');
+            }).fail(function (xhr, status, errorThrown) {
+                var response = xhr && xhr.responseJSON;
+                showOriginFeedback($modal,
+                    response && response.error && response.error.message ||
+                        xhr.responseText || errorThrown || status,
+                    false);
+            }).always(function () {
+                $button.prop('disabled', false);
+            });
+        }
+        function configureClassOriginEditor(languageContext) {
+            var $sectionModal = plugin.find('#container-class-edit');
+            $sectionModal.data('origin-ui-ready', false)
+                .find('#class-CompilazioneManuale, .btn-configura-origine')
+                .prop('disabled', true);
+            $.get('/controls/ui/control.ui.model-class-origin-edit.ejs?' + Date.now())
+                .done(function (templateString) {
+                    plugin.find('.model-container').append(
+                        ejs.render(templateString, { LanguageContext: languageContext })
+                    );
+                    var $originModal = plugin.find('#container-class-origin-edit');
+                    $sectionModal.data('origin-ui-ready', true);
+                    if ($sectionModal.data('origin-state-ready') === true) {
+                        $sectionModal.find('#class-CompilazioneManuale, .btn-configura-origine')
+                            .prop('disabled', false);
+                    }
+
+                    plugin.off('click.classOrigin')
+                        .on('click.classOrigin', '.btn-configura-origine', function () {
+                            openClassOrigin($sectionModal.find('#IDClasse').val(), languageContext);
+                        })
+                        .on('change.classOrigin', '#class-CompilazioneManuale', function () {
+                            var $toggle = $(this);
+                            var hasSavedOrigin = $sectionModal.data('has-class-origin') === true;
+                            if ($toggle.prop('checked') && hasSavedOrigin) {
+                                $toggle.prop('checked', false);
+                                var $confirm = plugin.find('#confirm-delete-origin');
+                                var confirmOptions = JSON.parse($confirm.attr('data-options'));
+                                confirmOptions.args = {
+                                    IDClasse: Number($sectionModal.find('#IDClasse').val())
+                                };
+                                $confirm.attr('data-options', JSON.stringify(confirmOptions));
+                                $confirm.confirmDelete.show($confirm);
+                                return;
+                            }
+                            $sectionModal.find('.origin-configure-container')
+                                .toggle(!$toggle.prop('checked'));
+                        })
+                        .on('click.classOrigin', '[data-origin-type]', function () {
+                            var $tab = $(this);
+                            var originType = Number($tab.data('origin-type'));
+                            $originModal.data('origin-type', originType);
+                            showOriginPanel($originModal, originType);
+                        })
+                        .on('change.classOrigin', '.class-origin-dynamic-field', function () {
+                            updateOriginFieldStatus(
+                                $(this).closest('tr'),
+                                languageContext
+                            );
+                        })
+                        .on('input.classOrigin', '#class-origin-description, #class-origin-connection, #class-origin-text', function () {
+                            updateOriginFormValidation($originModal);
+                        })
+                        .on('click.classOrigin', '.btn-test-origin-connection', function () {
+                            testClassOriginConnection($originModal, languageContext);
+                        })
+                        .on('click.classOrigin', '.btn-toggle-origin-connection-visibility', function () {
+                            var $button = $(this);
+                            var $input = $originModal.find('#class-origin-connection');
+                            var showConnection = $input.attr('type') === 'password';
+                            var labels = showConnection
+                                ? { IT: 'Nascondi connessione', GB: 'Hide connection', ES: 'Ocultar conexión', CN: '隱藏連線' }
+                                : { IT: 'Mostra connessione', GB: 'Show connection', ES: 'Mostrar conexión', CN: '顯示連線' };
+                            $input.attr('type', showConnection ? 'text' : 'password');
+                            $button.attr('aria-pressed', String(showConnection))
+                                .attr('aria-label', labels[languageContext] || labels.IT)
+                                .find('i')
+                                .toggleClass('bi-eye', !showConnection)
+                                .toggleClass('bi-eye-slash', showConnection);
+                        })
+                        .on('click.classOrigin', '.btn-test-origin-query', function () {
+                            testClassOriginQuery($originModal, languageContext, false);
+                        })
+                        .on('click.classOrigin', '.btn-save-class-origin', function () {
+                            saveClassOrigin($originModal, languageContext);
+                        })
+                        .on('click.classOrigin', '.btn-close-class-origin', function () {
+                            $originModal.removeClass('show').hide().attr('aria-hidden', 'true');
+                        });
+
+                    var $confirm = plugin.find('#confirm-delete-origin');
+                    $confirm.confirmDelete({ LanguageContext: languageContext });
+                    $confirm.off('onconfirm.classOrigin').on('onconfirm.classOrigin', function () {
+                        var classId = Number($sectionModal.find('#IDClasse').val());
+                        $.ajax({
+                            type: 'DELETE',
+                            url: '/model-class-origin/' + classId,
+                            dataType: 'json'
+                        }).done(function (response) {
+                            if (response.status !== 'OK') {
+                                ShowError(
+                                    response.error && response.error.message ||
+                                        'Impossibile eliminare l’origine dati.',
+                                    'model.deleteClassOrigin'
+                                );
+                                return;
+                            }
+                            $sectionModal.data('has-class-origin', false)
+                                .find('#class-CompilazioneManuale').prop('checked', true);
+                            $sectionModal.find('.origin-configure-container').hide();
+                        }).fail(function (xhr, status, errorThrown) {
+                            var response = xhr && xhr.responseJSON;
+                            ShowError(
+                                response && response.error && response.error.message ||
+                                    xhr.responseText || errorThrown || status,
+                                'model.deleteClassOrigin'
+                            );
+                        });
+                    });
+                })
+                .fail(function (xhr, status, errorThrown) {
+                    ShowError(xhr.responseText || errorThrown || status, 'model.loadClassOriginTemplate');
+                });
+        }
         plugin.off('.modelSectionToggle');
         plugin.on('click.modelSectionToggle', '.model-section-header', function (event) {
             if ($(event.target).closest('.model-editor-menu-trigger, .model-editor-context-menu').length) {
@@ -669,6 +1182,8 @@
                             plugin.find('.model-container').append(
                                 ejs.render(templateString, { LanguageContext })
                             );
+
+                            configureClassOriginEditor(LanguageContext);
 
                             plugin.find('.btn-salva-classe').click(function () {
                                 plugin.model.saveClass();
@@ -1453,6 +1968,12 @@
                 var multipleEntryEnabled = classe.NumeroCicliMin != null || classe.NumeroCicli != null;
                 modal.find('#class-InserimentoMultiplo').prop('checked', multipleEntryEnabled);
                 modal.find('#class-multiple-entry-settings').toggle(multipleEntryEnabled);
+                modal.find('#class-CompilazioneManuale')
+                    .prop('checked', true)
+                    .prop('disabled', true);
+                modal.find('.origin-configure-container').hide();
+                modal.data('has-class-origin', false)
+                    .data('origin-state-ready', false);
                 modal.find('#class-NumeroCicliMin').val(classe.NumeroCicliMin == null ? '' : classe.NumeroCicliMin);
                 modal.find('#class-NumeroCicli').val(classe.NumeroCicli == null ? '' : classe.NumeroCicli);
                 updateMultipleEntryValidation(modal, options.user.LanguageContext);
@@ -1482,6 +2003,49 @@
 
                 modal.show();
 
+                var classId = Number(classe.IDClasse);
+                var originLoadSequence = Number(modal.data('origin-load-sequence') || 0) + 1;
+                modal.data('origin-load-sequence', originLoadSequence);
+                if (Number.isSafeInteger(classId) && classId > 0) {
+                    var $manualEntry = modal.find('#class-CompilazioneManuale');
+                    $.ajax({
+                        type: 'GET',
+                        url: '/model-class-origin/' + classId,
+                        dataType: 'json'
+                    }).done(function (response) {
+                        if (Number(modal.data('origin-load-sequence')) !== originLoadSequence ||
+                            Number(modal.find('#IDClasse').val()) !== classId) {
+                            return;
+                        }
+                        if (response.status !== 'OK') {
+                            ShowError(
+                                response.error && response.error.message ||
+                                    'Impossibile verificare l’origine dati della sezione.',
+                                'model.editClass'
+                            );
+                            return;
+                        }
+                        var hasOrigin = Boolean(response.data && response.data.origin);
+                                modal.data('has-class-origin', hasOrigin)
+                                    .data('origin-state-ready', true);
+                        $manualEntry.prop('checked', !hasOrigin)
+                            .prop('disabled', modal.data('origin-ui-ready') !== true);
+                        modal.find('.origin-configure-container').toggle(hasOrigin);
+                        modal.find('.btn-configura-origine')
+                            .prop('disabled', modal.data('origin-ui-ready') !== true);
+                    }).fail(function (xhr, status, errorThrown) {
+                        ShowError(
+                            xhr && xhr.responseJSON && xhr.responseJSON.error &&
+                                xhr.responseJSON.error.message ||
+                                xhr.responseText || errorThrown || status,
+                            'model.editClass'
+                        );
+                    });
+                } else {
+                    modal.data('origin-state-ready', true)
+                        .find('#class-CompilazioneManuale')
+                        .prop('disabled', modal.data('origin-ui-ready') !== true);
+                }
 
             } catch (err) {
 
@@ -1892,6 +2456,22 @@
             }
 
             var fieldLoads = [];
+            var classOriginConfig = null;
+            if (options.ApiBase && options.ActionName === 'Modifica') {
+                fieldLoads.push(modelApiRequestAsync(
+                    options,
+                    'class-origin/' + IdClasse,
+                    'GET',
+                    { workflowRecordId: options.WorkflowRecordId || '' }
+                ).then(function (response) {
+                    var result = JSON.parse(response);
+                    if (result.status !== 'OK') {
+                        throw new Error(result.error && result.error.message ||
+                            'Unable to load the class data source.');
+                    }
+                    classOriginConfig = result.data;
+                }));
+            }
             return $.when(
                 $.ajax({
                     url: modelApiUrl(JSON.parse(plugin.attr('data-options')),
@@ -2128,6 +2708,46 @@
                 })
             ).then(function (response) {
                 return $.when.apply($, fieldLoads).then(function () {
+
+                if (classOriginConfig && classOriginConfig.configured &&
+                    Array.isArray(classOriginConfig.columns)) {
+                    var $classContainer = plugin.find('.model-class-' + IdClasse + '-container');
+                    var $originButton = $('<button>', {
+                        type: 'button',
+                        class: 'btn btn-outline-primary model-class-origin-select',
+                        'data-idclasse': IdClasse
+                    }).append(
+                        $('<i>', { class: 'bi bi-database me-1', 'aria-hidden': 'true' }),
+                        document.createTextNode({
+                            IT: 'Seleziona',
+                            GB: 'Select',
+                            ES: 'Seleccionar',
+                            CN: '選擇資料'
+                        }[options.user.LanguageContext] || 'Seleziona dati')
+                    );
+                    var $originAction = $('<div>', {
+                        class: 'model-class-origin-select-container mb-2'
+                    }).append($originButton);
+                    var $summary = $classContainer.find('.model-multiple-entry-summary');
+                    if ($summary.length) {
+                        $summary.before($originAction);
+                    } else {
+                        $classContainer.find('.model-class-' + IdClasse + '-attributes')
+                            .before($originAction);
+                    }
+
+                    classOriginConfig.columns.forEach(function (column) {
+                        var attributeId = Number(column.IDAttributo);
+                        var attributeSelector = '#control_' + attributeId +
+                            ', [name="control_' + attributeId + '"]';
+                        $classContainer.find(attributeSelector)
+                            .prop('disabled', true)
+                            .attr('aria-readonly', 'true');
+                        $classContainer.find('.control_' + attributeId + ' :input')
+                            .prop('disabled', true)
+                            .attr('aria-readonly', 'true');
+                    });
+                }
 
                 plugin.find(".btn-configura-lista")
                     .off('click.modelAttributeList')

@@ -969,11 +969,56 @@ div, span, h1, h2, h3, h4, h5, h6, .col-12, label {
 #container-attribute-edit-values {
     z-index: 2010;
 }
+#container-class-origin-edit {
+    z-index: 2020;
+    background: rgba(0, 0, 0, .35);
+}
+#container-class-origin-edit .modal-dialog {
+    width: calc(100% - 2rem);
+    max-width: 1100px;
+}
+#container-class-origin-edit .modal-content {
+    max-height: 92vh;
+}
+#container-class-origin-edit .class-origin-fields-scroll {
+    min-height: 390px;
+    max-height: 56vh;
+}
+#container-class-origin-edit .class-origin-fields-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    white-space: nowrap;
+}
+#container-class-origin-edit .class-origin-fields-table td {
+    vertical-align: middle;
+}
+#container-class-origin-edit .class-origin-query {
+    min-height: 180px;
+    resize: vertical;
+}
+#container-class-origin-edit .class-origin-feedback:empty {
+    display: none;
+}
 #dynamic-form-editor {
     z-index: 2010;
 }
 #dynamic-form-editor.show ~ .modal-backdrop {
     z-index: 2005;
+}
+#dynamic-form-origin-select-modal {
+    z-index: 2020;
+}
+#dynamic-form-origin-select-modal.show ~ .modal-backdrop {
+    z-index: 2015;
+}
+.dynamic-form-origin-select-row {
+    cursor: pointer;
+}
+.dynamic-form-origin-select-row.dynamic-form-origin-select-selected > * {
+    --bs-table-bg: #ffe8c2;
+    --bs-table-hover-bg: #ffe8c2;
+    background-color: #ffe8c2 !important;
 }
 .model-section-header {
     display: flex;

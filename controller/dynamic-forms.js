@@ -17,6 +17,8 @@ $(function () {
     var actionLoading = false;
     var workflowApplying = false;
     var selectedWorkflowFiles = [];
+    var originSelection = null;
+    var originSelectionRequestId = 0;
 
     function text(key) {
         var labels = {
@@ -737,6 +739,219 @@ $(function () {
         });
     }
 
+    function originText(key) {
+        var labels = {
+            IT: {
+                select: 'Seleziona',
+                selectData: 'Seleziona dati',
+                filter: 'Filtra',
+                loading: 'Caricamento in corso...',
+                error: 'Impossibile caricare i dati.',
+                noData: 'Nessun dato trovato'
+            },
+            GB: {
+                select: 'Select',
+                selectData: 'Select data',
+                filter: 'Filter',
+                loading: 'Loading...',
+                error: 'Unable to load data.',
+                noData: 'No data found'
+            },
+            ES: {
+                select: 'Seleccionar',
+                selectData: 'Seleccionar datos',
+                filter: 'Filtrar',
+                loading: 'Cargando...',
+                error: 'No se pudieron cargar los datos.',
+                noData: 'No se encontraron datos'
+            },
+            CN: {
+                select: '選擇',
+                selectData: '選擇資料',
+                filter: '篩選',
+                loading: '載入中...',
+                error: '無法載入資料。',
+                noData: '未找到資料'
+            }
+        };
+        return (labels[user.LanguageContext] || labels.IT)[key];
+    }
+
+    function updateOriginSelectTitle(description) {
+        var title = originText('selectData');
+        var descriptionText = String(description || '').trim();
+        if (descriptionText) {
+            title = originText('select') + ' (' + descriptionText + ')';
+        }
+        $('#dynamic-form-origin-select-modal .dynamic-form-origin-select-title').text(title);
+    }
+
+    function sourceValueText(value) {
+        if (value == null) return '';
+        if (value instanceof Date) return value.toISOString();
+        return String(value);
+    }
+
+    function renderOriginSelectRows() {
+        var $modal = $('#dynamic-form-origin-select-modal');
+        var $body = $modal.find('.dynamic-form-origin-select-table tbody').empty();
+        var columns = originSelection.columns;
+        var filters = $modal.find('.dynamic-form-origin-select-filter').map(function () {
+            return String($(this).val() || '').toLocaleLowerCase();
+        }).get();
+        var visibleIndexes = [];
+
+        originSelection.rows.forEach(function (row, rowIndex) {
+            var matches = columns.every(function (column, columnIndex) {
+                return sourceValueText(row[column.name])
+                    .toLocaleLowerCase()
+                    .indexOf(filters[columnIndex] || '') >= 0;
+            });
+            if (!matches) return;
+            visibleIndexes.push(rowIndex);
+
+            var $row = $('<tr>', {
+                class: 'dynamic-form-origin-select-row',
+                tabindex: 0,
+                'data-row-index': rowIndex
+            });
+            columns.forEach(function (column) {
+                $('<td>').text(sourceValueText(row[column.name])).appendTo($row);
+            });
+            if (originSelection.selectedIndex === rowIndex) {
+                $row.addClass('dynamic-form-origin-select-selected');
+            }
+            $body.append($row);
+        });
+
+        if (originSelection.selectedIndex != null &&
+            visibleIndexes.indexOf(originSelection.selectedIndex) < 0) {
+            originSelection.selectedIndex = null;
+        }
+        $modal.find('.dynamic-form-origin-select-confirm')
+            .prop('disabled', originSelection.selectedIndex == null);
+        $modal.find('.dynamic-form-origin-select-empty')
+            .toggleClass('d-none', visibleIndexes.length > 0);
+    }
+
+    function renderOriginSelectTable(columns, rows) {
+        var $modal = $('#dynamic-form-origin-select-modal');
+        var $head = $modal.find('.dynamic-form-origin-select-table thead').empty();
+        var $labels = $('<tr>').appendTo($head);
+        var $filters = $('<tr>').appendTo($head);
+        columns.forEach(function (column, index) {
+            $('<th>', { scope: 'col', text: column.name }).appendTo($labels);
+            $('<th>').append($('<input>', {
+                type: 'search',
+                class: 'form-control form-control-sm dynamic-form-origin-select-filter',
+                'aria-label': originText('filter') + ' ' + column.name,
+                placeholder: originText('filter')
+            }).attr('data-column-index', index)).appendTo($filters);
+        });
+        originSelection.columns = columns;
+        originSelection.rows = rows;
+        originSelection.selectedIndex = null;
+        renderOriginSelectRows();
+    }
+
+    function openOriginSelect(classId, $button, $container) {
+        var options;
+        try {
+            options = JSON.parse($container.attr('data-options'));
+        } catch (error) {
+            ShowError(error.message, 'openOriginSelect');
+            return;
+        }
+
+        var $modal = $('#dynamic-form-origin-select-modal');
+        var requestId = originSelectionRequestId + 1;
+        originSelectionRequestId = requestId;
+        originSelection = {
+            classId: classId,
+            columns: [],
+            rows: [],
+            selectedIndex: null
+        };
+        updateOriginSelectTitle('');
+        $modal.find('.dynamic-form-origin-select-error').addClass('d-none').text('');
+        $modal.find('.dynamic-form-origin-select-loading').removeClass('d-none');
+        $modal.find('.dynamic-form-origin-select-table thead, .dynamic-form-origin-select-table tbody')
+            .empty();
+        $modal.find('.dynamic-form-origin-select-empty').addClass('d-none');
+        $modal.find('.dynamic-form-origin-select-confirm').prop('disabled', true);
+        $button.prop('disabled', true);
+        $modal.modal('show');
+
+        $.ajax({
+            type: 'GET',
+            url: apiBase + '/class-origin/' + classId + '/rows',
+            data: { workflowRecordId: options.WorkflowRecordId || '' },
+            dataType: 'json'
+        }).done(function (response) {
+            try {
+                if (requestId !== originSelectionRequestId || !originSelection) return;
+                var result = unwrap(response);
+                if (!result || !Array.isArray(result.columns) || !Array.isArray(result.rows)) {
+                    throw new Error('Invalid data source response.');
+                }
+                updateOriginSelectTitle(result.description);
+                renderOriginSelectTable(result.columns, result.rows);
+                $modal.find('.dynamic-form-origin-select-loading').addClass('d-none');
+            } catch (error) {
+                $modal.find('.dynamic-form-origin-select-loading').addClass('d-none');
+                $modal.find('.dynamic-form-origin-select-error')
+                    .text(error.message || originText('error'))
+                    .removeClass('d-none');
+            }
+        }).fail(function (xhr) {
+            if (requestId !== originSelectionRequestId || !originSelection) return;
+            $modal.find('.dynamic-form-origin-select-loading').addClass('d-none');
+            $modal.find('.dynamic-form-origin-select-error')
+                .text(requestErrorMessage(xhr) || originText('error'))
+                .removeClass('d-none');
+        }).always(function () {
+            $button.prop('disabled', false);
+        });
+    }
+
+    function applyOriginSelection() {
+        if (!originSelection || originSelection.selectedIndex == null) return;
+        var $container = $('.container-dynamic-form-edit');
+        var $classContainer = $container.find(
+            '.model-class-' + originSelection.classId + '-container'
+        );
+        var row = originSelection.rows[originSelection.selectedIndex];
+        var attributes = $classContainer.data('model-attributes') || [];
+
+        originSelection.columns.forEach(function (column) {
+            var attribute = attributes.find(function (item) {
+                return Number(item.IDAttributo) === Number(column.IDAttributo);
+            });
+            var value = row[column.name];
+            var valueText = sourceValueText(value);
+            var attributeId = Number(column.IDAttributo);
+            if (Number(attribute && attribute.IDTipoDati) === 5) {
+                if (/^(true|yes)$/i.test(valueText)) valueText = '1';
+                if (/^(false|no)$/i.test(valueText)) valueText = '0';
+                $classContainer.find('input[name="control_' + attributeId + '"]')
+                    .prop('checked', false)
+                    .filter(function () {
+                        return this.value === valueText;
+                    })
+                    .prop('checked', true);
+                return;
+            }
+            if (Number(attribute && attribute.IDTipoDati) === 4 && valueText) {
+                valueText = valueText.slice(0, 10);
+            }
+            var $control = $classContainer.find('#control_' + attributeId);
+            if ($control.length) {
+                $control.val(valueText).trigger('change');
+            }
+        });
+        $('#dynamic-form-origin-select-modal').modal('hide');
+    }
+
     function loadEditor(instanceId, mode, workflowRecordId) {
         editorMode = mode;
         var $container = $('.container-dynamic-form-edit');
@@ -749,6 +964,9 @@ $(function () {
         $container.on('onsave.dynamicForms', function () {
             pageIndex = 1;
             loadRecords();
+        });
+        $container.on('click.dynamicForms', '.model-class-origin-select', function () {
+            openOriginSelect(Number($(this).data('idclasse')), $(this), $container);
         });
         $container.on('onload.dynamicForms', function () {
             if (editorMode === 'view' || editorMode === 'preview') {
@@ -895,6 +1113,24 @@ $(function () {
         updateWorkflowNoteValidity($note);
         $('.dynamic-form-workflow-apply').prop('disabled', false);
     });
+    $('#dynamic-form-origin-select-modal')
+        .on('input', '.dynamic-form-origin-select-filter', renderOriginSelectRows)
+        .on('click', '.dynamic-form-origin-select-row', function () {
+            originSelection.selectedIndex = Number($(this).data('row-index'));
+            renderOriginSelectRows();
+        })
+        .on('keydown', '.dynamic-form-origin-select-row', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                originSelection.selectedIndex = Number($(this).data('row-index'));
+                renderOriginSelectRows();
+            }
+        })
+        .on('click', '.dynamic-form-origin-select-confirm', applyOriginSelection)
+        .on('hidden.bs.modal', function () {
+            originSelection = null;
+            originSelectionRequestId += 1;
+        });
     $('.dynamic-form-workflow-note-input').on('input', function () {
         updateWorkflowNoteValidity($(this));
     });

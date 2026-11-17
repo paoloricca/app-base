@@ -121,6 +121,24 @@
                     </div>
                     <div class="alert alert-warning multiple-entry-validation-warning d-none mb-0" role="alert" aria-live="polite"></div>
                 </fieldset>
+                <div class="col-12 p-0 mb-3 form-switch">
+                    <input id="class-CompilazioneManuale" name="class-CompilazioneManuale" class="form-check-input" type="checkbox" checked>
+                    <label class="form-check-label ms-2" for="class-CompilazioneManuale">
+                        <% if (LanguageContext == "IT") { %>Compilazione manuale<% } %>
+                        <% if (LanguageContext == "GB") { %>Manual entry<% } %>
+                        <% if (LanguageContext == "ES") { %>Cumplimentación manual<% } %>
+                        <% if (LanguageContext == "CN") { %>手動填寫<% } %>
+                    </label>
+                </div>
+                <div class="col-12 p-0 mb-3 origin-configure-container" style="display: none;">
+                    <button type="button" class="btn btn-outline-primary btn-configura-origine">
+                        <i class="bi bi-database me-1" aria-hidden="true"></i>
+                        <% if (LanguageContext == "IT") { %>Configura origine<% } %>
+                        <% if (LanguageContext == "GB") { %>Configure source<% } %>
+                        <% if (LanguageContext == "ES") { %>Configurar origen<% } %>
+                        <% if (LanguageContext == "CN") { %>設定來源<% } %>
+                    </button>
+                </div>
                 <div class="divider col-12 mt-4 mb-4"></div>
                 <div class="col-12 p-0">
                     <a class="btn btn-success btn-md float-end btn-salva-classe">
@@ -139,6 +157,7 @@
                     </a>
                 </div>
             </div>
+            <div id="confirm-delete-origin"></div>
         </div>
     </div>
 </div>
