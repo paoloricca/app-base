@@ -973,6 +973,10 @@ div, span, h1, h2, h3, h4, h5, h6, .col-12, label {
     z-index: 2020;
     background: rgba(0, 0, 0, .35);
 }
+#container-class-origin-conditions {
+    z-index: 2030;
+    background: rgba(0, 0, 0, .35);
+}
 #container-class-origin-edit .modal-dialog {
     width: calc(100% - 2rem);
     max-width: 1100px;
@@ -1011,6 +1015,16 @@ div, span, h1, h2, h3, h4, h5, h6, .col-12, label {
 }
 #dynamic-form-origin-select-modal.show ~ .modal-backdrop {
     z-index: 2015;
+}
+.dynamic-form-origin-select-table-container {
+    max-height: 50vh;
+    overflow: auto;
+}
+.dynamic-form-origin-select-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--bs-body-bg);
 }
 .dynamic-form-origin-select-row {
     cursor: pointer;

@@ -134,6 +134,29 @@
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-danger dynamic-form-origin-select-error d-none" role="alert"></div>
+                    <form class="dynamic-form-origin-select-search-form mb-3">
+                        <fieldset class="border rounded p-3">
+                            <legend class="float-none w-auto px-2 fs-6 fw-bold">
+                                <% if (user.LanguageContext == 'IT') { %>Filtro di ricerca<% } %>
+                                <% if (user.LanguageContext == 'GB') { %>Search filter<% } %>
+                                <% if (user.LanguageContext == 'ES') { %>Filtro de búsqueda<% } %>
+                                <% if (user.LanguageContext == 'CN') { %>搜索筛选器<% } %>
+                            </legend>
+                            <div class="row g-2 dynamic-form-origin-select-filters"></div>
+                            <button type="submit" class="btn btn-primary dynamic-form-origin-select-search mt-3">
+                                <% if (user.LanguageContext == 'IT') { %>Cerca<% } %>
+                                <% if (user.LanguageContext == 'GB') { %>Search<% } %>
+                                <% if (user.LanguageContext == 'ES') { %>Buscar<% } %>
+                                <% if (user.LanguageContext == 'CN') { %>搜索<% } %>
+                            </button>
+                        </fieldset>
+                    </form>
+                    <div class="alert alert-warning dynamic-form-origin-select-warning d-none" role="alert">
+                        <% if (user.LanguageContext == 'IT') { %>La ricerca ha prodotto più risultati del previsto: Imposta uno o più filtri per trovare più velocemente ciò che cerchi.<% } %>
+                        <% if (user.LanguageContext == 'GB') { %>The search returned more results than expected: Set one or more filters to find what you are looking for faster.<% } %>
+                        <% if (user.LanguageContext == 'ES') { %>La búsqueda ha producido más resultados de los previstos: Establece uno o más filtros para encontrar antes lo que buscas.<% } %>
+                        <% if (user.LanguageContext == 'CN') { %>搜索结果超过预期：请设置一个或多个筛选条件，以便更快找到所需内容。<% } %>
+                    </div>
                     <div class="dynamic-form-origin-select-loading d-none mb-3" role="status" aria-live="polite">
                         <span class="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
                         <span>

@@ -12,17 +12,21 @@ function isPositiveInteger(value) {
 }
 
 function sendError(res, error) {
-    res.status(200).json(new response('ERR', null, error));
+    res.status(200).json(new response('ERR', null,
+        error instanceof Error ? { message: error.message } : error));
 }
 
 function getEditableClassAttributes(req) {
-    const workflowRecordId = req.query.workflowRecordId == null || req.query.workflowRecordId === ''
+    const data = req.method === 'POST' ? req.body : req.query;
+    const workflowRecordId = data.workflowRecordId == null || data.workflowRecordId === ''
         ? null
-        : req.query.workflowRecordId;
+        : data.workflowRecordId;
+    const actionName = data.action || 'Modifica';
     if (!isPositiveInteger(req.params.IdProcesso) ||
         !isPositiveInteger(req.params.IDClasse) ||
-        (workflowRecordId !== null && !isPositiveInteger(workflowRecordId))) {
-        return Promise.reject(new Error('Invalid process, class or workflow record ID.'));
+        (workflowRecordId !== null && !isPositiveInteger(workflowRecordId)) ||
+        (actionName !== 'Inserimento' && actionName !== 'Modifica')) {
+        return Promise.reject(new Error('Invalid process, class, action or workflow record ID.'));
     }
 
     return crud.getClassAttributes(
@@ -33,7 +37,7 @@ function getEditableClassAttributes(req) {
         workflowRecordId,
         req.session.user.IDProfiloUtenteDefault,
         req.session.user.IdGruppoOperativoDefault,
-        'Modifica'
+        actionName
     ).then(attributes => attributes.filter(attribute =>
         attribute.IsWorkflowEditable !== false &&
         attribute.IsWorkflowEditable !== 0 &&
@@ -182,10 +186,24 @@ router.get('/dynamic-forms/:IdProcesso/api/class-origin/:IDClasse', function (re
             req.session.user.IdAttore,
             req.params.IDClasse,
             req.session.user.LanguageContext
-        ).then(config => {
+        ).then(async config => {
             const allowedIds = new Set(attributes.map(attribute => Number(attribute.IDAttributo)));
+            const conditionConfig = config.origin
+                ? await classOrigin.getClassOriginConditions(
+                    req.session.user.IdAttore, req.params.IDClasse, req.session.user.LanguageContext
+                )
+                : null;
             return {
                 configured: Boolean(config.origin),
+                description: config.origin ? config.origin.Descrizione : '',
+                conditionFields: conditionConfig
+                    ? conditionConfig.conditions.map(condition => {
+                        const field = conditionConfig.fields.find(item =>
+                            Number(item.IDAttributo) === Number(condition.IDAttributo));
+                        return { IDAttributo: Number(condition.IDAttributo),
+                            Description: field ? field.Description : '' };
+                    })
+                    : [],
                 columns: config.origin
                     ? config.attributes
                         .filter(attribute => allowedIds.has(Number(attribute.IDAttributo)) &&
@@ -201,20 +219,31 @@ router.get('/dynamic-forms/:IdProcesso/api/class-origin/:IDClasse', function (re
         .catch(error => sendError(res, error));
 });
 
-router.get('/dynamic-forms/:IdProcesso/api/class-origin/:IDClasse/rows', function (req, res) {
+function getOriginRows(req, res) {
     if (!sessionUtil.verifyUser(req, res)) {
         return;
     }
     getEditableClassAttributes(req)
-        .then(attributes => classOrigin.getClassOriginRows(
-            req.session.user.IdAttore,
-            req.params.IDClasse,
-            req.session.user.LanguageContext,
-            attributes.map(attribute => attribute.IDAttributo)
-        ))
+        .then(attributes => {
+            const data = req.method === 'POST' ? req.body : req.query;
+            const filters = data.filters == null ? [] :
+                (typeof data.filters === 'string' ? JSON.parse(data.filters) : data.filters);
+            const conditionValues = data.conditionValues == null ? [] :
+                (typeof data.conditionValues === 'string' ? JSON.parse(data.conditionValues) : data.conditionValues);
+            return classOrigin.getClassOriginRows(
+                req.session.user.IdAttore,
+                req.params.IDClasse,
+                req.session.user.LanguageContext,
+                attributes,
+                filters,
+                conditionValues
+            );
+        })
         .then(data => res.status(200).json(new response('OK', data, null)))
         .catch(error => sendError(res, error));
-});
+}
+router.get('/dynamic-forms/:IdProcesso/api/class-origin/:IDClasse/rows', getOriginRows);
+router.post('/dynamic-forms/:IdProcesso/api/class-origin/:IDClasse/rows', getOriginRows);
 
 router.get('/dynamic-forms/:IdProcesso/api/model-class-attribute-values/:IdAttributo', function (req, res) {
     if (!sessionUtil.verifyUser(req, res)) {

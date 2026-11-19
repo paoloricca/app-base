@@ -342,6 +342,141 @@
                 updateOriginFieldStatus($select.closest('tr'), languageContext);
             });
         }
+        function updateOriginConditionsButton($modal) {
+            var saved = $modal.data('saved-origin');
+            var tested = $modal.data('tested-origin');
+            var ready = saved && tested &&
+                saved.Connessione === $modal.find('#class-origin-connection').val() &&
+                saved.TestoOrigine === $modal.find('#class-origin-text').val() &&
+                tested.connection === saved.Connessione && tested.query === saved.TestoOrigine;
+            $modal.find('.btn-configure-origin-conditions').prop('disabled', !ready);
+        }
+        function updateConditionRows($modal) {
+            var valid = true;
+            $modal.find('.class-origin-condition-row').each(function () {
+                var $row = $(this);
+                var complete = $row.find('.condition-column').val() &&
+                    $row.find('.condition-operator').val() && $row.find('.condition-field').val();
+                valid = valid && Boolean(complete);
+                $row.find('.condition-status')
+                    .toggleClass('bi-check-circle-fill text-success', Boolean(complete))
+                    .toggleClass('bi-x-circle-fill text-danger', !complete);
+            });
+            $modal.find('.btn-add-origin-condition, .btn-save-origin-conditions').prop('disabled', !valid);
+        }
+        function addConditionRow($modal, condition, languageContext) {
+            var translations = {
+                IT: ['Seleziona', 'Uguale', 'Contiene', 'Inizia per', 'Finisce per', 'Elimina',
+                    'Colonna dinamica', 'Condizione', 'Campo di sistema'],
+                GB: ['Select', 'Equals', 'Contains', 'Starts with', 'Ends with', 'Delete',
+                    'Dynamic column', 'Condition', 'System field'],
+                ES: ['Seleccionar', 'Igual', 'Contiene', 'Empieza por', 'Termina por', 'Eliminar',
+                    'Columna dinámica', 'Condición', 'Campo del sistema'],
+                CN: ['選擇', '等於', '包含', '開頭為', '結尾為', '刪除', '動態欄位', '條件', '系統欄位']
+            };
+            var labels = translations[languageContext] || translations.IT;
+            var $row = $('<tr>', { class: 'class-origin-condition-row' });
+            var $columnCell = $('<td>').appendTo($row);
+            var $columnWrap = $('<div>', { class: 'd-flex align-items-center gap-2' }).appendTo($columnCell);
+            $('<i>', { class: 'bi condition-status', 'aria-hidden': 'true' }).appendTo($columnWrap);
+            var $column = $('<select>', { class: 'form-select form-select-sm condition-column',
+                'aria-label': labels[6] }).appendTo($columnWrap);
+            var $operator = $('<select>', { class: 'form-select form-select-sm condition-operator',
+                'aria-label': labels[7] }).appendTo($('<td>').appendTo($row));
+            var $field = $('<select>', { class: 'form-select form-select-sm condition-field',
+                'aria-label': labels[8] }).appendTo($('<td>').appendTo($row));
+            [$column, $operator, $field].forEach(function ($select) {
+                $select.append(new Option(labels[0], ''));
+            });
+            $modal.data('columns').forEach(function (name) { $column.append(new Option(name, name)); });
+            labels.slice(1, 5).forEach(function (label, index) {
+                $operator.append(new Option(label, String(index + 1)));
+            });
+            $modal.data('fields').forEach(function (field) {
+                $field.append(new Option(field.Description || String(field.IDAttributo), field.IDAttributo));
+            });
+            $column.val(condition ? condition.CampoDinamico : '');
+            $operator.val(condition ? String(condition.Condizione) : '');
+            $field.val(condition ? String(condition.IDAttributo) : '');
+            $('<button>', { type: 'button', class: 'btn btn-outline-danger btn-sm btn-remove-origin-condition',
+                'aria-label': labels[5] }).append($('<i>', { class: 'bi bi-trash', 'aria-hidden': 'true' }))
+                .appendTo($('<td>').appendTo($row));
+            $modal.find('.class-origin-conditions-body').append($row);
+            updateConditionRows($modal);
+        }
+        function openOriginConditions($originModal, languageContext) {
+            var $modal = plugin.find('#container-class-origin-conditions');
+            var tested = $originModal.data('tested-origin');
+            var title = {
+                IT: 'CONFIGURA CONDIZIONE', GB: 'CONFIGURE CONDITION',
+                ES: 'CONFIGURAR CONDICIÓN', CN: '設定條件'
+            }[languageContext] || 'CONFIGURA CONDIZIONE';
+            var section = $originModal.data('section-description');
+            $modal.find('#class-origin-conditions-title').text(title + (section ? ' (' + section + ')' : ''));
+            $modal.find('.class-origin-conditions-feedback').addClass('d-none').text('');
+            var $button = $originModal.find('.btn-configure-origin-conditions').prop('disabled', true);
+            $.ajax({
+                type: 'GET', url: '/model-class-origin/' + $originModal.data('idclasse') + '/conditions',
+                dataType: 'json'
+            }).done(function (response) {
+                if (response.status !== 'OK' || !response.data ||
+                    !Array.isArray(response.data.fields) || !Array.isArray(response.data.conditions)) {
+                    showOriginFeedback($originModal, response.error && response.error.message ||
+                        'Impossibile caricare le condizioni.', false);
+                    return;
+                }
+                $modal.data('fields', response.data.fields).data('columns', tested.columns);
+                $modal.find('.class-origin-conditions-body').empty();
+                var conditions = response.data.conditions;
+                if (!conditions.length) addConditionRow($modal, null, languageContext);
+                else conditions.forEach(function (condition) {
+                    addConditionRow($modal, condition, languageContext);
+                });
+                $modal.addClass('show').show().attr('aria-hidden', 'false').trigger('focus');
+            }).fail(function (xhr, status, errorThrown) {
+                showOriginFeedback($originModal, xhr.responseJSON && xhr.responseJSON.error &&
+                    xhr.responseJSON.error.message || xhr.responseText || errorThrown || status, false);
+            }).always(function () {
+                $button.prop('disabled', false);
+                updateOriginConditionsButton($originModal);
+            });
+        }
+        function saveOriginConditions($originModal, $modal) {
+            updateConditionRows($modal);
+            if ($modal.find('.btn-save-origin-conditions').prop('disabled')) return;
+            var conditions = $modal.find('.class-origin-condition-row').map(function () {
+                var $row = $(this);
+                return {
+                    CampoDinamico: $row.find('.condition-column').val(),
+                    Condizione: Number($row.find('.condition-operator').val()),
+                    IDAttributo: Number($row.find('.condition-field').val())
+                };
+            }).get();
+            $modal.find('.btn-save-origin-conditions, .btn-add-origin-condition').prop('disabled', true);
+            $modal.find('.class-origin-condition-row select, .btn-remove-origin-condition, .btn-close-origin-conditions')
+                .prop('disabled', true);
+            $modal.find('.class-origin-conditions-feedback').addClass('d-none').text('');
+            $.ajax({
+                type: 'POST', url: '/model-class-origin/' + $originModal.data('idclasse') + '/conditions',
+                contentType: 'application/json', dataType: 'json', data: JSON.stringify({ conditions: conditions })
+            }).done(function (response) {
+                if (response.status !== 'OK') {
+                    $modal.find('.class-origin-conditions-feedback')
+                        .text(response.error && response.error.message || 'Impossibile salvare le condizioni.')
+                        .removeClass('d-none');
+                    return;
+                }
+                $modal.removeClass('show').hide().attr('aria-hidden', 'true');
+            }).fail(function (xhr, status, errorThrown) {
+                $modal.find('.class-origin-conditions-feedback')
+                    .text(xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.error.message ||
+                        xhr.responseText || errorThrown || status).removeClass('d-none');
+            }).always(function () {
+                $modal.find('.class-origin-condition-row select, .btn-remove-origin-condition, .btn-close-origin-conditions')
+                    .prop('disabled', false);
+                updateConditionRows($modal);
+            });
+        }
         function renderOriginFields($modal, attributes, languageContext) {
             var $body = $modal.find('.class-origin-fields-body').empty();
             (attributes || []).forEach(function (attribute) {
@@ -414,7 +549,10 @@
 
                 var config = response.data;
                 var origin = config.origin;
-                $originModal.data('idclasse', classId);
+                $originModal.data('idclasse', classId)
+                    .data('section-description', sectionDescription)
+                    .data('saved-origin', origin)
+                    .removeData('tested-origin');
                 $originModal.find('#class-origin-description').val(origin ? origin.Descrizione : '');
                 $originModal.find('#class-origin-connection').val(origin ? origin.Connessione : '');
                 $originModal.find('#class-origin-text').val(origin ? origin.TestoOrigine : '');
@@ -434,6 +572,7 @@
                 showOriginPanel($originModal, originType);
                 renderOriginFields($originModal, config.attributes, languageContext);
                 updateOriginFormValidation($originModal);
+                updateOriginConditionsButton($originModal);
                 showOriginFeedback($originModal, '', false);
                 $originModal.addClass('show').show().attr('aria-hidden', 'false').trigger('focus');
 
@@ -505,7 +644,13 @@
                         false);
                     return;
                 }
+                if ($modal.find('#class-origin-connection').val() !== data.Connessione ||
+                    $modal.find('#class-origin-text').val() !== data.TestoOrigine) return;
                 populateOriginColumns($modal, response.data || []);
+                $modal.data('tested-origin', {
+                    connection: data.Connessione, query: data.TestoOrigine, columns: response.data || []
+                });
+                updateOriginConditionsButton($modal);
                 showOriginFeedback($modal, originMessage('columnsOk', languageContext), true);
             }).fail(function (xhr, status, errorThrown) {
                 var response = xhr && xhr.responseJSON;
@@ -655,6 +800,7 @@
                         })
                         .on('input.classOrigin', '#class-origin-description, #class-origin-connection, #class-origin-text', function () {
                             updateOriginFormValidation($originModal);
+                            updateOriginConditionsButton($originModal);
                         })
                         .on('click.classOrigin', '.btn-test-origin-connection', function () {
                             testClassOriginConnection($originModal, languageContext);
@@ -675,6 +821,26 @@
                         })
                         .on('click.classOrigin', '.btn-test-origin-query', function () {
                             testClassOriginQuery($originModal, languageContext, false);
+                        })
+                        .on('click.classOrigin', '.btn-configure-origin-conditions', function () {
+                            openOriginConditions($originModal, languageContext);
+                        })
+                        .on('click.classOrigin', '.btn-add-origin-condition', function () {
+                            addConditionRow(plugin.find('#container-class-origin-conditions'), null, languageContext);
+                        })
+                        .on('change.classOrigin', '.class-origin-condition-row select', function () {
+                            updateConditionRows(plugin.find('#container-class-origin-conditions'));
+                        })
+                        .on('click.classOrigin', '.btn-remove-origin-condition', function () {
+                            $(this).closest('tr').remove();
+                            updateConditionRows(plugin.find('#container-class-origin-conditions'));
+                        })
+                        .on('click.classOrigin', '.btn-save-origin-conditions', function () {
+                            saveOriginConditions($originModal, plugin.find('#container-class-origin-conditions'));
+                        })
+                        .on('click.classOrigin', '.btn-close-origin-conditions', function () {
+                            plugin.find('#container-class-origin-conditions')
+                                .removeClass('show').hide().attr('aria-hidden', 'true');
                         })
                         .on('click.classOrigin', '.btn-save-class-origin', function () {
                             saveClassOrigin($originModal, languageContext);
@@ -778,6 +944,21 @@
         function datepickerOptions(languageContext) {
             var locale = { IT: 'it', GB: 'en-GB', ES: 'es', CN: 'zh-CN' }[languageContext] || 'it';
             return $.extend({}, $.datepicker.regional[locale], { dateFormat: 'dd/mm/yy' });
+        }
+        function configureCurrencyInput($control, row) {
+            var precision = row.LunghezzaDecimale;
+            if (precision == null || precision === '') {
+                precision = null;
+            } else {
+                precision = Number(precision);
+                if (!Number.isSafeInteger(precision) || precision < 0) {
+                    throw new Error('Precisione decimale non valida.');
+                }
+            }
+            $control.inputFilter(function (value) {
+                var match = /^-?\d*(?:[.,](\d*))?$/.exec(value);
+                return Boolean(match) && (precision == null || !match[1] || match[1].length <= precision);
+            });
         }
         function summaryValue(field, value, languageContext) {
             if (Number(field.IDTipoDati) === 5 && value !== '') {
@@ -2446,8 +2627,8 @@
                     (row.IsWorkflowEditable === false || row.IsWorkflowEditable === 0 ||
                         row.IsWorkflowEditable === '0');
             }
-            function lockWorkflowField(row) {
-                if (!isWorkflowFieldReadOnly(row)) {
+            function lockReadOnlyField(row) {
+                if (options.ReadOnly !== true && !isWorkflowFieldReadOnly(row)) {
                     return;
                 }
                 plugin.find('#control_' + row.IDAttributo +
@@ -2457,12 +2638,16 @@
 
             var fieldLoads = [];
             var classOriginConfig = null;
-            if (options.ApiBase && options.ActionName === 'Modifica') {
+            if (options.ApiBase &&
+                (options.ActionName === 'Modifica' || options.ActionName === 'Inserimento')) {
                 fieldLoads.push(modelApiRequestAsync(
                     options,
                     'class-origin/' + IdClasse,
                     'GET',
-                    { workflowRecordId: options.WorkflowRecordId || '' }
+                    {
+                        workflowRecordId: options.WorkflowRecordId || '',
+                        action: options.ActionName
+                    }
                 ).then(function (response) {
                     var result = JSON.parse(response);
                     if (result.status !== 'OK') {
@@ -2498,7 +2683,7 @@
                             fieldLoads.push($.Deferred().reject(error).promise());
                         }
 
-                        if (isModelPreview(options) &&
+                        if (options.Mode === 'preview' &&
                             plugin.find('.model-class-' + IdClasse + '-container .model-multiple-entry-summary').length) {
                             return;
                         }
@@ -2527,7 +2712,7 @@
                                         $(fieldPlaceholder).replaceWith(
                                             ejs.render(templateString, { row, mode, user })
                                         );
-                                        lockWorkflowField(row);
+                                        lockReadOnlyField(row);
 
                                         /* TESTO */
                                         if (row.IDTipoDati == 1 || row.IDTipoDati == 11) {
@@ -2544,9 +2729,7 @@
                                         /* VALUTA */
                                         if (row.IDTipoDati == 3) {
                                             plugin.find("#control_" + row.IDAttributo).val(RecordValue);
-                                            plugin.find("#control_" + row.IDAttributo).inputFilter(function (value) {
-                                                return /^-?\d*[.,]?\d{0,row.LunghezzaDecimale}$/.test(value);
-                                            });
+                                            configureCurrencyInput(plugin.find("#control_" + row.IDAttributo), row);
                                         }
                                         /* DATA */
                                         if (row.IDTipoDati == 4) {
@@ -2647,9 +2830,7 @@
                                     }
                                     /* VALUTA */
                                     if (row.IDTipoDati == 3) {
-                                        plugin.find("#control_" + row.IDAttributo).inputFilter(function (value) {
-                                            return /^-?\d*[.,]?\d{0,row.LunghezzaDecimale}$/.test(value);
-                                        });
+                                        configureCurrencyInput(plugin.find("#control_" + row.IDAttributo), row);
                                     }
                                     /* DATA */
                                     if (row.IDTipoDati == 4) {
@@ -2712,6 +2893,7 @@
                 if (classOriginConfig && classOriginConfig.configured &&
                     Array.isArray(classOriginConfig.columns)) {
                     var $classContainer = plugin.find('.model-class-' + IdClasse + '-container');
+                    $classContainer.data('model-class-origin', classOriginConfig);
                     var $originButton = $('<button>', {
                         type: 'button',
                         class: 'btn btn-outline-primary model-class-origin-select',

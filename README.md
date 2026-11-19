@@ -1,5 +1,22 @@
 # app-base
 
+## Condizioni delle origini dati
+
+La configurazione richiede la tabella esistente
+`dbo.TModelliClassiOriginiDatiCondizioni`. Le condizioni confrontano le colonne
+dell'origine con i valori correnti dei campi visibili della stessa versione del
+form; sono combinate con AND e la ricerca richiede che tali valori siano compilati.
+Per i campi lista il confronto usa la descrizione visualizzata della voce
+selezionata, senza modificare il codice memorizzato nel form.
+Il confronto definitivo avviene nell'applicazione prima del limite di 200 righe
+corrispondenti. Quando la query lo consente, le condizioni sono combinate con
+AND in un prefiltro SQL parametrizzato: i quattro operatori su testo ASCII e
+interi e i valori booleani su colonne `bit` vengono anticipati. Per valori non
+ASCII e altri tipi il prefiltro esclude solo i valori NULL; il confronto completo
+resta nell'applicazione. Le query non compatibili mantengono la lettura originale:
+per origini particolarmente estese possono essere necessarie ulteriori
+ottimizzazioni della query.
+
 ## Visibilita dei campi del workflow
 
 Applicare [workflow-field-visibility.sql](sql/workflow-field-visibility.sql)

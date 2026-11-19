@@ -67,6 +67,21 @@ forms.post('/model-class-origin/:IDClasse', function (req, res) {
         classOrigin.saveClassOrigin(user.IdAttore, req.params.IDClasse, req.body)
     );
 });
+forms.get('/model-class-origin/:IDClasse/conditions', function (req, res) {
+    handleClassOriginRequest(req, res, async user => {
+        const config = await classOrigin.getClassOriginConditions(
+            user.IdAttore, req.params.IDClasse, user.LanguageContext
+        );
+        return { fields: config.fields, conditions: config.conditions };
+    });
+});
+forms.post('/model-class-origin/:IDClasse/conditions', function (req, res) {
+    handleClassOriginRequest(req, res, user =>
+        classOrigin.saveClassOriginConditions(
+            user.IdAttore, req.params.IDClasse, user.LanguageContext, req.body.conditions
+        )
+    );
+});
 forms.delete('/model-class-origin/:IDClasse', function (req, res) {
     handleClassOriginRequest(req, res, user =>
         classOrigin.deleteClassOrigin(user.IdAttore, req.params.IDClasse)

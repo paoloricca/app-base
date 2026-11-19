@@ -79,13 +79,50 @@
                                         <% if (LanguageContext == "CN") { %>文字<% } %>
                                     </label>
                                     <textarea id="class-origin-text" class="form-control class-origin-query" rows="9" required></textarea>
-                                    <div class="d-flex justify-content-end mt-2">
+                                    <div class="d-flex justify-content-end gap-2 mt-2">
+                                        <button type="button" class="btn btn-outline-primary btn-configure-origin-conditions" disabled
+                                            aria-label="<% if (LanguageContext == 'IT') { %>Configura condizione<% } %><% if (LanguageContext == 'GB') { %>Configure condition<% } %><% if (LanguageContext == 'ES') { %>Configurar condición<% } %><% if (LanguageContext == 'CN') { %>設定條件<% } %>">
+                                            <i class="bi bi-funnel" aria-hidden="true"></i>
+                                        </button>
                                         <button type="button" class="btn btn-outline-secondary btn-test-origin-query">
                                             <% if (LanguageContext == "IT") { %>TEST<% } %>
                                             <% if (LanguageContext == "GB") { %>TEST<% } %>
                                             <% if (LanguageContext == "ES") { %>PROBAR<% } %>
                                             <% if (LanguageContext == "CN") { %>測試<% } %>
                                         </button>
+                                    </div>
+                                    <div id="container-class-origin-conditions" class="modal modal-origin-conditions" tabindex="-1" role="dialog"
+                                        aria-labelledby="class-origin-conditions-title" aria-hidden="true" style="display: none;">
+                                        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title f-roboto b" id="class-origin-conditions-title"></h5>
+                                                    <button type="button" class="btn-close btn-close-origin-conditions" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-bordered table-sm align-middle">
+                                                            <thead class="table-light"><tr>
+                                                                <th scope="col"><% if (LanguageContext == 'IT') { %>COLONNA DINAMICA<% } %><% if (LanguageContext == 'GB') { %>DYNAMIC COLUMN<% } %><% if (LanguageContext == 'ES') { %>COLUMNA DINÁMICA<% } %><% if (LanguageContext == 'CN') { %>動態欄位<% } %></th>
+                                                                <th scope="col"><% if (LanguageContext == 'IT') { %>CONDIZIONE<% } %><% if (LanguageContext == 'GB') { %>CONDITION<% } %><% if (LanguageContext == 'ES') { %>CONDICIÓN<% } %><% if (LanguageContext == 'CN') { %>條件<% } %></th>
+                                                                <th scope="col"><% if (LanguageContext == 'IT') { %>CAMPO DI SISTEMA<% } %><% if (LanguageContext == 'GB') { %>SYSTEM FIELD<% } %><% if (LanguageContext == 'ES') { %>CAMPO DEL SISTEMA<% } %><% if (LanguageContext == 'CN') { %>系統欄位<% } %></th>
+                                                                <th scope="col"></th>
+                                                            </tr></thead>
+                                                            <tbody class="class-origin-conditions-body"></tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div class="class-origin-conditions-feedback alert alert-danger d-none" role="alert"></div>
+                                                    <div class="d-flex justify-content-end gap-2">
+                                                        <button type="button" class="btn btn-outline-primary btn-add-origin-condition">
+                                                            <% if (LanguageContext == 'IT') { %>Aggiungi<% } %><% if (LanguageContext == 'GB') { %>Add<% } %><% if (LanguageContext == 'ES') { %>Añadir<% } %><% if (LanguageContext == 'CN') { %>新增<% } %>
+                                                        </button>
+                                                        <button type="button" class="btn btn-success btn-save-origin-conditions">
+                                                            <% if (LanguageContext == 'IT') { %>Salva<% } %><% if (LanguageContext == 'GB') { %>Save<% } %><% if (LanguageContext == 'ES') { %>Guardar<% } %><% if (LanguageContext == 'CN') { %>儲存<% } %>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     </div>
                                     <div class="tab-pane pt-3" id="class-origin-api-panel" role="tabpanel" aria-labelledby="class-origin-api-tab" hidden></div>

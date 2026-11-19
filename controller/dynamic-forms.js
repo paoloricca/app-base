@@ -747,6 +747,7 @@ $(function () {
                 filter: 'Filtra',
                 loading: 'Caricamento in corso...',
                 error: 'Impossibile caricare i dati.',
+                conditionRequired: 'Compila il campo richiesto dalla condizione: ',
                 noData: 'Nessun dato trovato'
             },
             GB: {
@@ -755,6 +756,7 @@ $(function () {
                 filter: 'Filter',
                 loading: 'Loading...',
                 error: 'Unable to load data.',
+                conditionRequired: 'Complete the field required by the condition: ',
                 noData: 'No data found'
             },
             ES: {
@@ -763,6 +765,7 @@ $(function () {
                 filter: 'Filtrar',
                 loading: 'Cargando...',
                 error: 'No se pudieron cargar los datos.',
+                conditionRequired: 'Complete el campo requerido por la condición: ',
                 noData: 'No se encontraron datos'
             },
             CN: {
@@ -771,6 +774,7 @@ $(function () {
                 filter: '篩選',
                 loading: '載入中...',
                 error: '無法載入資料。',
+                conditionRequired: '請填寫條件要求的欄位：',
                 noData: '未找到資料'
             }
         };
@@ -796,20 +800,8 @@ $(function () {
         var $modal = $('#dynamic-form-origin-select-modal');
         var $body = $modal.find('.dynamic-form-origin-select-table tbody').empty();
         var columns = originSelection.columns;
-        var filters = $modal.find('.dynamic-form-origin-select-filter').map(function () {
-            return String($(this).val() || '').toLocaleLowerCase();
-        }).get();
-        var visibleIndexes = [];
 
         originSelection.rows.forEach(function (row, rowIndex) {
-            var matches = columns.every(function (column, columnIndex) {
-                return sourceValueText(row[column.name])
-                    .toLocaleLowerCase()
-                    .indexOf(filters[columnIndex] || '') >= 0;
-            });
-            if (!matches) return;
-            visibleIndexes.push(rowIndex);
-
             var $row = $('<tr>', {
                 class: 'dynamic-form-origin-select-row',
                 tabindex: 0,
@@ -824,29 +816,24 @@ $(function () {
             $body.append($row);
         });
 
-        if (originSelection.selectedIndex != null &&
-            visibleIndexes.indexOf(originSelection.selectedIndex) < 0) {
-            originSelection.selectedIndex = null;
-        }
         $modal.find('.dynamic-form-origin-select-confirm')
             .prop('disabled', originSelection.selectedIndex == null);
         $modal.find('.dynamic-form-origin-select-empty')
-            .toggleClass('d-none', visibleIndexes.length > 0);
+            .toggleClass('d-none', originSelection.rows.length > 0);
     }
 
     function renderOriginSelectTable(columns, rows) {
         var $modal = $('#dynamic-form-origin-select-modal');
         var $head = $modal.find('.dynamic-form-origin-select-table thead').empty();
         var $labels = $('<tr>').appendTo($head);
-        var $filters = $('<tr>').appendTo($head);
-        columns.forEach(function (column, index) {
-            $('<th>', { scope: 'col', text: column.name }).appendTo($labels);
-            $('<th>').append($('<input>', {
-                type: 'search',
-                class: 'form-control form-control-sm dynamic-form-origin-select-filter',
-                'aria-label': originText('filter') + ' ' + column.name,
-                placeholder: originText('filter')
-            }).attr('data-column-index', index)).appendTo($filters);
+        columns.forEach(function (column) {
+            var attribute = originSelection.attributes.find(function (item) {
+                return Number(item.IDAttributo) === Number(column.IDAttributo);
+            });
+            $('<th>', {
+                scope: 'col',
+                text: attribute && attribute.Description || column.name
+            }).appendTo($labels);
         });
         originSelection.columns = columns;
         originSelection.rows = rows;
@@ -854,7 +841,7 @@ $(function () {
         renderOriginSelectRows();
     }
 
-    function openOriginSelect(classId, $button, $container) {
+    function openOriginSelect(classId, $container) {
         var options;
         try {
             options = JSON.parse($container.attr('data-options'));
@@ -863,54 +850,136 @@ $(function () {
             return;
         }
 
+        var $classContainer = $container.find('.model-class-' + classId + '-container');
+        var config = $classContainer.data('model-class-origin');
+        var attributes = $classContainer.data('model-attributes');
+        if (!config || !Array.isArray(config.columns) || !Array.isArray(attributes)) {
+            ShowError('Invalid data source configuration.', 'openOriginSelect');
+            return;
+        }
         var $modal = $('#dynamic-form-origin-select-modal');
-        var requestId = originSelectionRequestId + 1;
-        originSelectionRequestId = requestId;
+        originSelectionRequestId += 1;
         originSelection = {
             classId: classId,
-            columns: [],
+            options: options,
+            attributes: attributes,
+            conditionFields: config.conditionFields || [],
+            columns: config.columns,
             rows: [],
             selectedIndex: null
         };
-        updateOriginSelectTitle('');
+        updateOriginSelectTitle(config.description);
         $modal.find('.dynamic-form-origin-select-error').addClass('d-none').text('');
-        $modal.find('.dynamic-form-origin-select-loading').removeClass('d-none');
-        $modal.find('.dynamic-form-origin-select-table thead, .dynamic-form-origin-select-table tbody')
-            .empty();
+        $modal.find('.dynamic-form-origin-select-warning').addClass('d-none');
+        $modal.find('.dynamic-form-origin-select-loading').addClass('d-none');
+        $modal.attr('aria-busy', 'false');
+        $modal.find('.dynamic-form-origin-select-search').prop('disabled', false);
+        renderOriginSelectTable(config.columns, []);
+        var $filters = $modal.find('.dynamic-form-origin-select-filters').empty();
+        config.columns.forEach(function (column) {
+            var attribute = attributes.find(function (item) {
+                return Number(item.IDAttributo) === Number(column.IDAttributo);
+            });
+            if (!attribute || (attribute.IsFilter !== true && attribute.IsFilter !== 1)) return;
+            var id = 'dynamic-form-origin-filter-' + attribute.IDAttributo;
+            var $field = $('<div>', { class: 'col-12 col-md-4' }).appendTo($filters);
+            $('<label>', { class: 'form-label', for: id, text: attribute.Description || column.name })
+                .appendTo($field);
+            $('<input>', {
+                id: id,
+                type: 'search',
+                class: 'form-control dynamic-form-origin-select-filter',
+                'data-id-attributo': attribute.IDAttributo
+            }).appendTo($field);
+        });
         $modal.find('.dynamic-form-origin-select-empty').addClass('d-none');
         $modal.find('.dynamic-form-origin-select-confirm').prop('disabled', true);
-        $button.prop('disabled', true);
         $modal.modal('show');
+    }
+
+    function searchOriginRows() {
+        if (!originSelection) return;
+        var $modal = $('#dynamic-form-origin-select-modal');
+        var selection = originSelection;
+        var requestId = ++originSelectionRequestId;
+        var filters = $modal.find('.dynamic-form-origin-select-filter').map(function () {
+            return {
+                IDAttributo: Number($(this).attr('data-id-attributo')),
+                value: String($(this).val() || '')
+            };
+        }).get().filter(function (filter) { return filter.value !== ''; });
+        selection.rows = [];
+        selection.selectedIndex = null;
+        $modal.find('.dynamic-form-origin-select-table tbody').empty();
+        $modal.find('.dynamic-form-origin-select-confirm, .dynamic-form-origin-select-search')
+            .prop('disabled', true);
+        $modal.find('.dynamic-form-origin-select-error').addClass('d-none').text('');
+        $modal.find('.dynamic-form-origin-select-warning').addClass('d-none');
+        $modal.find('.dynamic-form-origin-select-empty').addClass('d-none');
+        var $editor = $('.container-dynamic-form-edit');
+        var conditionValues = [];
+        var seenFields = Object.create(null);
+        for (var index = 0; index < selection.conditionFields.length; index += 1) {
+            var field = selection.conditionFields[index];
+            var id = Number(field.IDAttributo);
+            if (seenFields[id]) continue;
+            seenFields[id] = true;
+            var $radio = $editor.find('input[name="control_' + id + '"]:checked');
+            var $control = $editor.find('#control_' + id);
+            var value = $radio.length ? $radio.val() : $control.val();
+            if ($control.is('select') && value != null && String(value).trim()) {
+                value = $control.find('option:selected').text();
+            }
+            if (value == null || !String(value).trim()) {
+                $modal.find('.dynamic-form-origin-select-error')
+                    .text(originText('conditionRequired') + (field.Description || id))
+                    .removeClass('d-none');
+                $modal.find('.dynamic-form-origin-select-search').prop('disabled', false);
+                return;
+            }
+            conditionValues.push({ IDAttributo: id, value: String(value) });
+        }
+        $modal.find('.dynamic-form-origin-select-loading').removeClass('d-none');
+        $modal.attr('aria-busy', 'true');
 
         $.ajax({
-            type: 'GET',
-            url: apiBase + '/class-origin/' + classId + '/rows',
-            data: { workflowRecordId: options.WorkflowRecordId || '' },
+            type: 'POST',
+            url: apiBase + '/class-origin/' + selection.classId + '/rows',
+            data: {
+                workflowRecordId: selection.options.WorkflowRecordId || '',
+                action: selection.options.ActionName,
+                filters: JSON.stringify(filters),
+                conditionValues: JSON.stringify(conditionValues)
+            },
             dataType: 'json'
         }).done(function (response) {
             try {
-                if (requestId !== originSelectionRequestId || !originSelection) return;
+                if (requestId !== originSelectionRequestId || originSelection !== selection) return;
                 var result = unwrap(response);
                 if (!result || !Array.isArray(result.columns) || !Array.isArray(result.rows)) {
                     throw new Error('Invalid data source response.');
                 }
                 updateOriginSelectTitle(result.description);
-                renderOriginSelectTable(result.columns, result.rows);
-                $modal.find('.dynamic-form-origin-select-loading').addClass('d-none');
+                if (result.limitExceeded) {
+                    $modal.find('.dynamic-form-origin-select-warning').removeClass('d-none');
+                } else {
+                    renderOriginSelectTable(result.columns, result.rows);
+                }
             } catch (error) {
-                $modal.find('.dynamic-form-origin-select-loading').addClass('d-none');
                 $modal.find('.dynamic-form-origin-select-error')
                     .text(error.message || originText('error'))
                     .removeClass('d-none');
             }
         }).fail(function (xhr) {
-            if (requestId !== originSelectionRequestId || !originSelection) return;
-            $modal.find('.dynamic-form-origin-select-loading').addClass('d-none');
+            if (requestId !== originSelectionRequestId || originSelection !== selection) return;
             $modal.find('.dynamic-form-origin-select-error')
                 .text(requestErrorMessage(xhr) || originText('error'))
                 .removeClass('d-none');
         }).always(function () {
-            $button.prop('disabled', false);
+            if (requestId !== originSelectionRequestId || originSelection !== selection) return;
+            $modal.find('.dynamic-form-origin-select-loading').addClass('d-none');
+            $modal.find('.dynamic-form-origin-select-search').prop('disabled', false);
+            $modal.attr('aria-busy', 'false');
         });
     }
 
@@ -966,7 +1035,7 @@ $(function () {
             loadRecords();
         });
         $container.on('click.dynamicForms', '.model-class-origin-select', function () {
-            openOriginSelect(Number($(this).data('idclasse')), $(this), $container);
+            openOriginSelect(Number($(this).data('idclasse')), $container);
         });
         $container.on('onload.dynamicForms', function () {
             if (editorMode === 'view' || editorMode === 'preview') {
@@ -1114,7 +1183,10 @@ $(function () {
         $('.dynamic-form-workflow-apply').prop('disabled', false);
     });
     $('#dynamic-form-origin-select-modal')
-        .on('input', '.dynamic-form-origin-select-filter', renderOriginSelectRows)
+        .on('submit', '.dynamic-form-origin-select-search-form', function (event) {
+            event.preventDefault();
+            searchOriginRows();
+        })
         .on('click', '.dynamic-form-origin-select-row', function () {
             originSelection.selectedIndex = Number($(this).data('row-index'));
             renderOriginSelectRows();
