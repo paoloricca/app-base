@@ -400,7 +400,7 @@
             $field.val(condition ? String(condition.IDAttributo) : '');
             $('<button>', { type: 'button', class: 'btn btn-outline-danger btn-sm btn-remove-origin-condition',
                 'aria-label': labels[5] }).append($('<i>', { class: 'bi bi-trash', 'aria-hidden': 'true' }))
-                .appendTo($('<td>').appendTo($row));
+                .appendTo($('<td>', { class: 'text-center align-middle' }).appendTo($row));
             $modal.find('.class-origin-conditions-body').append($row);
             updateConditionRows($modal);
         }
