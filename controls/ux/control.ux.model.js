@@ -3438,7 +3438,7 @@
                     $classContainer.data('model-class-origin', classOriginConfig);
                     var $originButton = $('<button>', {
                         type: 'button',
-                        class: 'btn btn-outline-primary model-class-origin-select',
+                        class: 'mt-2 btn btn-sm btn-outline-primary model-class-origin-select',
                         'data-idclasse': IdClasse
                     }).append(
                         $('<i>', { class: 'bi bi-database me-1', 'aria-hidden': 'true' }),
@@ -3493,7 +3493,7 @@
 
                     plugin.find('.model-class-' + IdClasse + '-container').append(
 
-                        '<div class="col-12 p-0 mb-2 px-3"><a class="btn btn-primary btn-circle bi bi-plus-lg btn-new-attribute" data-idclasse="' + IdClasse + '"></a></div>'
+                        '<div class="col-12 p-0 mb-2 px-3"><a class="mt-2 btn btn-primary btn-circle bi bi-plus-lg btn-new-attribute" data-idclasse="' + IdClasse + '"></a></div>'
                     );
 
                     plugin.find('.btn-new-attribute').click(function () {
