@@ -546,7 +546,7 @@ function PostAttribute(myRequest) {
                     request.input('RequestBody', sql.NVarChar(sql.MAX), myRequestBody);
                     request.output('Status', sql.NVarChar(500));
 
-                    request.execute("SP_POST_ATTRIBUTE", function (err, response) {
+                    request.execute("SP_POST_ATTRIBUTE_CALCULATED", function (err, response) {
                         if (err) {
                             reject(
                                 new exception(sender, err.message, err.name, err.stack)

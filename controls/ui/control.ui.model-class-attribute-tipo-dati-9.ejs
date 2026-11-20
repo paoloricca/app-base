@@ -1,0 +1,46 @@
+<!-- NUMERICO DECIMALE -->
+<div class="col-6 p-0 mb-2 px-3">
+	<% if (mode == "design") { %>
+		<a class="btn btn-light bi bi-three-dots-vertical btn-actions btn-circle m-1 ms-0 model-editor-menu-trigger"
+			data-bs-toggle="dropdown"
+			data-bs-placement="left">
+		</a>
+		<ul class="dropdown-menu model-editor-context-menu app-context-menu">
+			<li>
+				<div class="model-editor-context-menu-heading app-context-menu-heading">
+					<b><%= row.Description %></b>
+					<span class="spinner-border text-danger" role="status" style="display:none;"></span>
+				</div>
+			</li>
+			<li><hr class="dropdown-divider"></li>
+			<li>
+				<span class="dropdown-item model-editor-context-menu-action btn-menu-item btn-attribute-edit btn-attribute-<%= row.IDAttributo %>-edit"
+					data-idattributo="<%= row.IDAttributo %>"
+					data-idtipodati="<%= row.IDTipoDati %>">
+					<i class="bi bi-pencil"></i>
+					<% if (user.LanguageContext == "IT") { %>Modifica<% } %>
+					<% if (user.LanguageContext == "GB") { %>Edit<% } %>
+					<% if (user.LanguageContext == "ES") { %>Editar<% } %>
+					<% if (user.LanguageContext == "CN") { %>編輯<% } %>
+				</span>
+			</li>
+			<li>
+				<span class="dropdown-item model-editor-context-menu-action btn-menu-item btn-attribute-<%= row.IDAttributo %>-del"
+					data-idattributo="<%= row.IDAttributo %>"
+					data-idtipodati="<%= row.IDTipoDati %>">
+					<i class="bi bi-trash"></i>
+					<% if (user.LanguageContext == "IT") { %>Elimina<% } %>
+					<% if (user.LanguageContext == "GB") { %>Delete<% } %>
+					<% if (user.LanguageContext == "ES") { %>Borrar<% } %>
+					<% if (user.LanguageContext == "CN") { %>刪除<% } %>
+				</span>
+			</li>
+		</ul>
+	<% } %>
+	<label for="control_<%= row.IDAttributo %>" class="col-form-label"><%= row.Description %></label>
+	<input type="text" inputmode="decimal" <% if (row.Obbligatorio) { %> required<% } %>
+		data-idattributo="<%= row.IDAttributo %>"
+		data-idtipodati="<%= row.IDTipoDati %>"
+		class="form-control number" id="control_<%= row.IDAttributo %>"
+		maxlength="20">
+</div>

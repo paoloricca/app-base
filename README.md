@@ -1,5 +1,58 @@
 # app-base
 
+## Campi calcolati
+
+Per aggiornare il database applicativo:
+
+1. Applicare [forms-calculated-fields.sql](sql/forms-calculated-fields.sql),
+   dopo la procedura esistente `SP_POST_ATTRIBUTE`. Aggiunge
+   `IDAttributoCalcolato`, il relativo vincolo e indice, e la procedura
+   transazionale `SP_POST_ATTRIBUTE_CALCULATED`. `IDAttributo` continua a
+   identificare il campo sorgente.
+2. Applicare [forms-calculated-records.sql](sql/forms-calculated-records.sql)
+   dopo gli script dynamic-forms. Aggiorna le due procedure di lettura dei
+   record di sezione, senza crearne durante la visualizzazione.
+3. Applicare [forms-version.sql](sql/forms-version.sql) e
+   [forms-version-delete.sql](sql/forms-version-delete.sql) per copiare e
+   rimuovere correttamente le condizioni insieme alle versioni.
+
+Le condizioni precedenti prive di `IDAttributoCalcolato` non possono essere
+associate automaticamente a un campo calcolato e vanno verificate prima
+dell'uso. Le formule partono da zero, applicano le operazioni nell'ordine
+registrato e sommano i valori delle sezioni ripetute. I valori vuoti valgono
+zero; una divisione per zero viene segnalata e blocca il salvataggio.
+Gli interi sono arrotondati all'intero piu vicino; decimali e valute usano le
+cifre decimali configurate sul campo. I risultati numerici sono derivati durante la
+visualizzazione e non sono scritti come valori modificabili del record. Un
+campo utilizzato come sorgente non puo essere nascosto o convertito in un tipo
+non numerico finche resta collegato a una formula.
+Le cifre decimali sono configurabili anche per i campi decimali e valuta non
+calcolati; per i campi calcolati sono obbligatorie. Per abilitare questa
+modifica su un database gia aggiornato, rieseguire
+[forms-calculated-fields.sql](sql/forms-calculated-fields.sql).
+Nel riepilogo di dynamic-forms i campi calcolati vengono ricalcolati alla
+lettura delle righe, inclusi i valori delle sezioni ripetute; gli errori di
+calcolo sono indicati nella relativa cella. Questa integrazione non richiede
+ulteriori modifiche al database rispetto agli script sopra indicati.
+
+I campi Testo calcolati concatenano le sorgenti configurate, includendo
+l'account creatore e i progressivi del processo. Il valore proposto prima
+del salvataggio e provvisorio; il server lo assegna al primo salvataggio della
+sezione e lo conserva successivamente. Il conteggio considera le istanze di
+tutte le versioni del modello, anche quelle non visibili, ordinate per ID.
+Il modello deve appartenere a un solo processo: se e condiviso, il calcolo
+viene bloccato per evitare di attribuire progressivi a un processo errato.
+Il salvataggio dei valori della sezione e del testo calcolato e transazionale;
+gli eventuali allegati sono gestiti separatamente. La generazione usa un
+blocco sulla tabella delle istanze e puo rallentare salvataggi concorrenti.
+
+Test mirati: `node --test tests\calculated-fields.test.js
+tests\calculated-fields-ui.test.js tests\calculated-fields-route.test.js
+tests\calculated-fields-summary.test.js tests\calculated-text.test.js
+tests\decimal-attribute-template.test.js`.
+Per verificare le procedure su un database LocalDB temporaneo:
+`$env:CALCULATED_SQL_TEST='1'; node --test tests\calculated-fields-sql.test.js`.
+
 ## Condizioni delle origini dati
 
 La configurazione richiede la tabella esistente

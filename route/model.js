@@ -1,7 +1,6 @@
 const express = require('express');
 const model = express.Router();
 const bodyParser = require('body-parser');
-var requestIdModelloIstanzaRecordValue = require('../model/request-idmodello-istanza-record-value');
 var requestIdModelloIstanzaRecordMedia = require('../model/request-idmodello-istanza-record-media');
 var requestIdModelloIstanzaRecord = require('../model/request-idmodello-istanza-record');
 var requestIdModelloIstanza = require('../model/request-idmodello-istanza');
@@ -10,6 +9,8 @@ var requestModel = require('../model/request-model');
 var response = require('../model/response');
 const crud = require('../crud/model');
 const dynamicFormsCrud = require('../crud/dynamic-forms');
+const calculatedFields = require('../crud/forms/calculated-fields');
+const calculatedText = require('../crud/forms/calculated-text');
 const fs = require('fs');
 const path = require('path');
 const sessionUtil = require('../utils/session')
@@ -20,6 +21,48 @@ function isPositiveInteger(value) {
     return Number.isSafeInteger(number) && number > 0;
 }
 
+function calculatedTextOptions(req, res, saving) {
+    const data = saving ? req.body : req.query;
+    if (!isPositiveInteger(data.versionId) ||
+        (data.processId && !isPositiveInteger(data.processId)) ||
+        (data.instanceId && !isPositiveInteger(data.instanceId)) ||
+        (saving && (!isPositiveInteger(data.instanceId) ||
+            !isPositiveInteger(data.classId) || !isPositiveInteger(data.recordId)))) {
+        res.status(200).json(new response('ERR', null, { message: 'Invalid calculation parameters.' }));
+        return null;
+    }
+    return {
+        versionId: data.versionId, processId: data.processId, instanceId: data.instanceId,
+        classId: data.classId, recordId: data.recordId,
+        actorId: req.session.user.IdAttore, accountId: req.session.user.IdAccount,
+        profileId: req.session.user.IDProfiloUtenteDefault,
+        groupId: req.session.user.IdGruppoOperativoDefault
+    };
+}
+
+model.get('/calculated-text/context', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) return;
+    const options = calculatedTextOptions(req, res, false);
+    if (!options) return;
+    calculatedText.preview(options).then(data => res.status(200).json(new response('OK', data, null)))
+        .catch(error => res.status(200).json(new response('ERR', null, { message: error.message })));
+});
+
+model.post('/calculated-text/save', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) return;
+    const options = calculatedTextOptions(req, res, true);
+    if (!options) return;
+    try {
+        options.fields = JSON.parse(req.body.fields || '[]');
+        if (!Array.isArray(options.fields)) throw new Error('Invalid section values.');
+    } catch (error) {
+        res.status(200).json(new response('ERR', null, { message: 'Invalid section values.' }));
+        return;
+    }
+    calculatedText.save(options).then(data => res.status(200).json(new response('OK', data, null)))
+        .catch(error => res.status(200).json(new response('ERR', null, { message: error.message })));
+});
+
 model.get('/model-script', (req, res) => {
     const filePath = path.resolve(__dirname, '../controller/model.js');
     res.sendFile(filePath);
@@ -27,6 +70,9 @@ model.get('/model-script', (req, res) => {
 model.get('/control-model-script', (req, res) => {
     const filePath = path.resolve(__dirname, '../controls/ux/control.ux.model.js');
     res.sendFile(filePath);
+});
+model.get('/calculated-fields-script', (req, res) => {
+    res.sendFile(path.resolve(__dirname, '../controls/ux/calculated-fields.js'));
 });
 model.get('/utility-script', (req, res) => {
     const filePath = path.resolve(__dirname, '../utils/utility.js');
@@ -86,15 +132,18 @@ model.get('/model-class-attribute/:idclasse', function (req, res) {
             req.session.user.LanguageContext,
             req.body
         );
-        crud.GetModelClassAttribute(myRequest).then(listOf => {
-            res.status(200).json(
-                new response('OK', JSON.parse(listOf), null)
-            );
-        }).catch(err => {
-            res.status(200).json(new response('ERR', null, err));
-        }).finally(() => {
+        crud.GetModelClassAttribute(myRequest)
+            .then(listOf => calculatedFields.attachConditions(JSON.parse(listOf)))
+            .then(listOf => {
+                res.status(200).json(
+                    new response('OK', listOf, null)
+                );
+            }).catch(err => {
+                res.status(200).json(new response('ERR', null,
+                    err instanceof Error ? { message: err.message } : err));
+            }).finally(() => {
 
-        });
+            });
     }
 });
 model.get('/model-class-attribute-values/:idattributo', function (req, res) {
@@ -253,7 +302,7 @@ model.post('/post-attribute', function (req, res) {
         res.set('Access-Control-Allow-Origin', '*');
 
         var myRequest = new requestBase(
-            req.body.IDCliente,
+            req.session.user.IdAttore,
             req.session.user.IdAccount,
             req.session.user.LanguageContext,
             req.body
@@ -288,21 +337,14 @@ model.post('/post-idmodello-istanza', function (req, res) {
 model.post('/post-idmodello-istanza-record', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {
         res.set('Access-Control-Allow-Origin', '*');
-        var myRequest = new requestIdModelloIstanzaRecordValue(
-            req.body.IdRecord,
-            req.body.IdAttributo,
-            req.session.user.IdAccount,
-            req.body.RecordValue,
-            req.session.user.LanguageContext,
-        );
-        crud.PostIdModelloIstanzaRecord(myRequest).then(listOf => {
-            res.status(200).json(
-                new response('OK', JSON.parse(listOf), null)
-            );
+        calculatedText.saveRegularValue({
+            recordId: req.body.IdRecord, fieldId: req.body.IdAttributo,
+            accountId: req.session.user.IdAccount, value: req.body.RecordValue,
+            language: req.session.user.LanguageContext
+        }).then(() => {
+            res.status(200).json(new response('OK', 'OK', null));
         }).catch(err => {
-            res.status(200).json(new response('ERR', null, err));
-        }).finally(() => {
-
+            res.status(200).json(new response('ERR', null, { message: err.message }));
         });
     }
 });

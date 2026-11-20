@@ -9,6 +9,14 @@
 #container-attribute-edit .numero-file, #container-attribute-edit .dimensione-file { padding-left: 0 !important; }
 #container-attribute-edit.show,
 #container-attribute-edit-values.show { background-color: rgba(0, 0, 0, .5); }
+#container-calculation-conditions {
+    z-index: 2030;
+    background-color: rgba(0, 0, 0, .5);
+}
+#confirm-delete-calculation .modal-confirm-delete {
+    z-index: 2040;
+    background-color: rgba(0, 0, 0, .5);
+}
 #container-attribute-value-visibility .gruppo-operativo a,
 #container-attribute-value-visibility .profilo-utente a { text-decoration: none; }
 #container-attribute-value-visibility .gruppo-operativo a.active,
@@ -32,6 +40,7 @@
 }
 </style>
 <div id="confirm-delete-attribute"></div>
+<div id="confirm-delete-calculation"></div>
 <div class="modal" id="container-attribute-edit" tabindex="-1" role="dialog" data-args="" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -103,6 +112,15 @@
                         </div>
                     </div>
 
+                    <div class="decimal-precision mt-2" style="display: none;">
+                        <label for="LunghezzaDecimale" class="f-roboto-b text-primary">
+                            <% if (user.LanguageContext == "IT") { %>Cifre decimali<% } %>
+                            <% if (user.LanguageContext == "GB") { %>Decimal places<% } %>
+                            <% if (user.LanguageContext == "ES") { %>Cifras decimales<% } %>
+                            <% if (user.LanguageContext == "CN") { %>小數位數<% } %>
+                        </label>
+                        <input id="LunghezzaDecimale" type="number" class="form-control" min="0" max="12" step="1">
+                    </div>
                     <div class="col-12 p-0 valore-minimo" style="display: none;">
                         <h5 class="f-roboto-b text-primary">
                             <% if (user.LanguageContext == "IT") { %>
@@ -121,6 +139,26 @@
                         <div class="col-12 p-0 form-switch">
                             <input id="ValoreMinimo" name="ValoreMinimo" class="form-control number" type="textbox" maxlength="5">
                         </div>
+                    </div>
+
+                    <div class="attribute-toggle calculated-setting" style="display: none;">
+                        <label for="IsCalculated" class="f-roboto-b text-primary">
+                            <% if (user.LanguageContext == "IT") { %>Calcolato<% } %>
+                            <% if (user.LanguageContext == "GB") { %>Calculated<% } %>
+                            <% if (user.LanguageContext == "ES") { %>Calculado<% } %>
+                            <% if (user.LanguageContext == "CN") { %>計算欄位<% } %>
+                        </label>
+                        <div class="form-switch">
+                            <input id="IsCalculated" class="form-check-input" type="checkbox">
+                        </div>
+                    </div>
+                    <div class="calculated-configure mt-2" style="display: none;">
+                        <button type="button" class="btn btn-outline-primary btn-configure-calculation">
+                            <% if (user.LanguageContext == "IT") { %>Configura calcolo<% } %>
+                            <% if (user.LanguageContext == "GB") { %>Configure calculation<% } %>
+                            <% if (user.LanguageContext == "ES") { %>Configurar cálculo<% } %>
+                            <% if (user.LanguageContext == "CN") { %>設定計算<% } %>
+                        </button>
                     </div>
 
                     <div class="col-12 p-0 numero-righe" style="display: none;">
@@ -365,6 +403,47 @@
 		            </a>
                 </div>
 
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="container-calculation-conditions" class="modal modal-origin-conditions" tabindex="-1" role="dialog"
+    aria-labelledby="calculation-conditions-title" aria-hidden="true" style="display: none;">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title f-roboto b" id="calculation-conditions-title">
+                    <% if (user.LanguageContext == "IT") { %>CONFIGURA CONDIZIONE<% } %>
+                    <% if (user.LanguageContext == "GB") { %>CONFIGURE CONDITION<% } %>
+                    <% if (user.LanguageContext == "ES") { %>CONFIGURAR CONDICIÓN<% } %>
+                    <% if (user.LanguageContext == "CN") { %>設定條件<% } %>
+                </h5>
+                <button type="button" class="btn-close btn-close-calculation-conditions" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm align-middle">
+                        <thead class="table-light"><tr>
+                            <th scope="col"><% if (user.LanguageContext == "IT") { %>OPERAZIONE<% } %><% if (user.LanguageContext == "GB") { %>OPERATION<% } %><% if (user.LanguageContext == "ES") { %>OPERACIÓN<% } %><% if (user.LanguageContext == "CN") { %>運算<% } %></th>
+                            <th scope="col"><% if (user.LanguageContext == "IT") { %>CAMPO DI SISTEMA<% } %><% if (user.LanguageContext == "GB") { %>SYSTEM FIELD<% } %><% if (user.LanguageContext == "ES") { %>CAMPO DEL SISTEMA<% } %><% if (user.LanguageContext == "CN") { %>系統欄位<% } %></th>
+                            <th scope="col" class="calculation-text-column"><% if (user.LanguageContext == "IT") { %>LUNGHEZZA<% } %><% if (user.LanguageContext == "GB") { %>LENGTH<% } %><% if (user.LanguageContext == "ES") { %>LONGITUD<% } %><% if (user.LanguageContext == "CN") { %>长度<% } %></th>
+                            <th scope="col" class="calculation-text-column"><% if (user.LanguageContext == "IT") { %>SPAZI VUOTI<% } %><% if (user.LanguageContext == "GB") { %>PADDING<% } %><% if (user.LanguageContext == "ES") { %>RELLENO<% } %><% if (user.LanguageContext == "CN") { %>填充<% } %></th>
+                            <th scope="col" class="calculation-text-column"><% if (user.LanguageContext == "IT") { %>VALORE<% } %><% if (user.LanguageContext == "GB") { %>VALUE<% } %><% if (user.LanguageContext == "ES") { %>VALOR<% } %><% if (user.LanguageContext == "CN") { %>值<% } %></th>
+                            <th scope="col"></th>
+                        </tr></thead>
+                        <tbody class="calculation-conditions-body"></tbody>
+                    </table>
+                </div>
+                <div class="calculation-conditions-feedback alert alert-danger d-none" role="alert"></div>
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-add-calculation-condition">
+                        <% if (user.LanguageContext == "IT") { %>Aggiungi<% } %><% if (user.LanguageContext == "GB") { %>Add<% } %><% if (user.LanguageContext == "ES") { %>Añadir<% } %><% if (user.LanguageContext == "CN") { %>新增<% } %>
+                    </button>
+                    <button type="button" class="btn btn-success btn-save-calculation-conditions">
+                        <% if (user.LanguageContext == "IT") { %>Salva<% } %><% if (user.LanguageContext == "GB") { %>Save<% } %><% if (user.LanguageContext == "ES") { %>Guardar<% } %><% if (user.LanguageContext == "CN") { %>儲存<% } %>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

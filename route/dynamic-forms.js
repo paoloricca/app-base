@@ -4,6 +4,9 @@ const router = express.Router();
 const response = require('../model/response');
 const crud = require('../crud/dynamic-forms');
 const classOrigin = require('../crud/forms/class-origin');
+const calculatedFields = require('../crud/forms/calculated-fields');
+const calculatedSummary = require('../crud/forms/calculated-summary');
+const calculatedText = require('../crud/forms/calculated-text');
 const sessionUtil = require('../utils/session');
 
 function isPositiveInteger(value) {
@@ -136,7 +139,12 @@ router.post('/dynamic-forms/:IdProcesso/api/records', function (req, res) {
         pageSize,
         req.session.user.LanguageContext,
         req.body.filter
-    ).then(data => res.status(200).json(new response('OK', data, null)))
+    ).then(async data => {
+        await calculatedSummary.attachCalculatedSummaries(
+            data.rows, req.params.IdProcesso, req.session.user.IdAttore
+        );
+        res.status(200).json(new response('OK', data, null));
+    })
         .catch(error => sendError(res, error));
 });
 
@@ -173,7 +181,8 @@ router.get('/dynamic-forms/:IdProcesso/api/model-class-attribute/:IdClasse', fun
         req.session.user.IDProfiloUtenteDefault,
         req.session.user.IdGruppoOperativoDefault,
         req.query.action
-    ).then(data => res.status(200).json(new response('OK', data, null)))
+    ).then(data => calculatedFields.attachConditions(data))
+        .then(data => res.status(200).json(new response('OK', data, null)))
         .catch(error => sendError(res, error));
 });
 
@@ -367,16 +376,13 @@ router.post('/dynamic-forms/:IdProcesso/api/post-idmodello-istanza-record', func
     if (!sessionUtil.verifyUser(req, res)) {
         return;
     }
-    crud.saveRecordValue(
-        req.params.IdProcesso,
-        req.body.IdRecord,
-        req.body.IdAttributo,
-        req.body.RecordValue,
-        req.session.user.IdAttore,
-        req.session.user.IdAccount,
-        req.session.user.IDProfiloUtenteDefault,
-        req.session.user.IdGruppoOperativoDefault
-    ).then(() => res.status(200).send('OK'))
+    calculatedText.saveRegularValue({
+        processId: req.params.IdProcesso, recordId: req.body.IdRecord,
+        fieldId: req.body.IdAttributo, value: req.body.RecordValue,
+        actorId: req.session.user.IdAttore, accountId: req.session.user.IdAccount,
+        profileId: req.session.user.IDProfiloUtenteDefault,
+        groupId: req.session.user.IdGruppoOperativoDefault
+    }).then(() => res.status(200).send('OK'))
         .catch(error => sendError(res, error));
 });
 

@@ -110,7 +110,8 @@
                             loadingRefresh = true;
                             $.when(
                                 refreshMultipleEntrySummary(args.IDClasse),
-                                loadMultipleEntryRecordValues(args.IDClasse, null)
+                                loadMultipleEntryRecordValues(args.IDClasse, null),
+                                refreshCalculationData()
                             ).fail(function (xhr, status, errorThrown) {
                                 ShowError(
                                     xhr && (xhr.responseText || xhr.message) || errorThrown || status ||
@@ -898,11 +899,473 @@
             }
         });
         var attributesValuesList = [];
+        var calculationConditions = [];
+        var previousCalculationType = null;
+
+        function calculationLabels() {
+            var language = JSON.parse(plugin.attr('data-options')).user.LanguageContext;
+            return ({
+                IT: ['Seleziona', 'Somma', 'Sottrazione', 'Moltiplicazione', 'Divisione', 'Elimina',
+                    'Eliminare le condizioni di calcolo?', 'Configurare almeno una condizione valida.',
+                    'Operazione', 'Campo di sistema'],
+                GB: ['Select', 'Add', 'Subtract', 'Multiply', 'Divide', 'Delete',
+                    'Delete the calculation conditions?', 'Configure at least one valid condition.',
+                    'Operation', 'System field'],
+                ES: ['Seleccionar', 'Suma', 'Resta', 'Multiplicación', 'División', 'Eliminar',
+                    '¿Eliminar las condiciones de cálculo?', 'Configure al menos una condición válida.',
+                    'Operación', 'Campo del sistema'],
+                CN: ['選擇', '加法', '減法', '乘法', '除法', '刪除',
+                    '刪除計算條件？', '請設定至少一個有效條件。', '運算', '系統欄位']
+            })[language] || ['Seleziona', 'Somma', 'Sottrazione', 'Moltiplicazione', 'Divisione',
+                'Elimina', 'Eliminare le condizioni di calcolo?', 'Configurare almeno una condizione valida.',
+                'Operazione', 'Campo di sistema'];
+        }
+
+        function isNumericType(type) {
+            return [2, 3, 9].indexOf(Number(type)) !== -1;
+        }
+
+        function textCalculationLabels() {
+            var language = JSON.parse(plugin.attr('data-options')).user.LanguageContext;
+            return ({
+                IT: ['Concatena', 'Id Operatore (Sessione)', 'Progressivo processo', 'Progressivo processo (Per Operatore)', 'Lunghezza', 'Spazi vuoti', 'Riempi a sinistra', 'Riempi a destra', 'Valore'],
+                GB: ['Concatenate', 'Operator ID (Session)', 'Process sequence', 'Process sequence (Per Operator)', 'Length', 'Padding', 'Fill left', 'Fill right', 'Value'],
+                ES: ['Concatenar', 'Id operador (Sesión)', 'Secuencia del proceso', 'Secuencia del proceso (Por operador)', 'Longitud', 'Relleno', 'Rellenar a la izquierda', 'Rellenar a la derecha', 'Valor'],
+                CN: ['串接', '操作員 ID（工作階段）', '流程序號', '流程序號（每位操作員）', '长度', '填充', '左側填充', '右側填充', '值']
+            })[language] || ['Concatena', 'Id Operatore (Sessione)',
+                'Progressivo processo (Per Operatore)', 'Lunghezza', 'Spazi vuoti',
+                'Riempi a sinistra', 'Riempi a destra', 'Valore'];
+        }
+
+        function updateCalculatedControls() {
+            var type = Number(plugin.find('#IDTipoDati').val());
+            var supported = isNumericType(type) || type === 1;
+            var active = supported && plugin.find('#IsCalculated').prop('checked');
+            plugin.find('.calculated-setting').toggle(supported);
+            plugin.find('.calculated-configure').toggle(active);
+            var decimal = type === 3 || type === 9;
+            plugin.find('.decimal-precision').toggle(decimal);
+            plugin.find('#LunghezzaDecimale').prop('required', active && decimal);
+        }
+
+        function calculationFields() {
+            var classId = Number(plugin.find('#IDClasse').val());
+            var attributeId = Number(plugin.find('#IDAttributo').val());
+            var text = Number(plugin.find('#IDTipoDati').val()) === 1;
+            var fields = [];
+            plugin.find('[data-fieldlist]').each(function () {
+                var $section = $(this);
+                ($section.data('model-attributes') || []).forEach(function (field) {
+                    if (Number(field.IDClasse) !== classId &&
+                        Number(field.IDAttributo) !== attributeId &&
+                        (isNumericType(field.IDTipoDati) || (text && Number(field.IDTipoDati) === 1))) {
+                        fields.push({
+                            IDAttributo: field.IDAttributo,
+                            Description: $section.find('.model-section-title').first().text().trim() +
+                                ' - ' + (field.Description || field.IDAttributo)
+                        });
+                    }
+                });
+            });
+            return fields;
+        }
+
+        function addCalculationRow(condition) {
+            var labels = calculationLabels();
+            var $modal = plugin.find('#container-calculation-conditions');
+            var text = $modal.data('text-calculation') === true;
+            var textLabels = textCalculationLabels();
+            var $row = $('<tr>', { class: 'calculation-condition-row' });
+            var $operation = $('<select>', {
+                class: 'form-select form-select-sm calculation-operation', 'aria-label': labels[8]
+            }).appendTo($('<td>').appendTo($row));
+            var $field = $('<select>', {
+                class: 'form-select form-select-sm calculation-field', 'aria-label': labels[9]
+            }).appendTo($('<td>').appendTo($row));
+            $operation.append(new Option(labels[0], ''));
+            if (text) $operation.append(new Option(textLabels[0], '5'));
+            else labels.slice(1, 5).forEach(function (label, index) {
+                $operation.append(new Option(label, String(index + 1)));
+            });
+            $field.append(new Option(labels[0], ''));
+            if (text) {
+                $field.append(new Option(textLabels[1], 'operator'));
+                $field.append(new Option(textLabels[2], 'process'));
+                $field.append(new Option(textLabels[3], 'operator_process'));
+            }
+            ($modal.data('fields') || []).forEach(function (field) {
+                $field.append(new Option(field.Description, text ? 'field:' + field.IDAttributo : field.IDAttributo));
+            });
+            var $digits, $padding, $value;
+            if (text) {
+                $digits = $('<select>', { class: 'form-select form-select-sm calculation-digits', 'aria-label': textLabels[4] })
+                    .appendTo($('<td>').appendTo($row));
+                $digits.append(new Option(labels[0], ''));
+                for (var digits = 2; digits <= 20; digits += 2) $digits.append(new Option(String(digits), String(digits)));
+                $padding = $('<select>', { class: 'form-select form-select-sm calculation-padding', 'aria-label': textLabels[5] })
+                    .appendTo($('<td>').appendTo($row));
+                $padding.append(new Option(labels[0], ''));
+                $padding.append(new Option(textLabels[6], 'left'));
+                $padding.append(new Option(textLabels[7], 'right'));
+                $value = $('<input>', { type: 'text', maxlength: 2, class: 'form-control form-control-sm calculation-fill', 'aria-label': textLabels[8] })
+                    .appendTo($('<td>').appendTo($row));
+            }
+            if (condition) {
+                $operation.val(String(condition.Operazione));
+                $field.val(text ? (condition.Sorgente === 'field'
+                    ? 'field:' + condition.IDAttributo : condition.Sorgente) : String(condition.IDAttributo));
+                if (text) {
+                    $digits.val(String(condition.Cifre));
+                    $padding.val(condition.SpaziVuoti);
+                    $value.val(condition.Valore || '');
+                }
+            }
+            $('<button>', {
+                type: 'button', class: 'btn btn-outline-danger btn-sm btn-remove-calculation-condition',
+                'aria-label': labels[5]
+            }).append($('<i>', { class: 'bi bi-trash', 'aria-hidden': 'true' }))
+                .appendTo($('<td>', { class: 'text-center' }).appendTo($row));
+            $modal.find('.calculation-conditions-body').append($row);
+        }
+
+        function openCalculationConditionsModal($modal) {
+            $modal.addClass('show').show().attr('aria-hidden', 'false');
+        }
+
+        function closeCalculationConditionsModal($modal) {
+            $modal.removeClass('show').hide().attr('aria-hidden', 'true');
+        }
+
+        plugin.off('.modelCalculationEditor')
+            .on('onconfirm.modelCalculationEditor', '#confirm-delete-calculation', function () {
+                calculationConditions = [];
+                plugin.find('#IsCalculated').prop('checked', false);
+                updateCalculatedControls();
+            })
+            .on('change.modelCalculationEditor', '#IsCalculated', function () {
+                if (!this.checked && calculationConditions.length) {
+                    this.checked = true;
+                    var $confirm = plugin.find('#confirm-delete-calculation');
+                    if (!$confirm.find('.modal-confirm-delete').length) {
+                        ShowError('Unable to load the confirmation dialog.', 'model.calculationConfirmation');
+                    } else {
+                        $confirm.find('.modal-body h5').text(calculationLabels()[6]);
+                        $confirm.confirmDelete.show($confirm);
+                    }
+                    return;
+                }
+                updateCalculatedControls();
+            })
+            .on('click.modelCalculationEditor', '.btn-configure-calculation', function () {
+                var $modal = plugin.find('#container-calculation-conditions');
+                var text = Number(plugin.find('#IDTipoDati').val()) === 1;
+                $modal.data('text-calculation', text);
+                $modal.find('.calculation-text-column').toggle(text);
+                $modal.data('fields', calculationFields());
+                $modal.find('.calculation-conditions-body').empty();
+                $modal.find('.calculation-conditions-feedback').addClass('d-none').text('');
+                if (calculationConditions.length) {
+                    calculationConditions.forEach(addCalculationRow);
+                } else {
+                    addCalculationRow(null);
+                }
+                openCalculationConditionsModal($modal);
+            })
+            .on('click.modelCalculationEditor', '.btn-add-calculation-condition', function () {
+                addCalculationRow(null);
+            })
+            .on('click.modelCalculationEditor', '.btn-remove-calculation-condition', function () {
+                $(this).closest('tr').remove();
+            })
+            .on('click.modelCalculationEditor', '.btn-close-calculation-conditions', function () {
+                closeCalculationConditionsModal(plugin.find('#container-calculation-conditions'));
+            })
+            .on('click.modelCalculationEditor', '.btn-save-calculation-conditions', function () {
+                var $modal = plugin.find('#container-calculation-conditions');
+                var text = $modal.data('text-calculation') === true;
+                var conditions = $modal.find('.calculation-condition-row').map(function () {
+                    var source = $(this).find('.calculation-field').val() || '';
+                    if (text) {
+                        return {
+                            Operazione: Number($(this).find('.calculation-operation').val()),
+                            Sorgente: source.indexOf('field:') === 0 ? 'field' : source,
+                            IDAttributo: source.indexOf('field:') === 0 ? Number(source.slice(6)) : null,
+                            Cifre: Number($(this).find('.calculation-digits').val()),
+                            SpaziVuoti: $(this).find('.calculation-padding').val(),
+                            Valore: $(this).find('.calculation-fill').val()
+                        };
+                    }
+                    return {
+                        Operazione: Number($(this).find('.calculation-operation').val()),
+                        IDAttributo: Number(source)
+                    };
+                }).get();
+                if (!conditions.length || (text && !conditions.some(function (condition) {
+                    return condition.Sorgente === 'process' || condition.Sorgente === 'operator_process';
+                })) || conditions.some(function (condition) {
+                    if (!text) return !condition.IDAttributo || condition.Operazione < 1 || condition.Operazione > 4;
+                    return condition.Operazione !== 5 || !condition.Sorgente ||
+                        (condition.Sorgente === 'field' && !condition.IDAttributo) ||
+                        condition.Cifre < 2 || condition.Cifre > 20 || condition.Cifre % 2 !== 0 ||
+                        !condition.SpaziVuoti || condition.Valore.length > 2;
+                })) {
+                    $modal.find('.calculation-conditions-feedback')
+                        .text(calculationLabels()[7]).removeClass('d-none');
+                    return;
+                }
+                calculationConditions = conditions;
+                closeCalculationConditionsModal($modal);
+            });
+
+        var calculationState = { fields: {}, sections: {}, errors: [], requestId: 0, pending: false, textContext: null };
+
+        function isCalculatedField(field) {
+            return field.IsCalculated === true || field.IsCalculated === 1 || field.IsCalculated === '1';
+        }
+
+        function updateCalculations() {
+            var options = JSON.parse(plugin.attr('data-options'));
+            if (options.Mode === 'design') return;
+            var fields = calculationState.fields;
+            var sections = calculationState.sections;
+            var values = {};
+            var visiting = {};
+            calculationState.errors = [];
+
+            function hasDraft($section) {
+                if (options.ReadOnly === true || options.Mode === 'preview') return false;
+                return $section.find('.model-class-' + $section.data('calculation-class-id') +
+                    '-attributes :input[data-idattributo]').toArray().some(function (input) {
+                    var field = fields[Number($(input).data('idattributo'))];
+                    if ((input.type === 'checkbox' || input.type === 'radio') && !input.checked) return false;
+                    return field && !isCalculatedField(field) && String($(input).val() || '').trim() !== '';
+                });
+            }
+
+            function sourceValues(id) {
+                var field = fields[id];
+                if (!field) throw new Error('Calculation source ' + id + ' is unavailable.');
+                var section = sections[Number(field.IDClasse)];
+                if (!section) throw new Error('Calculation section is unavailable.');
+                var $control = section.container.find('#control_' + id);
+                if (!section.multiple) {
+                    if (isCalculatedField(field)) return [evaluate(id)];
+                    if (!$control.length) throw new Error('Calculation source ' + id + ' is unavailable.');
+                    return [$control.val()];
+                }
+                var selected = Number(section.container.data('selected-record-id')) || null;
+                var draft = selected === null && hasDraft(section.container);
+                if (isCalculatedField(field)) {
+                    if (Number(field.IDTipoDati) === 1) {
+                        var textValues = section.records.map(function (record) {
+                            if (selected === record.id && $control.length) return evaluate(id);
+                            var value = record.values[id];
+                            return value == null || value === '' ? evaluate(id) : value;
+                        });
+                        if (draft) textValues.push(evaluate(id));
+                        return textValues;
+                    }
+                    var count = section.records.length + (draft ? 1 : 0);
+                    return count ? Array(count).fill(evaluate(id)) : [];
+                }
+                var saved = section.records.map(function (record) {
+                    if (selected === record.id && $control.length && options.ReadOnly !== true) return $control.val();
+                    if (!Object.prototype.hasOwnProperty.call(record.values, id)) {
+                        throw new Error('Calculation source ' + id + ' is unavailable.');
+                    }
+                    return record.values[id];
+                });
+                if (draft && $control.length) saved.push($control.val());
+                return saved;
+            }
+
+            function evaluate(id) {
+                if (Object.prototype.hasOwnProperty.call(values, id)) return values[id];
+                if (visiting[id]) throw new Error('Circular calculation reference.');
+                var field = fields[id];
+                visiting[id] = true;
+                try {
+                    if (Number(field.IDTipoDati) === 1) {
+                        var $control = sections[Number(field.IDClasse)].container.find('#control_' + id);
+                        var saved = $control.data('calculation-saved');
+                        if (saved != null && saved !== '') {
+                            values[id] = String(saved);
+                        } else {
+                            var ctx = calculationState.textContext;
+                            if (!ctx) throw new Error('Calculation context is unavailable.');
+                            values[id] = CalculatedFieldMath.concatenate(field.CalculationConditions, function (condition) {
+                                switch (condition.Sorgente) {
+                                    case 'operator': return ctx.Creator;
+                                    case 'process': return ctx.ProcessSequence;
+                                    case 'operator_process': return ctx.OperatorSequence;
+                                    case 'field': return sourceValues(Number(condition.IDAttributo)).join('');
+                                    default: throw new Error('Calculation source is unavailable.');
+                                }
+                            });
+                        }
+                    } else {
+                        var precision = Number(field.IDTipoDati) === 2 ? 0 :
+                            (field.LunghezzaDecimale == null || field.LunghezzaDecimale === ''
+                                ? NaN : Number(field.LunghezzaDecimale));
+                        values[id] = CalculatedFieldMath.calculate(field.CalculationConditions, sourceValues, precision);
+                    }
+                    return values[id];
+                } finally {
+                    delete visiting[id];
+                }
+            }
+
+            Object.keys(fields).forEach(function (key) {
+                var field = fields[key];
+                if (!isCalculatedField(field)) return;
+                var $section = sections[Number(field.IDClasse)].container;
+                var $control = $section.find('#control_' + field.IDAttributo);
+                var $error = $section.find('.calculation-error[data-idattributo="' + field.IDAttributo + '"]');
+                if (!$error.length && $control.length) {
+                    $error = $('<div>', {
+                        class: 'calculation-error text-danger small',
+                        'data-idattributo': field.IDAttributo,
+                        role: 'alert'
+                    }).insertAfter($control);
+                }
+                try {
+                    var result = evaluate(Number(key));
+                    $control.prop('readonly', true).attr('aria-readonly', 'true').val(result);
+                    $error.text('').hide();
+                    if (Number(field.IDTipoDati) !== 1)
+                        $section.find('.model-multiple-entry-summary td[data-idattributo="' + key + '"]').text(result);
+                } catch (error) {
+                    var message = CalculatedFieldMath.errorMessage(error, options.user.LanguageContext);
+                    calculationState.errors.push(message);
+                    $control.prop('readonly', true).attr('aria-readonly', 'true').val('');
+                    $error.text(message).show();
+                    if (Number(field.IDTipoDati) !== 1)
+                        $section.find('.model-multiple-entry-summary td[data-idattributo="' + key + '"]').text(message);
+                }
+            });
+        }
+
+        function refreshCalculationData() {
+            var options = JSON.parse(plugin.attr('data-options'));
+            if (options.Mode === 'design') return $.Deferred().resolve().promise();
+            var requestId = ++calculationState.requestId;
+            calculationState.pending = true;
+            var fields = {};
+            var sections = {};
+            var sources = {};
+            var textContext = null;
+            plugin.find('[data-fieldlist]').each(function () {
+                var $section = $(this);
+                var attributes = $section.data('model-attributes') || [];
+                if (!attributes.length) return;
+                var classId = Number(attributes[0].IDClasse);
+                $section.data('calculation-class-id', classId);
+                sections[classId] = {
+                    container: $section,
+                    multiple: $section.find('.model-multiple-entry-summary').length > 0,
+                    records: []
+                };
+                attributes.forEach(function (field) {
+                    fields[Number(field.IDAttributo)] = field;
+                    if (isCalculatedField(field)) {
+                        (field.CalculationConditions || []).forEach(function (condition) {
+                            sources[Number(condition.IDAttributo)] = true;
+                        });
+                    }
+                });
+            });
+            var requests = Object.keys(sections).map(function (classId) {
+                var section = sections[classId];
+                if (!section.multiple || options.IDModelloIstanza == null) {
+                    return $.Deferred().resolve().promise();
+                }
+                var sourceFields = Object.keys(sources).map(function (id) { return fields[id]; })
+                    .filter(function (field) {
+                        return field && Number(field.IDClasse) === Number(classId) &&
+                            (!isCalculatedField(field) || Number(field.IDTipoDati) === 1);
+                    });
+                if (!sourceFields.length && !Object.keys(fields).some(function (id) {
+                    return sources[id] && Number(fields[id].IDClasse) === Number(classId);
+                })) return $.Deferred().resolve().promise();
+                return modelApiRequestAsync(options,
+                    'class-records/' + options.IDModelloIstanza + '/' + classId, 'GET')
+                    .then(function (response) {
+                        var result = JSON.parse(response);
+                        if (result.status !== 'OK' || !Array.isArray(result.data)) {
+                            throw new Error(result.error && result.error.message || 'Unable to load calculation records.');
+                        }
+                        var reads = [];
+                        result.data.forEach(function (record) {
+                            var item = { id: Number(record.IDRecord), values: {} };
+                            section.records.push(item);
+                            sourceFields.forEach(function (field) {
+                                reads.push(plugin.model.getIDModelloIstanzaRecordValueAsync(item.id, field.IDAttributo)
+                                    .then(function (value) {
+                                        if (typeof value === 'string' && value.charAt(0) === '{') {
+                                            var parsed = JSON.parse(value);
+                                            if (parsed.status === 'ERR') {
+                                                throw new Error(parsed.error && parsed.error.message || 'Unable to load a calculation value.');
+                                            }
+                                        }
+                                        item.values[Number(field.IDAttributo)] = value;
+                                    }));
+                            });
+                        });
+                        return $.when.apply($, reads);
+                    });
+            });
+            if (Object.keys(fields).some(function (id) {
+                return isCalculatedField(fields[id]) && Number(fields[id].IDTipoDati) === 1;
+            })) {
+                requests.push($.ajax({
+                    url: '/calculated-text/context',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: calculationRequestData(options)
+                }).then(function (response) {
+                    if (!response || response.status !== 'OK') {
+                        throw new Error(response && response.error && response.error.message ||
+                            'Unable to load calculation context.');
+                    }
+                    textContext = response.data;
+                }));
+            }
+            return $.when.apply($, requests).then(function () {
+                if (requestId !== calculationState.requestId) return;
+                calculationState.fields = fields;
+                calculationState.sections = sections;
+                calculationState.textContext = textContext;
+                updateCalculations();
+                calculationState.pending = false;
+            }, function (error) {
+                if (requestId === calculationState.requestId) {
+                    calculationState.errors = [error && error.message || 'Unable to load calculation values.'];
+                    calculationState.pending = false;
+                }
+                return $.Deferred().reject(error).promise();
+            });
+        }
+
+        plugin.off('.modelCalculationRuntime')
+            .on('input.modelCalculationRuntime change.modelCalculationRuntime', '[data-idattributo]', updateCalculations)
+            .on('onsave.modelCalculationRuntime', function () {
+                refreshCalculationData().fail(function (error) {
+                    ShowError(error && error.message || 'Unable to refresh calculations.', 'model.calculation');
+                });
+            });
         function modelApiUrl(options, endpoint) {
             var apiBase = options && options.ApiBase
                 ? String(options.ApiBase).replace(/\/$/, '')
                 : '';
             return apiBase + '/' + endpoint;
+        }
+        function calculationRequestData(options) {
+            var match = /^\/dynamic-forms\/(\d+)\/api\/?$/.exec(options.ApiBase || '');
+            return {
+                versionId: options.IDVersione,
+                processId: match ? match[1] : '',
+                instanceId: options.IDModelloIstanza || ''
+            };
         }
         function modelApiRequest(options, endpoint, method, data) {
             var request = $.ajax({
@@ -1102,6 +1565,8 @@
                         bindFileUploadValueEvents($fileUpload, field.IDAttributo);
                     }
                     $control.val(value == null ? '' : value);
+                    if (isCalculatedField(field) && Number(field.IDTipoDati) === 1)
+                        $control.data('calculation-saved', value == null ? '' : value);
                 });
             });
 
@@ -1111,6 +1576,7 @@
                         $classContainer.find('.model-multiple-entry-summary'),
                         options.user.LanguageContext
                     );
+                    updateCalculations();
                 }
             });
         }
@@ -1138,7 +1604,7 @@
             summaryFields.forEach(function (field) {
                 $('<th>', { scope: 'col', text: field.Description || '' }).appendTo($heading);
             });
-            var canEdit = options.ReadOnly !== true;
+            var canEdit = options.ReadOnly !== true && options.Mode !== 'preview';
             if (canEdit) {
                 $('<th>', {
                     scope: 'col',
@@ -1184,7 +1650,7 @@
                     }
 
                     var fieldLoads = summaryFields.map(function (field) {
-                        var $cell = $('<td>').appendTo($row);
+                        var $cell = $('<td>', { 'data-idattributo': field.IDAttributo }).appendTo($row);
                         return plugin.model.getIDModelloIstanzaRecordValueAsync(
                             IDRecord,
                             field.IDAttributo
@@ -1245,6 +1711,7 @@
                 $summary.toggleClass('d-none', !summaryFields.length);
                 return $.when.apply($, rowLoads).then(function () {
                     updateMultipleEntryStatus($summary, options.user.LanguageContext);
+                    updateCalculations();
                 });
             });
         }
@@ -1302,7 +1769,7 @@
                                 ejs.render(templateString, { row, LanguageContext })
                             );
 
-                            if (options.Mode == 'edit') {
+                            if (options.Mode == 'edit' || options.Mode == 'preview') {
 
                                 if (options.IDModelloIstanza == null ||
                                     Number(row.NumeroCicliMin) > 1) {
@@ -1314,7 +1781,9 @@
                                 } else {
                                     /* Per ogni IDClasse, verifica l'esistenza di un record esistente */
                                     sectionLoads.push(settleSectionLoad($.when(
-                                        plugin.model.getIDModelloIstanzaRecordAsync(options.IDModelloIstanza, row.IDClasse)
+                                        options.ReadOnly === true || options.Mode === 'preview'
+                                            ? plugin.model.getClassRecordReadOnlyAsync(options.IDModelloIstanza, row.IDClasse)
+                                            : plugin.model.getIDModelloIstanzaRecordAsync(options.IDModelloIstanza, row.IDClasse)
                                     ).then(function (IDRecord, textStatus, jqXHR) {
                                         return plugin.model.loadAttributes(row.IDClasse, IDRecord);
                                     })));
@@ -1349,8 +1818,15 @@
                         });
 
                         $.when.apply($, sectionLoads).done(function () {
-                            plugin.find('.model-section-loader').hide();
-                            plugin.trigger('onsectionsloaded');
+                            refreshCalculationData().then(function () {
+                                plugin.find('.model-section-loader').hide();
+                                plugin.trigger('onsectionsloaded');
+                            }, function (error) {
+                                plugin.find('.model-section-loader').hide();
+                                ShowError(error && error.message || 'Unable to load calculations.', 'model.calculation');
+                                plugin.trigger('loaderror', [error]);
+                                plugin.trigger('onsectionsloaded');
+                            });
                         });
 
                         /* Carica il template per l'inserimento e la modifica di una sezione */
@@ -1590,6 +2066,8 @@
                             });
 
                             if (options.Mode == 'design') {
+                                var calculationConfirm = plugin.find('#confirm-delete-calculation');
+                                calculationConfirm.confirmDelete({ LanguageContext: LanguageContext });
 
                                 /* initialize il controllo <confirm-delete-attribute> */
                                 var CtlDeleteAttribute = plugin.find('#confirm-delete-attribute');
@@ -1944,6 +2422,28 @@
                 return recordId;
             });
         };
+        $.fn.model.getClassRecordReadOnlyAsync = function (IDModelloIstanza, IDClasse) {
+            var options = JSON.parse(plugin.attr('data-options'));
+            return modelApiRequestAsync(options, 'class-records/' + IDModelloIstanza + '/' + IDClasse, 'GET')
+                .then(function (response) {
+                    var result = JSON.parse(response);
+                    if (result.status !== 'OK' || !Array.isArray(result.data)) {
+                        throw new Error(result.error && result.error.message || 'Unable to load the class record.');
+                    }
+                    if (result.data.length > 1) throw new Error('Multiple records found for a single-entry section.');
+                    if (!result.data.length) return null;
+                    var recordId = Number(result.data[0].IDRecord);
+                    if (!Number.isSafeInteger(recordId) || recordId <= 0) {
+                        throw new Error('The server returned an invalid class record ID.');
+                    }
+                    return recordId;
+                }).fail(function (error, status, errorThrown) {
+                    var message = error && (error.message || error.responseText) ||
+                        errorThrown || status || 'Unable to load the class record.';
+                    ShowError(message, 'model.getClassRecordReadOnly');
+                    plugin.trigger('loaderror', [error]);
+                });
+        };
         $.fn.model.createClassRecord = function (IDModelloIstanza, IDClasse) {
             var options = JSON.parse(plugin.attr('data-options'));
             var response = JSON.parse(modelApiRequest(options, 'class-records', 'POST', {
@@ -2009,7 +2509,7 @@
                                     row.IDTipoDati)
                             );
                         });
-                        plugin.find('.tipo-dati').change(function () {
+                        plugin.find('.tipo-dati').off('change.modelAttributeType').on('change.modelAttributeType', function () {
                             attributesValuesList = [];
                             plugin.find('.container-attribute-edit-values-list').empty();
                             plugin.model.clearAttributeValueList();
@@ -2035,6 +2535,16 @@
 
             try {
 
+                var type = Number(IDTipoDati);
+                if ((!isNumericType(type) && type !== 1) ||
+                    (previousCalculationType !== null &&
+                     (previousCalculationType === 1) !== (type === 1))) {
+                    calculationConditions = [];
+                    plugin.find('#IsCalculated').prop('checked', false);
+                    closeCalculationConditionsModal(plugin.find('#container-calculation-conditions'));
+                    plugin.find('#container-calculation-conditions .calculation-conditions-body').empty();
+                }
+                previousCalculationType = type;
                 plugin.find(".lunghezza-massima").hide();
                 plugin.find(".numero-righe").hide();
                 plugin.find(".btn-configura-lista").hide();
@@ -2092,6 +2602,7 @@
 
                 }
 
+                updateCalculatedControls();
             } catch (err) {
 
                 ShowError(err.message, fnName);
@@ -2340,7 +2851,9 @@
 
                     } else {
 
-                        ShowError(JSON.parse(response).error, fnName);
+                        var saveError = typeof response === 'string' ? JSON.parse(response) : response;
+                        ShowError(saveError.error && (saveError.error.message || saveError.error) ||
+                            'Unable to save the field.', fnName);
 
                     }
                 });
@@ -2462,6 +2975,17 @@
 
                 plugin.find("#IsFilter").prop("checked", campo.IsFilter === true || campo.IsFilter === 1);
                 plugin.find("#IsSummary").prop("checked", campo.IsSummary === true || campo.IsSummary === 1);
+                plugin.find("#IsCalculated").prop("checked",
+                    campo.IsCalculated === true || campo.IsCalculated === 1 || campo.IsCalculated === '1');
+                calculationConditions = (campo.CalculationConditions || []).map(function (condition) {
+                    if (Number(campo.IDTipoDati) === 1) return {
+                        IDAttributo: condition.IDAttributo == null ? null : Number(condition.IDAttributo),
+                        Operazione: Number(condition.Operazione), Sorgente: condition.Sorgente,
+                        Cifre: condition.Cifre, SpaziVuoti: condition.SpaziVuoti, Valore: condition.Valore
+                    };
+                    return { IDAttributo: Number(condition.IDAttributo), Operazione: Number(condition.Operazione) };
+                });
+                plugin.find("#LunghezzaDecimale").val(campo.LunghezzaDecimale == null ? '' : campo.LunghezzaDecimale);
 
                 plugin.find("#Lunghezza").val(campo.Lunghezza);
 
@@ -2522,6 +3046,7 @@
 
                 }
 
+                previousCalculationType = Number(campo.IDTipoDati);
                 plugin.model.switchTipoDati(campo.IDTipoDati);
                 plugin.find('#IDClasse').val(campo.IDClasse);
                 plugin.find('#IDAttributo').val(campo.IDAttributo);
@@ -2561,6 +3086,11 @@
                     isvalidform = false;
                 }
 
+                if (plugin.find('#IsCalculated').prop('checked') && !calculationConditions.length) {
+                    ShowError(calculationLabels()[7], fnName);
+                    return;
+                }
+
                 if (!isvalidform) {
                     return;
                 }
@@ -2579,6 +3109,8 @@
                         Obbligatorio: plugin.find('#Obbligatorio').prop('checked'),
                         IsFilter: plugin.find('#IsFilter').prop('checked'),
                         IsSummary: plugin.find('#IsSummary').prop('checked'),
+                        IsCalculated: plugin.find('#IsCalculated').prop('checked'),
+                        CalculationConditions: JSON.stringify(calculationConditions),
                         Description_IT: CtlTxtDescrizione.value.IT,
                         Description_GB: CtlTxtDescrizione.value.GB,
                         Description_ES: CtlTxtDescrizione.value.ES,
@@ -2604,6 +3136,8 @@
                         ShowError(JSON.parse(response).error, fnName);
 
                     }
+                }).fail(function (xhr, status, errorThrown) {
+                    ShowError(xhr.responseText || errorThrown || status, fnName);
                 });
 
             } catch (err) {
@@ -2628,7 +3162,11 @@
                         row.IsWorkflowEditable === '0');
             }
             function lockReadOnlyField(row) {
-                if (options.ReadOnly !== true && !isWorkflowFieldReadOnly(row)) {
+                if (isCalculatedField(row)) {
+                    plugin.find('#control_' + row.IDAttributo).prop('readonly', true)
+                        .attr('aria-readonly', 'true').val('');
+                }
+                if (options.ReadOnly !== true && options.Mode !== 'preview' && !isWorkflowFieldReadOnly(row)) {
                     return;
                 }
                 plugin.find('#control_' + row.IDAttributo +
@@ -2696,7 +3234,7 @@
                             plugin.find('.model-class-' + IdClasse + '-attributes')[0]
                                 .appendChild(fieldPlaceholder);
 
-                            if (options.Mode == 'edit') {
+                            if (options.Mode == 'edit' || options.Mode == 'preview') {
 
                                 var fieldLoad = $.when(IDRecord == null
                                     ? ''
@@ -2716,19 +3254,23 @@
 
                                         /* TESTO */
                                         if (row.IDTipoDati == 1 || row.IDTipoDati == 11) {
-                                            plugin.find("#control_" + row.IDAttributo).val(RecordValue);
+                                            var $textControl = plugin.find("#control_" + row.IDAttributo).val(RecordValue);
+                                            if (isCalculatedField(row) && Number(row.IDTipoDati) === 1)
+                                                $textControl.data('calculation-saved', RecordValue || '');
                                         }
 
                                         /* NUMERO */
                                         if (row.IDTipoDati == 2) {
-                                            plugin.find("#control_" + row.IDAttributo).val(RecordValue);
+                                            plugin.find("#control_" + row.IDAttributo)
+                                                .val(isCalculatedField(row) ? '' : RecordValue);
                                             plugin.find("#control_" + row.IDAttributo).inputFilter(function (value) {
                                                 return /^-?\d*$/.test(value);
                                             });
                                         }
-                                        /* VALUTA */
-                                        if (row.IDTipoDati == 3) {
-                                            plugin.find("#control_" + row.IDAttributo).val(RecordValue);
+                                        /* VALUTA E NUMERICO DECIMALE */
+                                        if (row.IDTipoDati == 3 || row.IDTipoDati == 9) {
+                                            plugin.find("#control_" + row.IDAttributo)
+                                                .val(isCalculatedField(row) ? '' : RecordValue);
                                             configureCurrencyInput(plugin.find("#control_" + row.IDAttributo), row);
                                         }
                                         /* DATA */
@@ -2777,7 +3319,7 @@
                                                 filenumber: row.FileNumber,
                                                 filetypes: row.FileTypes,
                                                 fileweight: row.FileWeight,
-                                                readOnly: options.ReadOnly === true || isWorkflowFieldReadOnly(row)
+                                                readOnly: options.ReadOnly === true || options.Mode === 'preview' || isWorkflowFieldReadOnly(row)
                                             });
 
                                             bindFileUploadValueEvents(ControlFileUpload, row.IDAttributo);
@@ -2828,8 +3370,8 @@
                                             return /^-?\d*$/.test(value);
                                         });
                                     }
-                                    /* VALUTA */
-                                    if (row.IDTipoDati == 3) {
+                                    /* VALUTA E NUMERICO DECIMALE */
+                                    if (row.IDTipoDati == 3 || row.IDTipoDati == 9) {
                                         configureCurrencyInput(plugin.find("#control_" + row.IDAttributo), row);
                                     }
                                     /* DATA */
@@ -2995,7 +3537,7 @@
 
                 /* Valorizza la lista degli IDAttributo, utilizzata per la registrazione dei valori */
                 $.each(response.data, function (key, row) {
-                    if (isWorkflowFieldReadOnly(row)) {
+                    if (isWorkflowFieldReadOnly(row) || isCalculatedField(row)) {
                         return;
                     }
                     fieldlist += '@' + row.IDAttributo;
@@ -3003,7 +3545,10 @@
 
                 if (options.Mode == "edit" && options.ReadOnly !== true) {
 
-                    if (!fieldlist && options.ActionName === 'Modifica' && options.WorkflowRecordId) {
+                    if (!fieldlist && options.ActionName === 'Modifica' && options.WorkflowRecordId &&
+                        !(response.data || []).some(function (field) {
+                            return isCalculatedField(field) && Number(field.IDTipoDati) === 1;
+                        })) {
                         plugin.trigger("onload");
                         $sectionLoader.hide();
                         return;
@@ -3093,6 +3638,10 @@
                 });
 
                 var options = JSON.parse(plugin.attr('data-options'));
+                if (calculationState.pending || calculationState.errors.length) {
+                    ShowError(calculationState.errors[0] || 'Calculation values are still loading.', 'model.calculation');
+                    return false;
+                }
                 if (!isvalidform) {
                     var form = document.getElementById('frm-class-' + IdClasse);
                     var invalidField = form && form.querySelector(':invalid');
@@ -3117,6 +3666,11 @@
                         : plugin.model.getIDModelloIstanzaRecord(options.IDModelloIstanza, IdClasse);
                 }
 
+                var hasCalculatedText = ($classContainer.data('model-attributes') || []).some(function (field) {
+                    return isCalculatedField(field) && Number(field.IDTipoDati) === 1;
+                });
+                var sectionValues = [];
+                var mediaValues = [];
                 (FieldList || '').split('@').filter(Boolean).forEach(function (IDAttributo) {
                     var control = plugin.find('#control_' + IDAttributo);
                     if (control.data('idtipodati') === undefined) {
@@ -3125,22 +3679,45 @@
                     var IdTipoDati = control.data('idtipodati');
                     var recordValue = control.val();
                     recordValue = recordValue == null ? '' : String(recordValue);
-                    plugin.model.postIDModelloIstanzaRecord(IDRecord, IDAttributo, recordValue);
-
-                    if (IdTipoDati == 7) {
-                        var fileList = recordValue.charAt(0) === '@'
-                            ? recordValue.substring(1)
-                            : recordValue;
-                        fileList.split('@').filter(Boolean).forEach(function (file) {
-                            plugin.model.postIDModelloIstanzaRecordMedia(IDRecord, IDAttributo, file);
-                        });
-                        var $fileControl = plugin.find('.control_' + IDAttributo);
-                        plugin.model.deleteIDModelloIstanzaRecordMedia(
-                            IDRecord,
-                            IDAttributo,
-                            JSON.parse($fileControl.attr('data-options')).filetodelete
-                        );
+                    if (hasCalculatedText) {
+                        sectionValues.push({ IDAttributo: IDAttributo, Value: recordValue });
+                    } else {
+                        plugin.model.postIDModelloIstanzaRecord(IDRecord, IDAttributo, recordValue);
                     }
+                    if (IdTipoDati == 7) {
+                        mediaValues.push({ id: IDAttributo, value: recordValue });
+                    }
+                });
+
+                if (hasCalculatedText) {
+                    var calculationRequest = calculationRequestData(options);
+                    calculationRequest.classId = IdClasse;
+                    calculationRequest.recordId = IDRecord;
+                    calculationRequest.fields = JSON.stringify(sectionValues);
+                    var textSave = $.ajax({
+                        type: 'POST', url: '/calculated-text/save',
+                        data: calculationRequest, dataType: 'json', async: false
+                    });
+                    var textResponse = textSave.responseJSON;
+                    if (textSave.status < 200 || textSave.status >= 300 ||
+                        !textResponse || textResponse.status !== 'OK') {
+                        throw new Error(textResponse && textResponse.error && textResponse.error.message ||
+                            textSave.responseText || 'Unable to save the calculated field.');
+                    }
+                    (textResponse.data || []).forEach(function (item) {
+                        $classContainer.find('#control_' + item.IDAttributo)
+                            .data('calculation-saved', item.Value).val(item.Value);
+                    });
+                }
+                mediaValues.forEach(function (item) {
+                    var fileList = item.value.charAt(0) === '@' ? item.value.substring(1) : item.value;
+                    fileList.split('@').filter(Boolean).forEach(function (file) {
+                        plugin.model.postIDModelloIstanzaRecordMedia(IDRecord, item.id, file);
+                    });
+                    var $fileControl = plugin.find('.control_' + item.id);
+                    plugin.model.deleteIDModelloIstanzaRecordMedia(
+                        IDRecord, item.id, JSON.parse($fileControl.attr('data-options')).filetodelete
+                    );
                 });
 
                 $classContainer.find('.card.border-success').fadeIn('slow');

@@ -584,6 +584,9 @@ $(function () {
         var match = values.find(function (value) {
             return Number(value.IDAttributo) === Number(field.IDAttributo);
         });
+        if (match && match.CalculationError) {
+            return CalculatedFieldMath.errorMessage(new Error(match.CalculationError), user.LanguageContext);
+        }
         if (!match || match.Value == null) {
             return '';
         }
