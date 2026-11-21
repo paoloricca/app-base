@@ -26,6 +26,10 @@
         }, options);
 
         var plugin = $(this);
+        if (plugin.data('model-date-timer')) {
+            clearInterval(plugin.data('model-date-timer'));
+            plugin.removeData('model-date-timer');
+        }
         function bindFileUploadValueEvents($fileUpload, IDAttributo) {
             $fileUpload.off('onupload.modelRecordValues ondelete.modelRecordValues')
                 .on('onupload.modelRecordValues ondelete.modelRecordValues', function () {
@@ -925,6 +929,31 @@
             return [2, 3, 9].indexOf(Number(type)) !== -1;
         }
 
+        function calculationEqualLabel() {
+            var language = JSON.parse(plugin.attr('data-options')).user.LanguageContext;
+            return { IT: 'Uguale', GB: 'Equal', ES: 'Igual', CN: '等於' }[language] || 'Uguale';
+        }
+
+        function calculationFirstOperationMessage() {
+            var language = JSON.parse(plugin.attr('data-options')).user.LanguageContext;
+            return ({
+                IT: 'La prima operazione deve essere Uguale o Somma.',
+                GB: 'The first operation must be Equal or Add.',
+                ES: 'La primera operación debe ser Igual o Suma.',
+                CN: '第一個運算必須是等於或加法。'
+            })[language] || 'La prima operazione deve essere Uguale o Somma.';
+        }
+
+        function dateCalculationLabels() {
+            var language = JSON.parse(plugin.attr('data-options')).user.LanguageContext;
+            return ({
+                IT: ['Intervallo (Giorni)', 'Intervallo (Ore)', 'Intervallo (Minuti)', 'Data (Ora corrente)', 'Data (Stato Workflow)'],
+                GB: ['Interval (Days)', 'Interval (Hours)', 'Interval (Minutes)', 'Date (Current time)', 'Date (Workflow state)'],
+                ES: ['Intervalo (Días)', 'Intervalo (Horas)', 'Intervalo (Minutos)', 'Fecha (Hora actual)', 'Fecha (Estado del flujo)'],
+                CN: ['間隔（天）', '間隔（小時）', '間隔（分鐘）', '日期（目前時間）', '日期（工作流程狀態）']
+            })[language] || ['Intervallo (Giorni)', 'Intervallo (Ore)', 'Intervallo (Minuti)', 'Data (Ora corrente)', 'Data (Stato Workflow)'];
+        }
+
         function textCalculationLabels() {
             var language = JSON.parse(plugin.attr('data-options')).user.LanguageContext;
             return ({
@@ -939,7 +968,7 @@
 
         function updateCalculatedControls() {
             var type = Number(plugin.find('#IDTipoDati').val());
-            var supported = isNumericType(type) || type === 1;
+            var supported = isNumericType(type) || type === 1 || type === 4;
             var active = supported && plugin.find('#IsCalculated').prop('checked');
             plugin.find('.calculated-setting').toggle(supported);
             plugin.find('.calculated-configure').toggle(active);
@@ -974,6 +1003,7 @@
             var labels = calculationLabels();
             var $modal = plugin.find('#container-calculation-conditions');
             var text = $modal.data('text-calculation') === true;
+            var date = $modal.data('date-calculation') === true;
             var textLabels = textCalculationLabels();
             var $row = $('<tr>', { class: 'calculation-condition-row' });
             var $operation = $('<select>', {
@@ -984,16 +1014,29 @@
             }).appendTo($('<td>').appendTo($row));
             $operation.append(new Option(labels[0], ''));
             if (text) $operation.append(new Option(textLabels[0], '5'));
-            else labels.slice(1, 5).forEach(function (label, index) {
-                $operation.append(new Option(label, String(index + 1)));
-            });
+            else {
+                $operation.append(new Option(calculationEqualLabel(), '6'));
+                labels.slice(1, date ? 3 : 5).forEach(function (label, index) {
+                    $operation.append(new Option(label, String(index + 1)));
+                });
+            }
             $field.append(new Option(labels[0], ''));
             if (text) {
                 $field.append(new Option(textLabels[1], 'operator'));
                 $field.append(new Option(textLabels[2], 'process'));
                 $field.append(new Option(textLabels[3], 'operator_process'));
             }
-            ($modal.data('fields') || []).forEach(function (field) {
+            if (date) {
+                var dateLabels = dateCalculationLabels();
+                ['interval_days', 'interval_hours', 'interval_minutes', 'date_now'].forEach(function (source, index) {
+                    $field.append(new Option(dateLabels[index], source));
+                });
+                ($modal.data('date-states') || []).forEach(function (state) {
+                    $field.append(new Option(dateLabels[4] + ' - ' + state.Description,
+                        'date_state:' + state.IDEventoTransizione));
+                });
+            }
+            if (!date) ($modal.data('fields') || []).forEach(function (field) {
                 $field.append(new Option(field.Description, text ? 'field:' + field.IDAttributo : field.IDAttributo));
             });
             var $digits, $padding, $value;
@@ -1009,17 +1052,34 @@
                 $padding.append(new Option(textLabels[7], 'right'));
                 $value = $('<input>', { type: 'text', maxlength: 2, class: 'form-control form-control-sm calculation-fill', 'aria-label': textLabels[8] })
                     .appendTo($('<td>').appendTo($row));
+            } else if (date) {
+                $digits = $('<input>', {
+                    type: 'number', min: 0, max: 2147483647, step: 1,
+                    class: 'form-control form-control-sm calculation-digits', 'aria-label': textLabels[4]
+                }).appendTo($('<td>').appendTo($row));
+                $field.on('change', function () {
+                    var interval = /^interval_/.test($field.val() || '');
+                    $digits.prop('disabled', !interval).prop('required', interval);
+                    if (!interval) $digits.val('');
+                });
             }
             if (condition) {
                 $operation.val(String(condition.Operazione));
-                $field.val(text ? (condition.Sorgente === 'field'
-                    ? 'field:' + condition.IDAttributo : condition.Sorgente) : String(condition.IDAttributo));
+                $field.val(date ? (condition.Sorgente === 'date_state'
+                    ? 'date_state:' + condition.IDStatoWorkflow : condition.Sorgente) :
+                    text ? (condition.Sorgente === 'field'
+                        ? 'field:' + condition.IDAttributo : condition.Sorgente) : String(condition.IDAttributo));
+                if (date) {
+                    $field.trigger('change');
+                    if (!$digits.prop('disabled')) $digits.val(condition.Cifre);
+                }
                 if (text) {
                     $digits.val(String(condition.Cifre));
                     $padding.val(condition.SpaziVuoti);
                     $value.val(condition.Valore || '');
                 }
             }
+            if (date && !condition) $field.trigger('change');
             $('<button>', {
                 type: 'button', class: 'btn btn-outline-danger btn-sm btn-remove-calculation-condition',
                 'aria-label': labels[5]
@@ -1058,18 +1118,41 @@
             })
             .on('click.modelCalculationEditor', '.btn-configure-calculation', function () {
                 var $modal = plugin.find('#container-calculation-conditions');
-                var text = Number(plugin.find('#IDTipoDati').val()) === 1;
-                $modal.data('text-calculation', text);
-                $modal.find('.calculation-text-column').toggle(text);
-                $modal.data('fields', calculationFields());
-                $modal.find('.calculation-conditions-body').empty();
-                $modal.find('.calculation-conditions-feedback').addClass('d-none').text('');
-                if (calculationConditions.length) {
-                    calculationConditions.forEach(addCalculationRow);
-                } else {
-                    addCalculationRow(null);
+                var type = Number(plugin.find('#IDTipoDati').val());
+                var text = type === 1, date = type === 4;
+                function showConditions(states) {
+                    $modal.data('text-calculation', text).data('date-calculation', date);
+                    $modal.data('date-states', states || []);
+                    $modal.find('.calculation-text-column').toggle(text);
+                    $modal.find('.calculation-length-column').toggle(text || date);
+                    $modal.data('fields', calculationFields());
+                    $modal.find('.calculation-conditions-body').empty();
+                    $modal.find('.calculation-conditions-feedback').addClass('d-none').text('');
+                    if (calculationConditions.length) calculationConditions.forEach(addCalculationRow);
+                    else addCalculationRow(null);
+                    openCalculationConditionsModal($modal);
                 }
-                openCalculationConditionsModal($modal);
+                if (!date) return showConditions();
+                var options = JSON.parse(plugin.attr('data-options'));
+                var classId = plugin.find('#IDClasse').val();
+                var attributeId = plugin.find('#IDAttributo').val();
+                $.ajax({
+                    url: '/calculated-date/context', type: 'GET', dataType: 'json',
+                    data: calculationRequestData(options)
+                }).done(function (response) {
+                    if (Number(plugin.find('#IDTipoDati').val()) !== 4 ||
+                        plugin.find('#IDClasse').val() !== classId ||
+                        plugin.find('#IDAttributo').val() !== attributeId) return;
+                    if (!response || response.status !== 'OK' || !response.data ||
+                        !Array.isArray(response.data.States)) {
+                        ShowError(response && response.error && response.error.message ||
+                            'Unable to load workflow states.', 'model.calculation');
+                        return;
+                    }
+                    showConditions(response.data.States);
+                }).fail(function (xhr, status, error) {
+                    ShowError(xhr.responseText || error || status, 'model.calculation');
+                });
             })
             .on('click.modelCalculationEditor', '.btn-add-calculation-condition', function () {
                 addCalculationRow(null);
@@ -1083,8 +1166,21 @@
             .on('click.modelCalculationEditor', '.btn-save-calculation-conditions', function () {
                 var $modal = plugin.find('#container-calculation-conditions');
                 var text = $modal.data('text-calculation') === true;
+                var date = $modal.data('date-calculation') === true;
                 var conditions = $modal.find('.calculation-condition-row').map(function () {
                     var source = $(this).find('.calculation-field').val() || '';
+                    if (date) {
+                        var interval = /^interval_/.test(source);
+                        var length = $(this).find('.calculation-digits').val();
+                        return {
+                            Operazione: Number($(this).find('.calculation-operation').val()),
+                            Sorgente: source.indexOf('date_state:') === 0 ? 'date_state' : source,
+                            IDAttributo: null,
+                            IDStatoWorkflow: source.indexOf('date_state:') === 0 ? Number(source.slice(11)) : null,
+                            Cifre: interval && length !== '' ? Number(length) : null,
+                            SpaziVuoti: null, Valore: null
+                        };
+                    }
                     if (text) {
                         return {
                             Operazione: Number($(this).find('.calculation-operation').val()),
@@ -1100,10 +1196,32 @@
                         IDAttributo: Number(source)
                     };
                 }).get();
+                if (conditions.length && !text &&
+                    [1, 6].indexOf(conditions[0].Operazione) === -1) {
+                    $modal.find('.calculation-conditions-feedback')
+                        .text(calculationFirstOperationMessage()).removeClass('d-none');
+                    return;
+                }
+                if (date && conditions.length) {
+                    if (typeof CalculatedFieldMath === 'undefined' ||
+                        typeof CalculatedFieldMath.validateDateConditions !== 'function') {
+                        ShowError('Date calculation validation is unavailable.', 'model.calculation');
+                        return;
+                    }
+                    try {
+                        CalculatedFieldMath.validateDateConditions(conditions);
+                    } catch (error) {
+                        $modal.find('.calculation-conditions-feedback')
+                            .text(calculationLabels()[7]).removeClass('d-none');
+                        return;
+                    }
+                }
                 if (!conditions.length || (text && !conditions.some(function (condition) {
                     return condition.Sorgente === 'process' || condition.Sorgente === 'operator_process';
-                })) || conditions.some(function (condition) {
-                    if (!text) return !condition.IDAttributo || condition.Operazione < 1 || condition.Operazione > 4;
+                })) || conditions.some(function (condition, index) {
+                    if (date) return false;
+                    if (!text) return !condition.IDAttributo ||
+                        [1, 2, 3, 4, 6].indexOf(condition.Operazione) === -1;
                     return condition.Operazione !== 5 || !condition.Sorgente ||
                         (condition.Sorgente === 'field' && !condition.IDAttributo) ||
                         condition.Cifre < 2 || condition.Cifre > 20 || condition.Cifre % 2 !== 0 ||
@@ -1117,7 +1235,8 @@
                 closeCalculationConditionsModal($modal);
             });
 
-        var calculationState = { fields: {}, sections: {}, errors: [], requestId: 0, pending: false, textContext: null };
+        var calculationState = { fields: {}, sections: {}, errors: [], requestId: 0, pending: false,
+            textContext: null, dateContext: null, dateContextReceivedAt: 0 };
 
         function isCalculatedField(field) {
             return field.IsCalculated === true || field.IsCalculated === 1 || field.IsCalculated === '1';
@@ -1203,6 +1322,16 @@
                                 }
                             });
                         }
+                    } else if (Number(field.IDTipoDati) === 4) {
+                        if (!calculationState.dateContext) throw new Error('Calculation context is unavailable.');
+                        var now = Date.parse(calculationState.dateContext.Now + 'Z');
+                        if (!Number.isFinite(now)) throw new Error('Invalid calculation date.');
+                        var dateContext = $.extend({}, calculationState.dateContext, {
+                            Now: new Date(now + Math.max(0, Date.now() - calculationState.dateContextReceivedAt))
+                                .toISOString().slice(0, 19)
+                        });
+                        values[id] = CalculatedFieldMath.calculateDate(
+                            field.CalculationConditions, dateContext);
                     } else {
                         var precision = Number(field.IDTipoDati) === 2 ? 0 :
                             (field.LunghezzaDecimale == null || field.LunghezzaDecimale === ''
@@ -1254,6 +1383,8 @@
             var sections = {};
             var sources = {};
             var textContext = null;
+            var dateContext = null;
+            var dateContextReceivedAt = 0;
             plugin.find('[data-fieldlist]').each(function () {
                 var $section = $(this);
                 var attributes = $section.data('model-attributes') || [];
@@ -1330,13 +1461,42 @@
                     textContext = response.data;
                 }));
             }
+            if (Object.keys(fields).some(function (id) {
+                return isCalculatedField(fields[id]) && Number(fields[id].IDTipoDati) === 4;
+            })) {
+                requests.push($.ajax({
+                    url: '/calculated-date/context',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: calculationRequestData(options)
+                }).then(function (response) {
+                    if (!response || response.status !== 'OK') {
+                        throw new Error(response && response.error && response.error.message ||
+                            'Unable to load date calculation context.');
+                    }
+                    dateContext = response.data;
+                    dateContextReceivedAt = Date.now();
+                }));
+            }
             return $.when.apply($, requests).then(function () {
                 if (requestId !== calculationState.requestId) return;
                 calculationState.fields = fields;
                 calculationState.sections = sections;
                 calculationState.textContext = textContext;
+                calculationState.dateContext = dateContext;
+                calculationState.dateContextReceivedAt = dateContextReceivedAt;
                 updateCalculations();
                 calculationState.pending = false;
+                if (dateContext && !plugin.data('model-date-timer')) {
+                    plugin.data('model-date-timer', setInterval(function () {
+                        if (!document.documentElement.contains(plugin[0])) {
+                            clearInterval(plugin.data('model-date-timer'));
+                            plugin.removeData('model-date-timer');
+                            return;
+                        }
+                        if (!calculationState.pending) updateCalculations();
+                    }, 30000));
+                }
             }, function (error) {
                 if (requestId === calculationState.requestId) {
                     calculationState.errors = [error && error.message || 'Unable to load calculation values.'];
@@ -2536,9 +2696,10 @@
             try {
 
                 var type = Number(IDTipoDati);
-                if ((!isNumericType(type) && type !== 1) ||
+                if ((!isNumericType(type) && type !== 1 && type !== 4) ||
                     (previousCalculationType !== null &&
-                     (previousCalculationType === 1) !== (type === 1))) {
+                     (previousCalculationType === 1 ? 1 : previousCalculationType === 4 ? 4 : 2) !==
+                     (type === 1 ? 1 : type === 4 ? 4 : 2))) {
                     calculationConditions = [];
                     plugin.find('#IsCalculated').prop('checked', false);
                     closeCalculationConditionsModal(plugin.find('#container-calculation-conditions'));
@@ -2978,10 +3139,11 @@
                 plugin.find("#IsCalculated").prop("checked",
                     campo.IsCalculated === true || campo.IsCalculated === 1 || campo.IsCalculated === '1');
                 calculationConditions = (campo.CalculationConditions || []).map(function (condition) {
-                    if (Number(campo.IDTipoDati) === 1) return {
+                    if (Number(campo.IDTipoDati) === 1 || Number(campo.IDTipoDati) === 4) return {
                         IDAttributo: condition.IDAttributo == null ? null : Number(condition.IDAttributo),
                         Operazione: Number(condition.Operazione), Sorgente: condition.Sorgente,
-                        Cifre: condition.Cifre, SpaziVuoti: condition.SpaziVuoti, Valore: condition.Valore
+                        Cifre: condition.Cifre, SpaziVuoti: condition.SpaziVuoti, Valore: condition.Valore,
+                        IDStatoWorkflow: condition.IDStatoWorkflow
                     };
                     return { IDAttributo: Number(condition.IDAttributo), Operazione: Number(condition.Operazione) };
                 });
@@ -3165,6 +3327,7 @@
                 if (isCalculatedField(row)) {
                     plugin.find('#control_' + row.IDAttributo).prop('readonly', true)
                         .attr('aria-readonly', 'true').val('');
+                    if (Number(row.IDTipoDati) === 4) return;
                 }
                 if (options.ReadOnly !== true && options.Mode !== 'preview' && !isWorkflowFieldReadOnly(row)) {
                     return;
@@ -3276,8 +3439,10 @@
                                         /* DATA */
                                         if (row.IDTipoDati == 4) {
                                             plugin.find("#control_" + row.IDAttributo).val(RecordValue);
-                                            plugin.find("#control_" + row.IDAttributo)
-                                                .datepicker(datepickerOptions(options.user.LanguageContext));
+                                            if (!isCalculatedField(row)) {
+                                                plugin.find("#control_" + row.IDAttributo)
+                                                    .datepicker(datepickerOptions(options.user.LanguageContext));
+                                            }
                                         }
                                         /* BOOLEAN */
                                         if (row.IDTipoDati == 5) {
@@ -3376,8 +3541,10 @@
                                     }
                                     /* DATA */
                                     if (row.IDTipoDati == 4) {
-                                        plugin.find("#control_" + row.IDAttributo)
-                                            .datepicker(datepickerOptions(options.user.LanguageContext));
+                                        if (!isCalculatedField(row)) {
+                                            plugin.find("#control_" + row.IDAttributo)
+                                                .datepicker(datepickerOptions(options.user.LanguageContext));
+                                        }
                                     }
                                     /* BOOLEAN */
                                     if (row.IDTipoDati == 5) {
@@ -3547,7 +3714,7 @@
 
                     if (!fieldlist && options.ActionName === 'Modifica' && options.WorkflowRecordId &&
                         !(response.data || []).some(function (field) {
-                            return isCalculatedField(field) && Number(field.IDTipoDati) === 1;
+                            return isCalculatedField(field) && [1, 4].indexOf(Number(field.IDTipoDati)) !== -1;
                         })) {
                         plugin.trigger("onload");
                         $sectionLoader.hide();
@@ -3666,8 +3833,13 @@
                         : plugin.model.getIDModelloIstanzaRecord(options.IDModelloIstanza, IdClasse);
                 }
 
-                var hasCalculatedText = ($classContainer.data('model-attributes') || []).some(function (field) {
-                    return isCalculatedField(field) && Number(field.IDTipoDati) === 1;
+                var hasTransactionalCalculation = ($classContainer.data('model-attributes') || []).some(function (field) {
+                    return isCalculatedField(field) && [1, 4].indexOf(Number(field.IDTipoDati)) !== -1;
+                }) || Object.keys(calculationState.fields).some(function (id) {
+                    var field = calculationState.fields[id];
+                    return field.HasCalculatedDate === true || field.HasCalculatedDate === 1 ||
+                        field.HasCalculatedDate === '1' ||
+                        (isCalculatedField(field) && Number(field.IDTipoDati) === 4);
                 });
                 var sectionValues = [];
                 var mediaValues = [];
@@ -3679,7 +3851,7 @@
                     var IdTipoDati = control.data('idtipodati');
                     var recordValue = control.val();
                     recordValue = recordValue == null ? '' : String(recordValue);
-                    if (hasCalculatedText) {
+                    if (hasTransactionalCalculation) {
                         sectionValues.push({ IDAttributo: IDAttributo, Value: recordValue });
                     } else {
                         plugin.model.postIDModelloIstanzaRecord(IDRecord, IDAttributo, recordValue);
@@ -3689,7 +3861,7 @@
                     }
                 });
 
-                if (hasCalculatedText) {
+                if (hasTransactionalCalculation) {
                     var calculationRequest = calculationRequestData(options);
                     calculationRequest.classId = IdClasse;
                     calculationRequest.recordId = IDRecord;

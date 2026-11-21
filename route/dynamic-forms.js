@@ -141,7 +141,8 @@ router.post('/dynamic-forms/:IdProcesso/api/records', function (req, res) {
         req.body.filter
     ).then(async data => {
         await calculatedSummary.attachCalculatedSummaries(
-            data.rows, req.params.IdProcesso, req.session.user.IdAttore
+            data.rows, req.params.IdProcesso, req.session.user.IdAttore,
+            req.session.user.IdAccount, req.session.user.LanguageContext
         );
         res.status(200).json(new response('OK', data, null));
     })

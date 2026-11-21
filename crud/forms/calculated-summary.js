@@ -1,12 +1,13 @@
 const sql = require('mssql/msnodesqlv8');
 const connection = require('../../config.db');
 const math = require('../../controls/ux/calculated-fields');
+const calculatedText = require('./calculated-text');
 
 function isCalculated(field) {
     return field.IsCalculated === true || field.IsCalculated === 1 || field.IsCalculated === '1';
 }
 
-function applySummaryCalculations(rows, attributes, conditions, recordValues) {
+function applySummaryCalculations(rows, attributes, conditions, recordValues, dateContexts) {
     const fields = new Map(attributes.map(field => [Number(field.IDAttributo), field]));
     const summaries = attributes.filter(field => isCalculated(field) &&
         (field.IsSummary === true || field.IsSummary === 1 || field.IsSummary === '1') &&
@@ -67,10 +68,18 @@ function applySummaryCalculations(rows, attributes, conditions, recordValues) {
             if (!field) throw new Error('Calculation source ' + id + ' is unavailable.');
             visiting.add(id);
             try {
-                const precision = Number(field.IDTipoDati) === 2 ? 0 :
-                    (field.LunghezzaDecimale == null || field.LunghezzaDecimale === ''
-                        ? NaN : Number(field.LunghezzaDecimale));
-                const result = math.calculate(rules.get(id), sourceValues, precision);
+                let result;
+                if (Number(field.IDTipoDati) === 4) {
+                    const dateContext = dateContexts && dateContexts.get(Number(row.IDModelloIstanza));
+                    if (dateContext instanceof Error) throw dateContext;
+                    if (!dateContext) throw new Error('Date calculation context is unavailable.');
+                    result = math.calculateDate(rules.get(id), dateContext);
+                } else {
+                    const precision = Number(field.IDTipoDati) === 2 ? 0 :
+                        (field.LunghezzaDecimale == null || field.LunghezzaDecimale === ''
+                            ? NaN : Number(field.LunghezzaDecimale));
+                    result = math.calculate(rules.get(id), sourceValues, precision);
+                }
                 calculated.set(id, result);
                 return result;
             } finally {
@@ -91,7 +100,7 @@ function applySummaryCalculations(rows, attributes, conditions, recordValues) {
     return rows;
 }
 
-async function attachCalculatedSummaries(rows, processId, actorId) {
+async function attachCalculatedSummaries(rows, processId, actorId, accountId, language) {
     if (!rows.length) return rows;
     const ids = rows.map(row => Number(row.IDModelloIstanza));
     if (ids.some(id => !Number.isSafeInteger(id) || id <= 0)) {
@@ -113,14 +122,15 @@ async function attachCalculatedSummaries(rows, processId, actorId) {
                   AND A.IsCalculated = 1 AND ISNULL(C.NumeroCicliMin, 0) < 2
             )
             BEGIN
-                SELECT A.IDAttributo, A.IDClasse, A.IDTipoDati, A.IsCalculated,
+                SELECT A.IDAttributo, A.IDClasse, A.IDTipoDati, A.IsCalculated, C.IDVersione,
                        A.IsSummary, A.LunghezzaDecimale, C.NumeroCicliMin
                 FROM dbo.TModelliClassiAttributi A
                 JOIN dbo.TModelliClassi C ON C.IDClasse = A.IDClasse
                 WHERE C.IDVersione = @VersionId AND C.IsVisible = 1 AND C.Visibile = 1
-                  AND A.IsVisible = 1 AND A.Visibile = 1 AND A.IDTipoDati IN (2, 3, 9);
+                  AND A.IsVisible = 1 AND A.Visibile = 1 AND A.IDTipoDati IN (2, 3, 4, 9);
 
-                SELECT D.IDAttributoCalcolato, D.IDAttributo, D.Operazione
+                SELECT D.IDAttributoCalcolato, D.IDAttributo, D.Operazione,
+                       D.Sorgente, D.Cifre, D.IDStatoWorkflow
                 FROM dbo.TModelliClassiAttributiCondizioni D
                 JOIN dbo.TModelliClassiAttributi A ON A.IDAttributo = D.IDAttributoCalcolato
                 JOIN dbo.TModelliClassi C ON C.IDClasse = A.IDClasse
@@ -145,7 +155,24 @@ async function attachCalculatedSummaries(rows, processId, actorId) {
             END
         `);
     if (!result.recordsets.length) return rows;
-    return applySummaryCalculations(rows, result.recordsets[0], result.recordsets[1], result.recordsets[2]);
+    const dateField = result.recordsets[0].find(field => isCalculated(field) &&
+        Number(field.IDTipoDati) === 4 &&
+        (field.IsSummary === true || field.IsSummary === 1 || field.IsSummary === '1') &&
+        Number(field.NumeroCicliMin || 0) < 2);
+    const dateContexts = new Map();
+    if (dateField) {
+        await Promise.all(ids.map(async instanceId => {
+            try {
+                dateContexts.set(instanceId, await calculatedText.previewDate({
+                    versionId: dateField.IDVersione, processId, instanceId, actorId, accountId, language
+                }));
+            } catch (error) {
+                dateContexts.set(instanceId, error);
+            }
+        }));
+    }
+    return applySummaryCalculations(rows, result.recordsets[0], result.recordsets[1],
+        result.recordsets[2], dateContexts);
 }
 
 module.exports = { applySummaryCalculations, attachCalculatedSummaries };

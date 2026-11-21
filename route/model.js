@@ -36,7 +36,8 @@ function calculatedTextOptions(req, res, saving) {
         classId: data.classId, recordId: data.recordId,
         actorId: req.session.user.IdAttore, accountId: req.session.user.IdAccount,
         profileId: req.session.user.IDProfiloUtenteDefault,
-        groupId: req.session.user.IdGruppoOperativoDefault
+        groupId: req.session.user.IdGruppoOperativoDefault,
+        language: req.session.user.LanguageContext
     };
 }
 
@@ -45,6 +46,14 @@ model.get('/calculated-text/context', function (req, res) {
     const options = calculatedTextOptions(req, res, false);
     if (!options) return;
     calculatedText.preview(options).then(data => res.status(200).json(new response('OK', data, null)))
+        .catch(error => res.status(200).json(new response('ERR', null, { message: error.message })));
+});
+
+model.get('/calculated-date/context', function (req, res) {
+    if (!sessionUtil.verifyUser(req, res)) return;
+    const options = calculatedTextOptions(req, res, false);
+    if (!options) return;
+    calculatedText.previewDate(options).then(data => res.status(200).json(new response('OK', data, null)))
         .catch(error => res.status(200).json(new response('ERR', null, { message: error.message })));
 });
 
@@ -339,7 +348,7 @@ model.post('/post-idmodello-istanza-record', function (req, res) {
         res.set('Access-Control-Allow-Origin', '*');
         calculatedText.saveRegularValue({
             recordId: req.body.IdRecord, fieldId: req.body.IdAttributo,
-            accountId: req.session.user.IdAccount, value: req.body.RecordValue,
+            actorId: req.session.user.IdAttore, accountId: req.session.user.IdAccount, value: req.body.RecordValue,
             language: req.session.user.LanguageContext
         }).then(() => {
             res.status(200).json(new response('OK', 'OK', null));

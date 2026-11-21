@@ -83,7 +83,7 @@ $(function () {
         try {
 
             /* inizializza il controllo Model */
-            var formEdit = $('.container-form-edit');
+            var formEdit = $('#container-form-edit').find('.container-form-edit').first();
 
             $('.form-header').html($('.model-header').text());
             $('.form-header-version').text(Numero ? ' (' + Numero + ')' : '');

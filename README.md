@@ -18,8 +18,10 @@ Per aggiornare il database applicativo:
 
 Le condizioni precedenti prive di `IDAttributoCalcolato` non possono essere
 associate automaticamente a un campo calcolato e vanno verificate prima
-dell'uso. Le formule partono da zero, applicano le operazioni nell'ordine
-registrato e sommano i valori delle sezioni ripetute. I valori vuoti valgono
+dell'uso. Le formule numeriche iniziano con Uguale o Somma, applicano le
+operazioni nell'ordine registrato e sommano i valori delle sezioni ripetute.
+Uguale sostituisce il risultato precedente. Le formule esistenti che iniziano
+con un'altra operazione devono essere corrette. I valori vuoti valgono
 zero; una divisione per zero viene segnalata e blocca il salvataggio.
 Gli interi sono arrotondati all'intero piu vicino; decimali e valute usano le
 cifre decimali configurate sul campo. I risultati numerici sono derivati durante la
@@ -45,6 +47,48 @@ viene bloccato per evitare di attribuire progressivi a un processo errato.
 Il salvataggio dei valori della sezione e del testo calcolato e transazionale;
 gli eventuali allegati sono gestiti separatamente. La generazione usa un
 blocco sulla tabella delle istanze e puo rallentare salvataggi concorrenti.
+
+I campi Data calcolati usano l'ora corrente del server oppure la data di uno
+stato visibile del workflow. Nella differenza tra due date, lo stato che
+fornisce il minuendo usa l'ultimo ingresso e lo stato sottratto il primo,
+anche se sono presenti intervalli intermedi. Senza una successiva sottrazione
+tra date si usa il primo ingresso. Uguale a una data avvia un nuovo segmento
+di calcolo. Se lo stato non e ancora stato raggiunto il risultato resta vuoto.
+Le condizioni sono eseguite in
+ordine: la prima operazione e Uguale o Somma; un intervallo iniziale parte
+dall'ora corrente. Sottraendo una data da un'altra si ottiene una durata,
+visualizzata come `N giorni hh:mm`, con segno negativo se necessario e minuti
+interi troncati verso zero. Gli intervalli successivi sommano o sottraggono
+alla data o alla durata; Uguale a una data ripristina un risultato di tipo data.
+Non si possono sommare due date o sottrarre una data da una durata. La lunghezza
+e un intero non negativo espresso in giorni, ore o minuti secondo la sorgente.
+I risultati sono in sola lettura; le date usano `gg/mm/aaaa hh:mm`.
+
+Per configurare una data calcolata il modello deve essere associato a un solo
+processo. Gli stati si riferiscono agli identificativi della versione workflow
+configurata: per un'istanza associata a una versione diversa non vengono
+abbinati stati omonimi. Il salvataggio ricalcola le date lato server nella
+stessa transazione dei valori della sezione; gli allegati e la creazione
+iniziale dei record di sezione restano operazioni separate.
+Per i record workflow precedenti alla migrazione, il collegamento viene
+risolto tramite l'oggetto configurato sul processo. Una storia legacy senza
+versione associata viene usata solo quando versione e processo sono
+identificabili senza ambiguita.
+Il riepilogo ricalcola le date per ogni istanza utilizzando lo stesso contesto
+workflow; gli stati non raggiunti producono una cella vuota e gli errori sono
+mostrati nella cella.
+
+Applicare nell'ordine [forms-calculated-fields.sql](sql/forms-calculated-fields.sql)
+e [forms-version.sql](sql/forms-version.sql): il primo aggiunge
+`IDStatoWorkflow` e aggiorna `SP_POST_ATTRIBUTE_CALCULATED`; il secondo
+aggiorna `SP_POST_FORMS_VERSION` per copiare le condizioni delle date.
+
+Test mirati: `node --test tests\calculated-numeric-start.test.js
+tests\calculated-date.test.js tests\calculated-date-editor.test.js
+tests\calculated-date-summary.test.js`.
+Il test SQL isolato crea e rimuove una propria istanza LocalDB e un database
+temporaneo: `$env:CALCULATED_SQL_TEST='1'; node --test
+tests\calculated-date-sql.test.js`.
 
 Test mirati: `node --test tests\calculated-fields.test.js
 tests\calculated-fields-ui.test.js tests\calculated-fields-route.test.js
