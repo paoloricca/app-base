@@ -145,8 +145,8 @@
             $header.attr('aria-expanded', String(!isExpanded))
                 .find('.model-section-toggle')
                 .html(isExpanded
-                    ? '<i class="bi bi-folder-plus"></i>'
-                    : '<i class="bi bi-folder-minus"></i>');
+                    ? '<i class="bi bi-chevron-down"></i>'
+                    : '<i class="bi bi-chevron-up"></i>');
         }
         function updateMultipleEntryValidation(modal, languageContext) {
             var enabled = modal.find('#class-InserimentoMultiplo').prop('checked');
