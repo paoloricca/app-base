@@ -12,6 +12,59 @@ const realtime = require('../utils/workflow-chat-realtime');
 const router = express.Router();
 const storage = path.join(__dirname, '..', 'files', '.workflow-chat');
 const maxFileSize = 10 * 1024 * 1024;
+const attachmentAccessLifetime = 5 * 60 * 1000;
+
+function attachmentAccessKey(c) {
+    return `${c.process}:${c.record}`;
+}
+
+function rememberAttachmentAccess(req, c, attachments) {
+    const grants = req.session.workflowAttachmentAccess || {};
+    const now = Date.now();
+    Object.keys(grants).forEach(key => {
+        if (!grants[key] || grants[key].expiresAt <= now) delete grants[key];
+    });
+    grants[attachmentAccessKey(c)] = {
+        expiresAt: now + attachmentAccessLifetime,
+        files: attachments.reduce((result, file) => {
+            result[file.IDAllegato] = {
+                NomeFileOriginale: file.NomeFileOriginale,
+                NomeFileStorage: file.NomeFileStorage,
+                PercorsoFile: file.PercorsoFile,
+                MimeType: file.MimeType
+            };
+            return result;
+        }, {})
+    };
+    req.session.workflowAttachmentAccess = grants;
+}
+
+function grantedAttachment(req, c, id) {
+    const grants = req.session.workflowAttachmentAccess;
+    const grant = grants && grants[attachmentAccessKey(c)];
+    if (!grant || grant.expiresAt <= Date.now()) return null;
+    return grant.files && grant.files[id] || null;
+}
+
+async function workflowAttachmentPath(file) {
+    const candidates = [file.NomeFileStorage, file.PercorsoFile];
+    const roots = [storage, path.join(__dirname, '..', 'files')];
+    for (const candidate of candidates) {
+        if (typeof candidate !== 'string') continue;
+        const name = path.basename(candidate);
+        if (!/^[a-f0-9]{48}$/.test(name)) continue;
+        for (const root of roots) {
+            const target = path.join(root, name);
+            try {
+                const stat = await fs.promises.stat(target);
+                if (stat.isFile()) return target;
+            } catch (error) {
+                if (error.code !== 'ENOENT' && error.code !== 'ENOTDIR') throw error;
+            }
+        }
+    }
+    throw new Error('File allegato non disponibile.');
+}
 
 function positive(value) {
     const n = Number(value);
@@ -161,7 +214,8 @@ router.get('/workflow-chat/:process/:record', async (req, res) => {
                 .input('IdRecord', sql.Int, c.record).input('IdProcesso', sql.Int, c.process)
                 .input('LanguageContext', sql.VarChar(2), language)
                 .output('Status', sql.VarChar(500)).execute('SP_GET_WORKFLOW_HISTORY');
-            if (history.output.Status !== 'OK') throw new Error(history.output.Status || 'Errore nella storia.');
+            const historyStatus = history.output && history.output.Status;
+            if (historyStatus !== 'OK') throw new Error(historyStatus || 'Errore nella storia.');
             const messages = await new sql.Request(transaction)
                 .input('Record', sql.Int, c.record).input('Version', sql.Int, state.Version)
                 .query(`SELECT M.IDMessaggio, M.IDEventoStato, M.IDMittente, M.TestoMessaggio, M.DataInvio,
@@ -173,7 +227,8 @@ router.get('/workflow-chat/:process/:record', async (req, res) => {
                         WHERE S.IDRecord = @Record AND N.IDVersioneWorkflow = @Version
                           AND S.IsVisible = 1 AND M.IsDeleted = 0
                         ORDER BY M.DataInvio, M.IDMessaggio;
-                        SELECT A.IDAllegato, A.IDMessaggio, A.NomeFileOriginale, A.MimeType, A.DimensioneBytes
+                        SELECT A.IDAllegato, A.IDMessaggio, A.NomeFileOriginale, A.NomeFileStorage,
+                               A.PercorsoFile, A.MimeType, A.DimensioneBytes
                         FROM dbo.TEventiStatiAllegati A
                         JOIN dbo.TEventiStatiMessaggi M ON M.IDMessaggio = A.IDMessaggio
                         JOIN dbo.TEventiStati S ON S.IDEventoStato = M.IDEventoStato
@@ -183,10 +238,24 @@ router.get('/workflow-chat/:process/:record', async (req, res) => {
             await new sql.Request(transaction).input('IDAccount', sql.Int, c.account)
                 .input('IDProcesso', sql.Int, c.process).input('IDRecord', sql.Int, c.record)
                 .execute('SP_READ_WORKFLOW_CHAT_NOTIFICATIONS');
-            return { history: history.recordset || [], messages: messages.recordsets[0],
-                attachments: messages.recordsets[1], currentState: state.IDStato, canWrite: state.CanWrite };
+            const attachments = (messages.recordsets && messages.recordsets[1]) || [];
+            rememberAttachmentAccess(req, c, attachments);
+            return {
+                history: history.recordset || [],
+                messages: (messages.recordsets && messages.recordsets[0]) || [],
+                attachments: attachments.map(file => ({
+                    IDAllegato: file.IDAllegato,
+                    IDMessaggio: file.IDMessaggio,
+                    NomeFileOriginale: file.NomeFileOriginale,
+                    MimeType: file.MimeType,
+                    DimensioneBytes: file.DimensioneBytes
+                })),
+                currentState: state.IDStato,
+                canWrite: state.CanWrite
+            };
         });
         publish(c.account, 'chat_notifications_read', { process: c.process, record: c.record });
+        res.set('Cache-Control', 'private, no-store');
         res.json({ status: 'OK', data });
     } catch (error) { fail(res, error); }
 });
@@ -261,10 +330,10 @@ router.get('/workflow-chat/:process/:record/attachment/:attachment', async (req,
     try {
         const c = context(req);
         const id = positive(req.params.attachment);
-        const file = await readInTransaction(c, async (transaction, state) => {
+        const file = grantedAttachment(req, c, id) || await readInTransaction(c, async (transaction, state) => {
             const result = await new sql.Request(transaction).input('ID', sql.Int, id)
                 .input('Record', sql.Int, c.record).input('Version', sql.Int, state.Version)
-                .query(`SELECT A.NomeFileOriginale, A.NomeFileStorage, A.MimeType
+                .query(`SELECT A.NomeFileOriginale, A.NomeFileStorage, A.PercorsoFile, A.MimeType
                         FROM dbo.TEventiStatiAllegati A
                         JOIN dbo.TEventiStatiMessaggi M ON M.IDMessaggio = A.IDMessaggio
                         JOIN dbo.TEventiStati S ON S.IDEventoStato = M.IDEventoStato
@@ -274,13 +343,19 @@ router.get('/workflow-chat/:process/:record/attachment/:attachment', async (req,
             if (result.recordset.length !== 1) throw new Error('Allegato non disponibile.');
             return result.recordset[0];
         });
-        if (!/^[a-f0-9]{48}$/.test(file.NomeFileStorage)) throw new Error('Allegato non valido.');
+        const filePath = await workflowAttachmentPath(file);
+        const fileStat = await fs.promises.stat(filePath);
+        const detectedMimeType = await identifyFile({
+            filepath: filePath,
+            size: fileStat.size
+        }, maxFileSize);
         res.set('X-Content-Type-Options', 'nosniff');
-        res.set('Cache-Control', 'private, no-store');
-        if (req.query.download === '1' || !file.MimeType.startsWith('image/')) {
-            return res.download(path.join(storage, file.NomeFileStorage), file.NomeFileOriginale);
+        res.set('Cache-Control', 'private, max-age=300');
+        const mimeType = detectedMimeType;
+        if (req.query.download === '1' || !mimeType.startsWith('image/')) {
+            return res.download(filePath, file.NomeFileOriginale);
         }
-        res.type(file.MimeType).sendFile(path.join(storage, file.NomeFileStorage));
+        res.type(mimeType).sendFile(filePath);
     } catch (error) { fail(res, error); }
 });
 

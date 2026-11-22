@@ -43,10 +43,13 @@
                     type: 'GET'
                 });
             }).then(function (response) {
-                if (response.status !== "OK") {
-                    var error = response.error || {};
-                    ShowError(error.message || 'Unable to load workflow history.', error.sender || 'loadHistory');
-                    return $.Deferred().reject(error).promise();
+                if (!response || response.status !== "OK") {
+                    var error = response && response.error || {};
+                    var message = error.message || 'Unable to load workflow history.';
+                    ShowError(message, error.sender || 'loadHistory');
+                    return $.Deferred().reject(error instanceof Error
+                        ? error
+                        : new Error(message)).promise();
                 }
 
                 var $history = plugin.find('.container-workflow-history-' + optionsWorkflowHistory.IdRecord);
@@ -60,7 +63,7 @@
                 $history.empty();
                 var data = response.data;
                 var $composer = plugin.find('.workflow-chat-composer').prop('hidden', true);
-                if (!data || !data.history.length) {
+                if (!data || !Array.isArray(data.history) || !data.history.length) {
                     return plugin;
                 }
 
@@ -77,7 +80,7 @@
                             });
                             $history.append(partialToRender);
                         });
-                        $.each(data.messages, function (_, message) {
+                        $.each(data.messages || [], function (_, message) {
                             var $state = $history.find('[data-event-state="' + Number(message.IDEventoStato) + '"]');
                             var $item = $('<div>', { class: 'workflow-chat-message-item' });
                             $('<i>', { class: 'bi bi-chat workflow-chat-marker', 'aria-hidden': 'true' }).appendTo($item);
@@ -89,14 +92,33 @@
                             if (message.TestoMessaggio) {
                                 $('<div>', { class: 'workflow-chat-message-text' }).text(message.TestoMessaggio).appendTo($message);
                             }
-                            $.each(data.attachments.filter(function (file) { return file.IDMessaggio === message.IDMessaggio; }), function (_, file) {
+                            $.each((data.attachments || []).filter(function (file) { return file.IDMessaggio === message.IDMessaggio; }), function (_, file) {
                                 var url = '/workflow-chat/' + encodeURIComponent(optionsWorkflowHistory.IdProcesso) + '/' +
                                     encodeURIComponent(optionsWorkflowHistory.IdRecord) + '/attachment/' + encodeURIComponent(file.IDAllegato);
                                 var $attachment = $('<div>', { class: 'workflow-chat-attachment' }).appendTo($message);
-                                if (file.MimeType.indexOf('image/') === 0) {
+                                var mimeType = String(file.MimeType || '').trim().toLowerCase();
+                                var fileName = String(file.NomeFileOriginale || '');
+                                var isImage = mimeType.indexOf('image/') === 0 ||
+                                    /\.(png|jpe?g|gif|webp)$/i.test(fileName);
+                                if (isImage) {
+                                    var $preview = $('<img>', {
+                                        'data-workflow-history-src': url,
+                                        alt: file.NomeFileOriginale,
+                                        decoding: 'async',
+                                        fetchpriority: 'high'
+                                    }).on('error.workflowhistory', function () {
+                                        var $image = $(this);
+                                        if (!$image.data('workflowhistoryRetried')) {
+                                            $image.data('workflowhistoryRetried', true);
+                                            setTimeout(function () {
+                                                $image.attr('src', url + '?preview=' + Date.now());
+                                            }, 150);
+                                            return;
+                                        }
+                                        $image.removeAttr('src').prop('hidden', true);
+                                    });
                                     $('<a>', { href: url, target: '_blank', rel: 'noopener noreferrer' })
-                                        .append($('<img>', { src: url, alt: file.NomeFileOriginale, loading: 'lazy' }))
-                                        .appendTo($attachment);
+                                        .append($preview).appendTo($attachment);
                                 }
                                 $('<a>', { href: url + '?download=1', text: file.NomeFileOriginale, download: '' }).appendTo($attachment);
                             });
@@ -106,6 +128,13 @@
                             $state.find('.workflow-history-toggle').attr('aria-expanded', String(expanded))
                                 .find('i').toggleClass('bi-chevron-down', expanded).toggleClass('bi-chevron-right', !expanded);
                             $state.find('.workflow-history-content').prop('hidden', !expanded);
+                            if (expanded) {
+                                $state.find('img[data-workflow-history-src]').each(function () {
+                                    var $image = $(this);
+                                    $image.attr('src', $image.attr('data-workflow-history-src'))
+                                        .removeAttr('data-workflow-history-src');
+                                });
+                            }
                         }
                         $history.off('click.workflowhistory', '.workflow-history-toggle')
                             .on('click.workflowhistory', '.workflow-history-toggle', function () {
