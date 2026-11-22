@@ -32,7 +32,10 @@ $(function () {
                 previous: 'Precedente', next: 'Successiva', page: 'Pagina',
                 of: 'di', total: 'Record Totali',
                 error: 'Errore durante il caricamento dei dati.', invalidId: 'ID non valido.',
-                recordUnavailable: 'Richiesta non trovata o non autorizzata.'
+                recordUnavailable: 'Richiesta non trovata o non autorizzata.',
+                export: 'Esporta', exportExcel: 'Esporta Excel', exportPdf: 'Esporta PDF',
+                generating: 'Generazione in corso',
+                exportError: 'Errore durante l\'esportazione dei dati.'
             },
             GB: {
                 id: 'ID', creator: 'Created by', status: 'Status', actions: 'Actions', insert: 'Add', read: 'View',
@@ -44,7 +47,10 @@ $(function () {
                 previous: 'Previous', next: 'Next', page: 'Page',
                 of: 'of', total: 'Total records',
                 error: 'An error occurred while loading data.', invalidId: 'Invalid ID.',
-                recordUnavailable: 'Request not found or access denied.'
+                recordUnavailable: 'Request not found or access denied.',
+                export: 'Export', exportExcel: 'Export Excel', exportPdf: 'Export PDF',
+                generating: 'Generating file',
+                exportError: 'An error occurred while exporting data.'
             },
             ES: {
                 id: 'ID', creator: 'Creado por', status: 'Estado', actions: 'Acciones', insert: 'Añadir', read: 'Ver',
@@ -56,7 +62,10 @@ $(function () {
                 previous: 'Anterior', next: 'Siguiente', page: 'Página',
                 of: 'de', total: 'Registros totales',
                 error: 'Se produjo un error al cargar los datos.', invalidId: 'ID no válido.',
-                recordUnavailable: 'Solicitud no encontrada o acceso denegado.'
+                recordUnavailable: 'Solicitud no encontrada o acceso denegado.',
+                export: 'Exportar', exportExcel: 'Exportar Excel', exportPdf: 'Exportar PDF',
+                generating: 'Generación en curso',
+                exportError: 'Se produjo un error al exportar los datos.'
             },
             CN: {
                 id: 'ID', creator: '创建者', status: '状态', actions: '操作', insert: '新增', read: '查看',
@@ -68,7 +77,10 @@ $(function () {
                 previous: '上一页', next: '下一页', page: '页',
                 of: '/', total: '记录总数',
                 error: '加载数据时发生错误。', invalidId: 'ID 无效。',
-                recordUnavailable: '找不到请求或无权访问。'
+                recordUnavailable: '找不到请求或无权访问。',
+                export: '导出', exportExcel: '导出 Excel', exportPdf: '导出 PDF',
+                generating: '正在生成文件',
+                exportError: '导出数据时发生错误。'
             }
         };
         return (labels[user.LanguageContext] || labels.GB)[key];
@@ -159,6 +171,98 @@ $(function () {
     function isAuthorized(actionName) {
         var action = getAction(actionName);
         return !!action && (action.IsAuthorized === true || action.IsAuthorized === 1);
+    }
+
+    function isActionEnabled(action) {
+        return action && (action.IsAuthorized === true || action.IsAuthorized === 1);
+    }
+
+    function isPrimaryAction(action) {
+        return action && (action.IsPrimary === true || action.IsPrimary === 1 ||
+            action.IsPrimary === '1');
+    }
+
+    function exportActionFormat(action) {
+        var identity = [action.ActionName, action.Description].map(function (value) {
+            return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        });
+        if (identity.some(function (value) {
+            return value.indexOf('excel') !== -1 || value.indexOf('xlsx') !== -1;
+        })) {
+            return 'excel';
+        }
+        if (identity.some(function (value) {
+            return value.indexOf('pdf') !== -1;
+        })) {
+            return 'pdf';
+        }
+        return null;
+    }
+
+    function exportFileName(xhr, format) {
+        var disposition = xhr.getResponseHeader('Content-Disposition') || '';
+        var encodedMatch = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
+        if (encodedMatch) {
+            try {
+                return decodeURIComponent(encodedMatch[1].replace(/^"|"$/g, ''));
+            } catch (error) {
+            }
+        }
+        var match = /filename="?([^";]+)"?/i.exec(disposition);
+        return match ? match[1] : 'dynamic-forms-export.' + (format === 'pdf' ? 'pdf' : 'xlsx');
+    }
+
+    function exportButtonContent() {
+        return '<i class="bi bi-download" aria-hidden="true"></i>&nbsp;&nbsp;' +
+            escapeHtml(text('export'));
+    }
+
+    function setExportLoading(format, loading) {
+        var $overlay = $('#dynamic-form-export-loading');
+        $overlay.toggleClass('d-none', !loading)
+            .attr('aria-hidden', loading ? 'false' : 'true');
+        if (loading) {
+            $overlay.find('.dynamic-form-export-loader')
+                .removeClass('excel pdf')
+                .addClass(format);
+            $overlay.find('.dynamic-form-export-loader-icon')
+                .removeClass('bi-file-earmark-excel bi-file-earmark-pdf')
+                .addClass('bi-file-earmark-' + format);
+            $overlay.find('.dynamic-form-export-loader-extension').text(
+                format === 'pdf' ? 'PDF' : 'EXCEL'
+            );
+            $overlay.find('.dynamic-form-export-loading-text').text(text('generating'));
+        }
+        $('.dynamic-form-export, .dynamic-form-export-option')
+            .prop('disabled', loading)
+            .toggleClass('disabled', loading);
+    }
+
+    function downloadExport(format) {
+        if ($('#dynamic-form-export-loading').hasClass('d-none') === false) {
+            return;
+        }
+        setExportLoading(format, true);
+        $.ajax({
+            type: 'POST',
+            url: apiBase + '/export/' + encodeURIComponent(format),
+            data: { filter: activeFilter },
+            xhrFields: { responseType: 'blob' }
+        }).done(function (blob, status, xhr) {
+            var url = URL.createObjectURL(blob);
+            var $link = $('<a>', {
+                href: url,
+                download: exportFileName(xhr, format),
+                class: 'd-none'
+            }).appendTo('body');
+            $link[0].click();
+            $link.remove();
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        }).fail(function (xhr) {
+            ShowError(text('exportError'), 'dynamic-form-export');
+        }).always(function () {
+            setExportLoading(format, false);
+        });
     }
 
     function actionIcon(actionName) {
@@ -436,8 +540,55 @@ $(function () {
                 type: 'button',
                 class: 'btn btn-primary dynamic-form-insert' + (insertAllowed ? '' : ' disabled'),
                 disabled: !insertAllowed,
-                text: insertAction.Description || text('insert')
+                html: '<i class="bi bi-plus-lg" aria-hidden="true"></i>&nbsp;&nbsp;' +
+                    escapeHtml(insertAction.Description || text('insert'))
             }).appendTo($insert);
+        }
+
+        var exportActions = actions.filter(function (action) {
+            return isActionEnabled(action) && isPrimaryAction(action) && exportActionFormat(action);
+        }).filter(function (action, index, list) {
+            return list.findIndex(function (item) {
+                return exportActionFormat(item) === exportActionFormat(action);
+            }) === index;
+        });
+        var $export = $('.dynamic-form-export-action').empty();
+        if (exportActions.length === 1) {
+            var format = exportActionFormat(exportActions[0]);
+            $('<button>', {
+                type: 'button',
+                class: 'btn btn-success dynamic-form-export',
+                html: exportButtonContent()
+            }).on('click', function () {
+                downloadExport(format);
+            }).appendTo($export);
+        } else if (exportActions.length > 1) {
+            var $group = $('<div>', { class: 'btn-group' }).appendTo($export);
+            var $toggle = $('<button>', {
+                type: 'button',
+                class: 'btn btn-success dropdown-toggle dynamic-form-export',
+                'data-bs-toggle': 'dropdown',
+                'aria-expanded': 'false',
+                html: exportButtonContent()
+            }).appendTo($group);
+            var $menu = $('<ul>', { class: 'dropdown-menu dropdown-menu-end' }).appendTo($group);
+            exportActions.forEach(function (action) {
+                var actionFormat = exportActionFormat(action);
+                $('<li>').append(
+                    $('<button>', {
+                        type: 'button',
+                        class: 'dropdown-item dynamic-form-export-option',
+                        html: '<i class="bi bi-file-earmark-' +
+                            (actionFormat === 'pdf' ? 'pdf' : 'excel') +
+                            '" aria-hidden="true"></i>&nbsp;&nbsp;' +
+                            escapeHtml(action.Description ||
+                                (actionFormat === 'pdf' ? text('exportPdf') : text('exportExcel')))
+                    }).on('click', function (event) {
+                        event.preventDefault();
+                        downloadExport(actionFormat);
+                    })
+                ).appendTo($menu);
+            });
         }
     }
 

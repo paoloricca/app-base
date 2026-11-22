@@ -80,7 +80,10 @@
                         <% if (user.LanguageContext == 'ES') { %>Resumen<% } %>
                         <% if (user.LanguageContext == 'CN') { %>摘要<% } %>
                     </b>
-                    <span class="dynamic-form-insert-action"></span>
+                    <span class="dynamic-form-header-actions">
+                        <span class="dynamic-form-insert-action"></span>
+                        <span class="dynamic-form-export-action"></span>
+                    </span>
                     <button type="button" class="btn btn-light bi bi-sliders float-end btn-filter-open"
                         data-bs-toggle="tooltip"
                         data-bs-title="<% if (user.LanguageContext == 'IT') { %>Visualizza filtro<% } %><% if (user.LanguageContext == 'GB') { %>Show filter<% } %><% if (user.LanguageContext == 'ES') { %>Mostrar filtro<% } %><% if (user.LanguageContext == 'CN') { %>显示筛选器<% } %>"></button>
@@ -236,6 +239,16 @@
                 <% if (user.LanguageContext == 'ES') { %>Cargando...<% } %>
                 <% if (user.LanguageContext == 'CN') { %>加载中...<% } %>
             </span>
+        </div>
+    </div>
+    <div id="dynamic-form-export-loading" class="dynamic-form-export-loading-overlay d-none"
+        role="status" aria-live="polite" aria-hidden="true">
+        <div class="dynamic-form-export-loading-card">
+            <div class="dynamic-form-export-loader excel" aria-hidden="true">
+                <i class="bi bi-file-earmark-excel dynamic-form-export-loader-icon"></i>
+                <span class="dynamic-form-export-loader-extension">EXCEL</span>
+            </div>
+            <div class="dynamic-form-export-loading-text">Generazione in corso</div>
         </div>
     </div>
     <div class="modal fade" id="dynamic-form-workflow-modal" tabindex="-1" aria-hidden="true">

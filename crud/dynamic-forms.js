@@ -1,6 +1,8 @@
 const sql = require('mssql/msnodesqlv8');
 const exception = require('../model/exception');
 const connection = require('../config.db');
+const calculatedSummary = require('./forms/calculated-summary');
+const calculatedMath = require('../controls/ux/calculated-fields');
 
 function executeProcedure(procedureName, inputs, outputs) {
     const sender = procedureName;
@@ -87,8 +89,27 @@ function getActions(IdProcesso, IdAccount, LanguageContext) {
         IdProcesso: intInput(IdProcesso),
         IdAccount: intInput(IdAccount),
         LanguageContext: stringInput(LanguageContext, 2)
-    }).then(function (result) {
-        return result.recordset || [];
+    }).then(async function (result) {
+        const actions = result.recordset || [];
+        if (!actions.length) return actions;
+        const pool = await sql.connect(connection);
+        const primaryResult = await new sql.Request(pool)
+            .input('IdProcesso', sql.Int, Number(IdProcesso))
+            .query(`
+                SELECT C.IDProcessoAzione, A.IsPrimary
+                FROM dbo.TProcessiAzioniCustom AS C
+                INNER JOIN dbo.TProcessiAzioni AS A
+                    ON A.IDProcessoAzione = C.IDProcessoAzione
+                WHERE C.IDProcesso = @IdProcesso
+            `);
+        const primaryById = new Map(primaryResult.recordset.map(action => [
+            Number(action.IDProcessoAzione),
+            action.IsPrimary === true || action.IsPrimary === 1
+        ]));
+        return actions.map(action => ({
+            ...action,
+            IsPrimary: primaryById.get(Number(action.IDProcessoAzione)) === true
+        }));
     });
 }
 
@@ -120,6 +141,78 @@ function getRecords(IdProcesso, IdAttore, IdAccount, IdProfiloUtente, pageIndex,
                 : 0
         };
     });
+}
+
+function exportSummaryValue(row, field, language) {
+    let values;
+    try {
+        values = row.SummaryJson ? JSON.parse(row.SummaryJson) : [];
+    } catch (error) {
+        throw new Error('Invalid summary data returned for record ' + row.IDModelloIstanza + '.');
+    }
+    if (!Array.isArray(values)) {
+        throw new Error('Invalid summary data returned for record ' + row.IDModelloIstanza + '.');
+    }
+    const match = values.find(value => Number(value.IDAttributo) === Number(field.IDAttributo));
+    if (match && match.CalculationError) {
+        return calculatedMath.errorMessage(new Error(match.CalculationError), language);
+    }
+    return match && match.Value != null ? match.Value : '';
+}
+
+async function getExportData(
+    IdProcesso, IdAttore, IdAccount, IdProfiloUtente, LanguageContext, filter
+) {
+    const exportLabels = {
+        IT: { id: 'ID', creator: 'Creato da', status: 'Stato', total: 'Record totali' },
+        GB: { id: 'ID', creator: 'Created by', status: 'Status', total: 'Total records' },
+        ES: { id: 'ID', creator: 'Creado por', status: 'Estado', total: 'Registros totales' },
+        CN: { id: 'ID', creator: '创建者', status: '状态', total: '记录总数' }
+    };
+    const labels = exportLabels[LanguageContext] || exportLabels.GB;
+    const fields = (await getFields(IdProcesso, IdAccount, LanguageContext))
+        .filter(field => field.IsSummary === true || field.IsSummary === 1 || field.IsSummary === '1');
+    const process = await getProcessPage(IdProcesso, IdAccount, LanguageContext);
+    if (!process) throw new Error('Process not found or access denied.');
+
+    const pageSize = 100;
+    const rows = [];
+    let pageIndex = 1;
+    let totalRecord = 0;
+    do {
+        const page = await getRecords(
+            IdProcesso, IdAttore, IdAccount, IdProfiloUtente,
+            pageIndex, pageSize, LanguageContext, filter
+        );
+        await calculatedSummary.attachCalculatedSummaries(
+            page.rows, IdProcesso, IdAttore, IdAccount, LanguageContext
+        );
+        rows.push(...page.rows);
+        totalRecord = Number(page.totalRecord) || rows.length;
+        pageIndex++;
+        if (page.rows.length < pageSize) break;
+    } while (rows.length < totalRecord);
+
+    const columns = [
+        { key: 'id', label: labels.id },
+        { key: 'creator', label: labels.creator },
+        ...fields.map(field => ({
+            key: 'field-' + field.IDAttributo,
+            label: field.Description || ''
+        })),
+        { key: 'status', label: labels.status }
+    ];
+    const records = rows.map(row => {
+        const values = [
+            row.IDModelloIstanza,
+            row.CreatedBy || '',
+            ...fields.map(field => exportSummaryValue(row, field, LanguageContext)),
+            row.CurrentState || ''
+        ];
+        return Object.fromEntries(columns.map((column, index) => [column.key, values[index]]));
+    });
+
+    return { process, columns, records, totalLabel: labels.total };
 }
 
 function getModelClasses(IdProcesso, IdVersione, IdAccount, LanguageContext) {
@@ -340,6 +433,7 @@ module.exports = {
     getActions,
     getStates,
     getRecords,
+    getExportData,
     getModelClasses,
     getClassAttributes,
     getAttributeValues,
