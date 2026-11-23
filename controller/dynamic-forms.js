@@ -23,8 +23,13 @@ $(function () {
     function text(key) {
         var labels = {
             IT: {
-                id: 'ID', creator: 'Creato da', status: 'Stato', actions: 'Azioni', insert: 'Inserisci', read: 'Visualizza',
+                id: 'ID', creator: 'Creato da', registrationDate: 'Data registrazione', status: 'Stato',
+                actions: 'Azioni', insert: 'Inserisci', read: 'Visualizza',
                 edit: 'Modifica', preview: 'Anteprima', delete: 'Elimina', from: 'Da', to: 'A',
+                today: 'Oggi', yesterday: 'Ieri', lastSevenDays: '7 giorni', thisMonth: 'Questo mese',
+                interval: 'Intervallo', between: 'Compreso fra', greaterOrEqual: 'Maggiore o uguale a',
+                lessOrEqual: 'Minore o uguale a', exactDay: 'Giorno esatto',
+                invalidRegistrationDate: 'Impostare le date richieste dal filtro.',
                 currentState: 'Stato attuale',
                 workflow: 'Workflow', noWorkflow: 'Nessuno stato da impostare',
                 attach: 'Allega file', removeAttachment: 'Rimuovi allegato',
@@ -38,8 +43,13 @@ $(function () {
                 exportError: 'Errore durante l\'esportazione dei dati.'
             },
             GB: {
-                id: 'ID', creator: 'Created by', status: 'Status', actions: 'Actions', insert: 'Add', read: 'View',
+                id: 'ID', creator: 'Created by', registrationDate: 'Registration date', status: 'Status',
+                actions: 'Actions', insert: 'Add', read: 'View',
                 edit: 'Edit', preview: 'Preview', delete: 'Delete', from: 'From', to: 'To',
+                today: 'Today', yesterday: 'Yesterday', lastSevenDays: '7 days', thisMonth: 'This month',
+                interval: 'Interval', between: 'Between', greaterOrEqual: 'Greater than or equal to',
+                lessOrEqual: 'Less than or equal to', exactDay: 'Exact day',
+                invalidRegistrationDate: 'Set the dates required by the filter.',
                 currentState: 'Current state',
                 workflow: 'Workflow', noWorkflow: 'No state available to set',
                 attach: 'Attach files', removeAttachment: 'Remove attachment',
@@ -53,8 +63,13 @@ $(function () {
                 exportError: 'An error occurred while exporting data.'
             },
             ES: {
-                id: 'ID', creator: 'Creado por', status: 'Estado', actions: 'Acciones', insert: 'Añadir', read: 'Ver',
+                id: 'ID', creator: 'Creado por', registrationDate: 'Fecha de registro', status: 'Estado',
+                actions: 'Acciones', insert: 'Añadir', read: 'Ver',
                 edit: 'Modificar', preview: 'Vista previa', delete: 'Eliminar', from: 'Desde', to: 'Hasta',
+                today: 'Hoy', yesterday: 'Ayer', lastSevenDays: '7 días', thisMonth: 'Este mes',
+                interval: 'Intervalo', between: 'Entre', greaterOrEqual: 'Mayor o igual que',
+                lessOrEqual: 'Menor o igual que', exactDay: 'Día exacto',
+                invalidRegistrationDate: 'Introduzca las fechas requeridas por el filtro.',
                 currentState: 'Estado actual',
                 workflow: 'Flujo de trabajo', noWorkflow: 'No hay estados disponibles',
                 attach: 'Adjuntar archivos', removeAttachment: 'Quitar archivo adjunto',
@@ -68,8 +83,13 @@ $(function () {
                 exportError: 'Se produjo un error al exportar los datos.'
             },
             CN: {
-                id: 'ID', creator: '创建者', status: '状态', actions: '操作', insert: '新增', read: '查看',
+                id: 'ID', creator: '创建者', registrationDate: '登记日期', status: '状态',
+                actions: '操作', insert: '新增', read: '查看',
                 edit: '修改', preview: '预览', delete: '删除', from: '从', to: '至',
+                today: '今天', yesterday: '昨天', lastSevenDays: '7 天', thisMonth: '本月',
+                interval: '区间', between: '介于', greaterOrEqual: '大于或等于',
+                lessOrEqual: '小于或等于', exactDay: '具体日期',
+                invalidRegistrationDate: '请设置筛选所需的日期。',
                 currentState: '当前状态',
                 workflow: '工作流', noWorkflow: '没有可设置的状态',
                 attach: '添加附件', removeAttachment: '移除附件',
@@ -98,6 +118,29 @@ $(function () {
             throw new Error(typeof message === 'string' ? message : JSON.stringify(message));
         }
         return response.data;
+    }
+
+    function datepickerOptions() {
+        var locale = { IT: 'it', GB: 'en-GB', ES: 'es', CN: 'zh-CN' }[
+            user.LanguageContext
+        ] || 'it';
+        return $.extend({}, $.datepicker.regional[locale], {
+            dateFormat: 'dd/mm/yy',
+            changeMonth: true,
+            changeYear: true
+        });
+    }
+
+    function registrationDateText(value) {
+        if (!value) return '';
+        var match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (match) {
+            return match[3] + '/' + match[2] + '/' + match[1];
+        }
+        var date = new Date(value);
+        return Number.isNaN(date.getTime()) ? String(value) : $.datepicker.formatDate(
+            datepickerOptions().dateFormat, date
+        );
     }
 
     function requestErrorMessage(xhr) {
@@ -594,6 +637,7 @@ $(function () {
         $('<input>', { id: 'dynamic-filter-id', type: 'number', min: 1, max: 2147483647,
             class: 'form-control dynamic-filter-id' }).appendTo($idWrapper);
         $container.append($idWrapper);
+        renderRegistrationDateFilter($container);
         var $stateWrapper = $('<div>', { class: 'mb-3 dynamic-filter-field' });
         var $stateSelect = $('<select>', {
             id: 'dynamic-filter-current-state',
@@ -660,6 +704,148 @@ $(function () {
         });
     }
 
+    function renderRegistrationDateFilter($container) {
+        var $wrapper = $('<div>', {
+            class: 'mb-3 dynamic-filter-field dynamic-registration-date-filter'
+        }).appendTo($container);
+        $('<label>', {
+            class: 'form-label fw-bold',
+            for: 'dynamic-filter-registration-date-from',
+            text: text('registrationDate')
+        }).appendTo($wrapper);
+
+        var $presets = $('<div>', {
+            class: 'd-flex flex-wrap gap-2 mb-2 dynamic-registration-presets'
+        }).appendTo($wrapper);
+        [
+            ['today', 'today'], ['yesterday', 'yesterday'],
+            ['lastSevenDays', 'lastSevenDays'], ['thisMonth', 'thisMonth']
+        ].forEach(function (item) {
+            $('<button>', {
+                type: 'button',
+                class: 'btn btn-outline-secondary dynamic-registration-preset',
+                'data-preset': item[1],
+                text: text(item[0])
+            }).appendTo($presets);
+        });
+
+        var operators = [
+            ['between', 'between'], ['gte', 'greaterOrEqual'],
+            ['lte', 'lessOrEqual'], ['eq', 'exactDay']
+        ];
+        var $dropdown = $('<div>', { class: 'dropdown d-inline-block' }).appendTo($presets);
+        var $dropdownButton = $('<button>', {
+            id: 'dynamic-registration-interval',
+            type: 'button',
+            class: 'btn btn-outline-secondary dropdown-toggle',
+            'data-bs-toggle': 'dropdown',
+            'aria-expanded': 'false',
+            text: text('interval')
+        }).appendTo($dropdown);
+        var $operatorMenu = $('<ul>', { class: 'dropdown-menu' }).appendTo($dropdown);
+        operators.forEach(function (item) {
+            $('<li>').append(
+                $('<button>', {
+                    type: 'button',
+                    class: 'dropdown-item dynamic-registration-operator',
+                    'data-operator': item[0],
+                    text: text(item[1])
+                })
+            ).appendTo($operatorMenu);
+        });
+
+        var $dateGroup = $('<div>', { class: 'dynamic-registration-dates' }).appendTo($wrapper);
+        [
+            ['from', 'dynamic-filter-registration-date-from', text('from')],
+            ['to', 'dynamic-filter-registration-date-to', text('to')]
+        ].forEach(function (item) {
+            var $group = $('<div>', { class: 'input-group' }).appendTo($dateGroup);
+            $('<input>', {
+                id: item[1],
+                type: 'text',
+                class: 'form-control dynamic-registration-date dynamic-registration-' + item[0],
+                placeholder: item[2],
+                'aria-label': text('registrationDate') + ' ' + item[2],
+                readonly: true
+            }).attr('autocomplete', 'off').datepicker(datepickerOptions()).appendTo($group);
+            $('<button>', {
+                type: 'button',
+                class: 'btn btn-outline-secondary dynamic-registration-calendar',
+                'data-target': '#' + item[1],
+                'aria-label': text('registrationDate') + ' ' + item[2],
+                html: '<i class="bi bi-calendar3" aria-hidden="true"></i>',
+                disabled: true
+            }).appendTo($group);
+        });
+
+        $wrapper.data('operator', '');
+        $wrapper.on('click', '.dynamic-registration-preset', function () {
+            setRegistrationPreset($(this).data('preset'));
+        });
+        $dropdownButton.on('click', function () {
+            $(this).addClass('active');
+            $('.dynamic-registration-preset').removeClass('active');
+        });
+        $wrapper.on('click', '.dynamic-registration-operator', function () {
+            $wrapper.data('operator', String($(this).data('operator')));
+            $dropdownButton.text($(this).text());
+            $('.dynamic-registration-preset').removeClass('active');
+            $dropdownButton.addClass('active');
+            updateRegistrationDateControls();
+        });
+        $wrapper.on('click', '.dynamic-registration-calendar', function () {
+            var $input = $($(this).data('target'));
+            if (!$input.prop('readonly')) $input.datepicker('show');
+        });
+    }
+
+    function startOfDay(date) {
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    function setRegistrationPreset(preset) {
+        var today = startOfDay(new Date());
+        var from = new Date(today);
+        var to = new Date(today);
+        if (preset === 'yesterday') {
+            from.setDate(from.getDate() - 1);
+            to = new Date(from);
+        } else if (preset === 'lastSevenDays') {
+            from.setDate(from.getDate() - 6);
+        } else if (preset === 'thisMonth') {
+            from = new Date(today.getFullYear(), today.getMonth(), 1);
+            to = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        }
+        $('.dynamic-registration-date-filter').data('operator', 'between');
+        $('.dynamic-registration-from').datepicker('setDate', from);
+        $('.dynamic-registration-to').datepicker('setDate', to);
+        $('.dynamic-registration-preset').removeClass('active');
+        $('.dynamic-registration-preset[data-preset="' + preset + '"]').addClass('active');
+        $('#dynamic-registration-interval').text(text('interval')).removeClass('active');
+        updateRegistrationDateControls(true);
+    }
+
+    function updateRegistrationDateControls(presetMode) {
+        var operator = $('.dynamic-registration-date-filter').data('operator');
+        var $from = $('.dynamic-registration-from');
+        var $to = $('.dynamic-registration-to');
+        if (presetMode === true) {
+            $from.prop('readonly', true);
+            $to.prop('readonly', true);
+            $from.datepicker('disable');
+            $to.datepicker('disable');
+        } else {
+            $from.prop('readonly', operator !== 'between' && operator !== 'gte' && operator !== 'eq');
+            $to.prop('readonly', operator !== 'between' && operator !== 'lte');
+            $from.datepicker($from.prop('readonly') ? 'disable' : 'enable');
+            $to.datepicker($to.prop('readonly') ? 'disable' : 'enable');
+            if (operator === 'eq') $to.val('');
+        }
+        $('.dynamic-registration-calendar').each(function () {
+            $(this).prop('disabled', $($(this).data('target')).prop('readonly'));
+        });
+    }
+
     function loadFilterValues(IdAttributo, controlId) {
         $.getJSON(apiBase + '/model-class-attribute-values/' + IdAttributo)
             .done(function (response) {
@@ -694,6 +880,36 @@ $(function () {
             filters.push({
                 filterType: 'currentState',
                 stateId: Number(currentStateId)
+            });
+        }
+        var registrationOperator = $('.dynamic-registration-date-filter').data('operator');
+        if (registrationOperator) {
+            var $registrationFrom = $('.dynamic-registration-from');
+            var $registrationTo = $('.dynamic-registration-to');
+            var registrationFromValue = $registrationFrom.val();
+            var registrationToValue = $registrationTo.val();
+            var registrationFromDate = registrationFromValue ? $.datepicker.parseDate(
+                datepickerOptions().dateFormat, registrationFromValue
+            ) : null;
+            var registrationToDate = registrationToValue ? $.datepicker.parseDate(
+                datepickerOptions().dateFormat, registrationToValue
+            ) : null;
+            var needsFrom = registrationOperator === 'between' ||
+                registrationOperator === 'gte' || registrationOperator === 'eq';
+            var needsTo = registrationOperator === 'between' || registrationOperator === 'lte';
+            if ((needsFrom && !$registrationFrom.val()) ||
+                (needsTo && !$registrationTo.val())) {
+                throw new Error(text('invalidRegistrationDate'));
+            }
+            if (registrationOperator === 'between' &&
+                registrationFromDate > registrationToDate) {
+                throw new Error(text('invalidRegistrationDate'));
+            }
+            filters.push({
+                filterType: 'registrationDate',
+                operator: registrationOperator,
+                from: registrationFromDate ? $.datepicker.formatDate('yy-mm-dd', registrationFromDate) : null,
+                to: registrationToDate ? $.datepicker.formatDate('yy-mm-dd', registrationToDate) : null
             });
         }
         $('.dynamic-filter-value').each(function () {
@@ -743,6 +959,7 @@ $(function () {
         var $heading = $('.dynamic-form-records-heading').empty();
         $('<th>', { scope: 'col', text: text('id') }).appendTo($heading);
         $('<th>', { scope: 'col', text: text('creator') }).appendTo($heading);
+        $('<th>', { scope: 'col', text: text('registrationDate') }).appendTo($heading);
         fields.filter(function (field) {
             return field.IsSummary === true || field.IsSummary === 1;
         }).forEach(function (field) {
@@ -762,6 +979,7 @@ $(function () {
             var $tr = $('<tr>');
             $('<td>', { text: row.IDModelloIstanza }).appendTo($tr);
             $('<td>', { text: row.CreatedBy || '' }).appendTo($tr);
+            $('<td>', { text: registrationDateText(row.DataIstanza) }).appendTo($tr);
             summaryFields.forEach(function (field) {
                 $('<td>', { text: summaryValue(row, field) }).appendTo($tr);
             });
@@ -1259,9 +1477,14 @@ $(function () {
     }
 
     $('.btn-filter-close').on('click', function () {
+        var tooltip = bootstrap.Tooltip.getInstance(this);
+        if (tooltip) tooltip.hide();
+        $(this).blur();
         $('.dynamic-forms-layout').addClass('filter-hidden');
     });
     $('.btn-filter-open').on('click', function () {
+        var tooltip = bootstrap.Tooltip.getInstance(this);
+        if (tooltip) tooltip.hide();
         $('.dynamic-forms-layout').removeClass('filter-hidden');
         $(this).blur();
     });

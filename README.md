@@ -37,6 +37,12 @@ lettura delle righe, inclusi i valori delle sezioni ripetute; gli errori di
 calcolo sono indicati nella relativa cella. Questa integrazione non richiede
 ulteriori modifiche al database rispetto agli script sopra indicati.
 
+Il riepilogo espone anche la data di registrazione ricavata da
+`TModelliIstanze.DataIstanza`. Il relativo filtro supporta intervalli e date
+rapide. Per abilitarlo sui database esistenti rieseguire
+[dynamic-forms-record-id-filter.sql](sql/dynamic-forms-record-id-filter.sql),
+che aggiorna `SP_GET_PROCESS_FORM_RECORDS`.
+
 I campi Testo calcolati concatenano le sorgenti configurate, includendo
 l'account creatore e i progressivi del processo. Il valore proposto prima
 del salvataggio e provvisorio; il server lo assegna al primo salvataggio della

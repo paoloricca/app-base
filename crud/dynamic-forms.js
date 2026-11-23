@@ -145,10 +145,10 @@ async function getExportData(
     IdProcesso, IdAttore, IdAccount, IdProfiloUtente, LanguageContext, filter
 ) {
     const exportLabels = {
-        IT: { id: 'ID', creator: 'Creato da', status: 'Stato', total: 'Record totali' },
-        GB: { id: 'ID', creator: 'Created by', status: 'Status', total: 'Total records' },
-        ES: { id: 'ID', creator: 'Creado por', status: 'Estado', total: 'Registros totales' },
-        CN: { id: 'ID', creator: '创建者', status: '状态', total: '记录总数' }
+        IT: { id: 'ID', creator: 'Creato da', registrationDate: 'Data registrazione', status: 'Stato', total: 'Record totali' },
+        GB: { id: 'ID', creator: 'Created by', registrationDate: 'Registration date', status: 'Status', total: 'Total records' },
+        ES: { id: 'ID', creator: 'Creado por', registrationDate: 'Fecha de registro', status: 'Estado', total: 'Registros totales' },
+        CN: { id: 'ID', creator: '创建者', registrationDate: '登记日期', status: '状态', total: '记录总数' }
     };
     const labels = exportLabels[LanguageContext] || exportLabels.GB;
     const fields = (await getFields(IdProcesso, IdAccount, LanguageContext))
@@ -177,6 +177,7 @@ async function getExportData(
     const columns = [
         { key: 'id', label: labels.id },
         { key: 'creator', label: labels.creator },
+        { key: 'registrationDate', label: labels.registrationDate },
         ...fields.map(field => ({
             key: 'field-' + field.IDAttributo,
             label: field.Description || ''
@@ -187,6 +188,7 @@ async function getExportData(
         const values = [
             row.IDModelloIstanza,
             row.CreatedBy || '',
+            row.DataIstanza ? exportRegistrationDate(row.DataIstanza) : '',
             ...fields.map(field => exportSummaryValue(row, field, LanguageContext)),
             row.CurrentState || ''
         ];
@@ -194,6 +196,16 @@ async function getExportData(
     });
 
     return { process, columns, records, totalLabel: labels.total };
+}
+
+function exportRegistrationDate(value) {
+    const text = String(value);
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) return match[3] + '/' + match[2] + '/' + match[1];
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return text;
+    return String(date.getDate()).padStart(2, '0') + '/' +
+        String(date.getMonth() + 1).padStart(2, '0') + '/' + date.getFullYear();
 }
 
 function getModelClasses(IdProcesso, IdVersione, IdAccount, LanguageContext) {
