@@ -177,11 +177,6 @@ $(function () {
         return action && (action.IsAuthorized === true || action.IsAuthorized === 1);
     }
 
-    function isPrimaryAction(action) {
-        return action && (action.IsPrimary === true || action.IsPrimary === 1 ||
-            action.IsPrimary === '1');
-    }
-
     function exportActionFormat(action) {
         var identity = [action.ActionName, action.Description].map(function (value) {
             return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -546,7 +541,7 @@ $(function () {
         }
 
         var exportActions = actions.filter(function (action) {
-            return isActionEnabled(action) && isPrimaryAction(action) && exportActionFormat(action);
+            return isActionEnabled(action) && exportActionFormat(action);
         }).filter(function (action, index, list) {
             return list.findIndex(function (item) {
                 return exportActionFormat(item) === exportActionFormat(action);

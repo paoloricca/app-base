@@ -42,7 +42,6 @@ function exportActionFormat(action) {
 function hasExportAuthorization(actions, format) {
     return actions.some(action =>
         isEnabled(action.IsAuthorized) &&
-        isEnabled(action.IsPrimary) &&
         exportActionFormat(action) === format
     );
 }

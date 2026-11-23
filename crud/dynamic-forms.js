@@ -89,27 +89,8 @@ function getActions(IdProcesso, IdAccount, LanguageContext) {
         IdProcesso: intInput(IdProcesso),
         IdAccount: intInput(IdAccount),
         LanguageContext: stringInput(LanguageContext, 2)
-    }).then(async function (result) {
-        const actions = result.recordset || [];
-        if (!actions.length) return actions;
-        const pool = await sql.connect(connection);
-        const primaryResult = await new sql.Request(pool)
-            .input('IdProcesso', sql.Int, Number(IdProcesso))
-            .query(`
-                SELECT C.IDProcessoAzione, A.IsPrimary
-                FROM dbo.TProcessiAzioniCustom AS C
-                INNER JOIN dbo.TProcessiAzioni AS A
-                    ON A.IDProcessoAzione = C.IDProcessoAzione
-                WHERE C.IDProcesso = @IdProcesso
-            `);
-        const primaryById = new Map(primaryResult.recordset.map(action => [
-            Number(action.IDProcessoAzione),
-            action.IsPrimary === true || action.IsPrimary === 1
-        ]));
-        return actions.map(action => ({
-            ...action,
-            IsPrimary: primaryById.get(Number(action.IDProcessoAzione)) === true
-        }));
+    }).then(function (result) {
+        return result.recordset || [];
     });
 }
 
