@@ -1763,6 +1763,15 @@ a, btn {
     min-height: 0;
     overflow: auto;
 }
+.dynamic-form-records-table-container {
+    overflow: visible;
+}
+.dynamic-form-records-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #F8F8F8;
+}
 .dynamic-form-loading-overlay {
     position: fixed;
     inset: 0;
