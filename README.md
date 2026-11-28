@@ -39,7 +39,9 @@ ulteriori modifiche al database rispetto agli script sopra indicati.
 
 Il riepilogo espone anche la data di registrazione ricavata da
 `TModelliIstanze.DataIstanza`. Il relativo filtro supporta intervalli e date
-rapide. Per abilitarlo sui database esistenti rieseguire
+rapide. Prima della colonna ID mostra inoltre l'indicatore colorato dello stato
+workflow corrente, usando `TEventiTransizioni.HexColor`. Per abilitarlo sui
+database esistenti rieseguire
 [dynamic-forms-record-id-filter.sql](sql/dynamic-forms-record-id-filter.sql),
 che aggiorna `SP_GET_PROCESS_FORM_RECORDS`.
 

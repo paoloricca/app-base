@@ -955,8 +955,21 @@ $(function () {
         return match.Value;
     }
 
+    function workflowStateColor(row) {
+        var color = String(row.CurrentStateHexColor || '').trim();
+        if (!row.CurrentState) {
+            return '#adb5bd';
+        }
+        return /^#[0-9a-f]{3,8}$/i.test(color) ? color : '#3498db';
+    }
+
     function renderHeading() {
         var $heading = $('.dynamic-form-records-heading').empty();
+        $('<th>', {
+            scope: 'col',
+            class: 'dynamic-form-state-color',
+            'aria-hidden': 'true'
+        }).appendTo($heading);
         $('<th>', { scope: 'col', text: text('id') }).appendTo($heading);
         $('<th>', { scope: 'col', text: text('creator') }).appendTo($heading);
         $('<th>', { scope: 'col', text: text('registrationDate') }).appendTo($heading);
@@ -977,6 +990,12 @@ $(function () {
         rows.forEach(function (row) {
             var authorizedActionIds = workflowAuthorizedActionIds(row);
             var $tr = $('<tr>');
+            $('<td>', { class: 'dynamic-form-state-color' }).append(
+                $('<i>', {
+                    class: 'bi bi-circle-fill',
+                    'aria-hidden': 'true'
+                }).css('color', workflowStateColor(row))
+            ).appendTo($tr);
             $('<td>', { text: row.IDModelloIstanza }).appendTo($tr);
             $('<td>', { text: row.CreatedBy || '' }).appendTo($tr);
             $('<td>', { text: registrationDateText(row.DataIstanza) }).appendTo($tr);

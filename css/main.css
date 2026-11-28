@@ -1766,6 +1766,12 @@ a, btn {
 .dynamic-form-records-table-container {
     overflow: visible;
 }
+.dynamic-form-records-table .dynamic-form-state-color {
+    width: 1.5rem;
+    min-width: 1.5rem;
+    padding-right: 0.25rem;
+    text-align: center;
+}
 .dynamic-form-records-table thead th {
     position: sticky;
     top: 0;
