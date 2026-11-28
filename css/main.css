@@ -1893,7 +1893,7 @@ a, btn {
     font-weight: 400;
 }
 #workflow-version-editor-modal {
-    z-index: 1060;
+    z-index: 2100;
 }
 #workflow-version-editor-modal .modal-dialog {
     width: 100vw;
