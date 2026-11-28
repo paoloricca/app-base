@@ -32,6 +32,23 @@ function intInput(value) {
     return { type: sql.Int, value: value };
 }
 
+function colorInput(value) {
+    return { type: sql.VarChar(7), value: value };
+}
+
+function getWorkflowColors() {
+    return execute(`
+        SELECT DISTINCT UPPER(LTRIM(RTRIM(HexColor))) AS HexColor
+        FROM dbo.TEventiTransizioni
+        WHERE NULLIF(LTRIM(RTRIM(HexColor)), N'') IS NOT NULL
+        ORDER BY HexColor;
+    `).then(function (result) {
+        return (result.recordset || []).map(function (row) {
+            return row.HexColor;
+        });
+    });
+}
+
 function bitInput(value) {
     return { type: sql.Bit, value: value };
 }
@@ -727,7 +744,7 @@ function createVersionGraphTransition(IDVersioneWorkflow, IDAttore, startNodeId,
     });
 }
 
-function updateVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizione, codes, descriptions) {
+function updateVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizione, codes, descriptions, color) {
     return execute(`
         EXEC dbo.SP_PUT_WORKFLOW_VERSION_NODE
             @IDVersioneWorkflow = @IDVersioneWorkflow,
@@ -744,7 +761,37 @@ function updateVersionGraphNode(IDVersioneWorkflow, IDAttore, IDEventoTransizion
     `, graphTranslationInputs(IDVersioneWorkflow, IDAttore, codes, descriptions, {
         IDEventoTransizione: intInput(IDEventoTransizione)
     })).then(function () {
-        return true;
+        return execute(`
+            UPDATE dbo.TEventiTransizioni
+            SET HexColor = @HexColor
+            WHERE IDEventoTransizione = @IDEventoTransizione
+                AND IDVersioneWorkflow = @IDVersioneWorkflow
+                AND EXISTS (
+                    SELECT 1
+                    FROM dbo.TWorkflowVersioni AS Version
+                    INNER JOIN dbo.TWorkflow AS Workflow
+                        ON Workflow.IDWorkflow = Version.IDWorkflow
+                    WHERE Version.IDVersioneWorkflow = @IDVersioneWorkflow
+                        AND Workflow.IDAttore = @IDAttore
+                );
+
+            SELECT HexColor
+            FROM dbo.TEventiTransizioni
+            WHERE IDEventoTransizione = @IDEventoTransizione
+                AND IDVersioneWorkflow = @IDVersioneWorkflow;
+        `, {
+            IDVersioneWorkflow: intInput(IDVersioneWorkflow),
+            IDAttore: intInput(IDAttore),
+            IDEventoTransizione: intInput(IDEventoTransizione),
+            HexColor: colorInput(color)
+        });
+    }).then(function (result) {
+        const savedColor = result.recordset && result.recordset[0] && result.recordset[0].HexColor;
+        const normalizedSavedColor = String(savedColor || '').trim().toUpperCase();
+        if (normalizedSavedColor !== String(color).trim().toUpperCase()) {
+            throw new exception('workflow-catalog', 'Workflow node color was not saved.', 'ColorSaveError', null);
+        }
+        return { HexColor: normalizedSavedColor };
     });
 }
 
@@ -1046,6 +1093,7 @@ function deleteVersion(IDVersioneWorkflow) {
 }
 
 module.exports = {
+    getWorkflowColors,
     getRecords,
     getVersions,
     getVersionEditorDetails,

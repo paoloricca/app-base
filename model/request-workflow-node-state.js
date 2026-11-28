@@ -1,6 +1,6 @@
 class RequestWorkflowNodeState {
     constructor(
-        IdAttore, IdAccount, LanguageContext, IdEventoTransizione, Code_IT, Code_GB, Code_ES, Code_CN, Text_IT, Text_GB, Text_ES, Text_CN
+        IdAttore, IdAccount, LanguageContext, IdEventoTransizione, Code_IT, Code_GB, Code_ES, Code_CN, Text_IT, Text_GB, Text_ES, Text_CN, HexColor
     ) {
         this.IdAttore = IdAttore;
         this.IdAccount = IdAccount;
@@ -14,6 +14,7 @@ class RequestWorkflowNodeState {
         this.Text_GB = Text_GB;
         this.Text_ES = Text_ES;
         this.Text_CN = Text_CN;
+        this.HexColor = HexColor;
     }
 }
 module.exports = RequestWorkflowNodeState;

@@ -1081,6 +1081,90 @@ $(function () {
         )
         $('#container-workflow-node-link').modal('show');
     });
+    function validWorkflowColor(color) {
+        const normalized = String(color || '').trim();
+        return /^#[0-9a-f]{6}$/i.test(normalized) ? normalized.toUpperCase() : '#3B82F6';
+    }
+
+    function workflowTextColor(color) {
+        const hex = validWorkflowColor(color).slice(1);
+        const red = parseInt(hex.slice(0, 2), 16);
+        const green = parseInt(hex.slice(2, 4), 16);
+        const blue = parseInt(hex.slice(4, 6), 16);
+        return ((red * 299) + (green * 587) + (blue * 114)) / 1000 >= 128 ? '#000000' : '#FFFFFF';
+    }
+
+    function updateWorkflowStatusPreview() {
+        const color = validWorkflowColor($('#finalColorValue').val());
+        const language = $('#LanguageContext').val();
+        const control = $('.container-control-workflow-set-node-descrizione').data('mltextbox');
+        const value = control && control.value && control.value[language]
+            ? control.value[language]
+            : $('#txt-culture-edit-DescrizioneNode').val();
+        $('#statusPreview')
+            .text(String(value || ''))
+            .css({ 'background-color': color, color: workflowTextColor(color) });
+    }
+
+    function selectWorkflowColor(value, custom) {
+        const color = validWorkflowColor(value);
+        $('#finalColorValue').val(color);
+        $('#customColorInput').val(color.toLowerCase());
+        if (custom) {
+            $('input[name="colorPreset"]').prop('checked', false);
+            $('#customColorButton').addClass('is-active').css('background-color', color);
+        } else {
+            $('input[name="colorPreset"]').each(function () {
+                $(this).prop('checked', validWorkflowColor(this.value) === color);
+            });
+            $('#customColorButton').removeClass('is-active').css('background-color', '');
+        }
+        updateWorkflowStatusPreview();
+    }
+
+    function initializeWorkflowColor(value) {
+        const color = validWorkflowColor(value);
+        const preset = $('input[name="colorPreset"]').filter(function () {
+            return validWorkflowColor(this.value) === color;
+        });
+        selectWorkflowColor(color, preset.length === 0);
+    }
+
+    $('.workflow-color-options').on('change', 'input[name="colorPreset"]', function () {
+        if (this.checked) {
+            selectWorkflowColor(this.value, false);
+        }
+    });
+    $('#customColorInput').on('input change', function () {
+        selectWorkflowColor(this.value, true);
+    });
+    $('.container-control-workflow-set-node-descrizione')
+        .on('languageChanged valueChanged', updateWorkflowStatusPreview)
+        .on('input', '#txt-culture-edit-DescrizioneNode', updateWorkflowStatusPreview);
+
+    function renderWorkflowColorPalette(colors, selectedColor) {
+        const normalized = [];
+        (colors || []).forEach(function (value) {
+            const color = validWorkflowColor(value);
+            if (normalized.indexOf(color) === -1) normalized.push(color);
+        });
+        const $options = $('.workflow-color-options');
+        $options.find('.workflow-color-choice').remove();
+        normalized.forEach(function (color, index) {
+            const id = 'workflow-color-' + index;
+            $('<span class="workflow-color-choice"></span>')
+                .append(
+                    $('<input class="workflow-color-radio" type="radio" name="colorPreset">')
+                        .attr({ id: id, value: color }),
+                    $('<label class="workflow-color-swatch"></label>')
+                        .attr({ for: id, title: color, 'aria-label': color })
+                        .css('background-color', color)
+                )
+                .insertBefore('#customColorButton');
+        });
+        if (selectedColor) initializeWorkflowColor(selectedColor);
+    }
+
     $('.workflow-set-node').click(function () {
 
         var transition = JSON.parse($('#context-menu-node').find('.node').val());
@@ -1134,6 +1218,7 @@ $(function () {
         $('.container-workflow-set-node-header').html(
             $('#context-menu-node').find('#DescTransizione').val()
         )
+        initializeWorkflowColor(transition.HexColor);
         $('#container-workflow-set-node').modal('show');
     });
 
@@ -1249,7 +1334,8 @@ $(function () {
             CtlTxtDescrizione.value.IT,
             CtlTxtDescrizione.value.GB,
             CtlTxtDescrizione.value.ES,
-            CtlTxtDescrizione.value.CN
+            CtlTxtDescrizione.value.CN,
+            $('#finalColorValue').val()
         );
 
     });
@@ -1582,7 +1668,7 @@ $(function () {
             ShowError(err.message, "newNodeWorkflow");
         }
     }
-    setNodeWorkflowState = function (IdEventoTransizione, Code_IT, Code_GB, Code_ES, Code_CN, Text_IT, Text_GB, Text_ES, Text_CN) {
+    setNodeWorkflowState = function (IdEventoTransizione, Code_IT, Code_GB, Code_ES, Code_CN, Text_IT, Text_GB, Text_ES, Text_CN, color) {
         try {
             $('.spinner-workflow-set-node').show();
 
@@ -1593,13 +1679,28 @@ $(function () {
                     contentType: 'application/json',
                     data: JSON.stringify({
                         Code_IT: Code_IT, Code_GB: Code_GB, Code_ES: Code_ES, Code_CN: Code_CN,
-                        Text_IT: Text_IT, Text_GB: Text_GB, Text_ES: Text_ES, Text_CN: Text_CN
+                        Text_IT: Text_IT, Text_GB: Text_GB, Text_ES: Text_ES, Text_CN: Text_CN,
+                        color: color
                     })
                 }).done(function (response) {
                     $('.spinner-workflow-set-node').hide();
                     if (response.status === 'ERR') {
                         ShowError(response.error.message, response.error.sender);
                         return;
+                    }
+                    const savedColor = response.data && response.data.HexColor;
+                    if (savedColor) {
+                        const node = JSON.parse($('#context-menu-node').find('.node').val() || 'null');
+                        if (node) {
+                            node.HexColor = savedColor;
+                            $('#context-menu-node').find('.node').val(JSON.stringify(node));
+                        }
+                        const currentColors = $('input[name="colorPreset"]').map(function () {
+                            return this.value;
+                        }).get();
+                        if (currentColors.indexOf(savedColor) === -1) {
+                            renderWorkflowColorPalette(currentColors.concat(savedColor), savedColor);
+                        }
                     }
                     $('#container-workflow-set-node').modal('hide');
                     $('#context-menu-node').hide();
@@ -1622,6 +1723,7 @@ $(function () {
                     Text_GB: Text_GB,
                     Text_ES: Text_ES,
                     Text_CN: Text_CN,
+                    color: color
                 },
             }).done(function (response) {
 
@@ -1630,6 +1732,15 @@ $(function () {
                     ShowError(response.error.message, response.error.sender);
 
                 } else if (response.status == "OK") {
+                    const savedColor = response.data && response.data.HexColor;
+                    if (savedColor) {
+                        const currentColors = $('input[name="colorPreset"]').map(function () {
+                            return this.value;
+                        }).get();
+                        if (currentColors.indexOf(savedColor) === -1) {
+                            renderWorkflowColorPalette(currentColors.concat(savedColor), savedColor);
+                        }
+                    }
                     $('.spinner-workflow-set-node').hide();
                     $('#container-workflow-set-node').modal('hide');
                     $('#context-menu-node').hide();
@@ -1992,7 +2103,6 @@ $(function () {
                     // nodi
 
                     machine.states.forEach(state => {
-
                         elements.push({
 
                             data: {

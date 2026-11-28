@@ -34,6 +34,23 @@ const { identifyFile } = require('../utils/workflow-chat-file');
 const workflowChatRealtime = require('../utils/workflow-chat-realtime');
 const workflowChatStorage = path.join(__dirname, '..', 'files', '.workflow-chat');
 const workflowChatMaxFileSize = 10 * 1024 * 1024;
+const defaultWorkflowColors = ['#64748B', '#3B82F6', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6'];
+
+function normalizeWorkflowColor(value) {
+    const color = String(value || '').trim();
+    return /^#[0-9A-Fa-f]{6}$/.test(color) ? color.toUpperCase() : null;
+}
+
+function mergeWorkflowColors(databaseColors) {
+    const uniqueColors = new Map();
+    defaultWorkflowColors.concat(databaseColors || []).forEach(function (value) {
+        const color = normalizeWorkflowColor(value);
+        if (color && !uniqueColors.has(color)) {
+            uniqueColors.set(color, color);
+        }
+    });
+    return Array.from(uniqueColors.values());
+}
 
 function parseWorkflowApplyUpload(req) {
     return new Promise((resolve, reject) => {
@@ -188,10 +205,15 @@ workflow.get('/workflow-editor', function (req, res) {
     }
     const versionId = req.query.versionId;
     if (versionId == null || versionId === '') {
-        res.status(200).render('workflow', {
-            user: req.session.user,
-            versionId: null,
-            editorTitle: 'Workflow'
+        workflowCatalog.getWorkflowColors().then(function (databaseColors) {
+            res.status(200).render('workflow', {
+                user: req.session.user,
+                versionId: null,
+                editorTitle: 'Workflow',
+                workflowColors: mergeWorkflowColors(databaseColors)
+            });
+        }).catch(function (error) {
+            res.status(500).send(error.message || 'Unable to load Workflow colors.');
         });
         return;
     }
@@ -199,11 +221,15 @@ workflow.get('/workflow-editor', function (req, res) {
         res.status(400).send('Invalid workflow version ID.');
         return;
     }
-    workflowCatalog.getVersionEditorDetails(
-        Number(versionId),
-        req.session.user.IdAttore,
-        req.session.user.LanguageContext
-    ).then(function (version) {
+    Promise.all([
+        workflowCatalog.getVersionEditorDetails(
+            Number(versionId),
+            req.session.user.IdAttore,
+            req.session.user.LanguageContext
+        ),
+        workflowCatalog.getWorkflowColors()
+    ]).then(function (values) {
+        const version = values[0];
         if (!version) {
             res.status(404).send('Workflow version not found.');
             return;
@@ -218,7 +244,8 @@ workflow.get('/workflow-editor', function (req, res) {
             user: req.session.user,
             versionId: version.IDVersioneWorkflow,
             processId: version.IDProcesso,
-            editorTitle: (version.Description || 'Workflow') + ' (' + versionLabel + ' ' + version.Numero + ')'
+            editorTitle: (version.Description || 'Workflow') + ' (' + versionLabel + ' ' + version.Numero + ')',
+            workflowColors: mergeWorkflowColors(values[1])
         });
     }).catch(function (error) {
         res.status(500).send(error.message || 'Unable to load the Workflow editor.');
@@ -614,8 +641,9 @@ workflow.put('/workflow/api/versions/:IDVersioneWorkflow/graph/nodes/:IDEventoTr
         return;
     }
     const translations = getGraphTranslations(req.body);
+    const color = normalizeWorkflowColor(req.body && req.body.color);
     if (!isPositiveInteger(req.params.IDVersioneWorkflow) ||
-        !isPositiveInteger(req.params.IDEventoTransizione) || !translations) {
+        !isPositiveInteger(req.params.IDEventoTransizione) || !translations || !color) {
         sendCatalogError(res, { message: 'Invalid workflow node data.' });
         return;
     }
@@ -624,9 +652,10 @@ workflow.put('/workflow/api/versions/:IDVersioneWorkflow/graph/nodes/:IDEventoTr
         req.session.user.IdAttore,
         Number(req.params.IDEventoTransizione),
         translations.codes,
-        translations.descriptions
-    ).then(function () {
-        res.status(200).json(new response('OK', true, null));
+        translations.descriptions,
+        color
+    ).then(function (saved) {
+        res.status(200).json(new response('OK', saved, null));
     }).catch(function (error) {
         sendCatalogError(res, error);
     });
@@ -1063,6 +1092,14 @@ workflow.post('/workflow-node-link/:IdEventoDirezione', function (req, res) {
 workflow.put('/workflow-node-set/:IdEventoTransizione', function (req, res) {
     if (sessionUtil.verifyUser(req, res)) {
         res.set('Access-Control-Allow-Origin', '*');
+        const color = normalizeWorkflowColor(req.body && req.body.color);
+        if (!isPositiveInteger(req.params.IdEventoTransizione) || !color) {
+            res.status(200).json(new response('ERR', null, {
+                message: 'Invalid workflow node color.',
+                sender: 'workflow-node-set'
+            }));
+            return;
+        }
         var myRequest = new requestWorkflowNodeState(
             req.session.user.IdAttore,
             req.session.user.IdAccount,
@@ -1075,7 +1112,8 @@ workflow.put('/workflow-node-set/:IdEventoTransizione', function (req, res) {
             req.body.Text_IT,
             req.body.Text_GB,
             req.body.Text_ES,
-            req.body.Text_CN
+            req.body.Text_CN,
+            color
         );
         crud.PutWorkflowNodeState(myRequest).then(listOf => {
             res.status(200).json(

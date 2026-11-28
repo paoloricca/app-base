@@ -317,9 +317,7 @@ function PostWorkflowNodeLink(myRequest) {
                         } else {
 
                             if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
-
                                 resolve(JSON.stringify("OK"));
-
                             } else {
                                 reject(
                                     new exception(sender, JSON.parse(JSON.stringify(response.output)).Status, null, null)
@@ -369,7 +367,6 @@ function PutWorkflowNodeState(myRequest) {
                     request.input('Text_GB', sql.NVarChar(50), myRequest.Text_GB);
                     request.input('Text_ES', sql.NVarChar(50), myRequest.Text_ES);
                     request.input('Text_CN', sql.NVarChar(50), myRequest.Text_CN);
-
                     request.output('Status', sql.NVarChar(500))
 
                     request.execute("SP_PUT_WORKFLOW_NODE_STATE", function (err, response) {
@@ -380,8 +377,32 @@ function PutWorkflowNodeState(myRequest) {
                         } else {
 
                             if (JSON.parse(JSON.stringify(response.output)).Status == 'OK') {
+                                var colorRequest = new sql.Request();
+                                colorRequest.input('IdEventoTransizione', sql.Int, myIdEventoTransizione);
+                                colorRequest.input('HexColor', sql.VarChar(7), myRequest.HexColor);
+                                colorRequest.query(`
+                                    UPDATE dbo.TEventiTransizioni
+                                    SET HexColor = @HexColor
+                                    WHERE IDEventoTransizione = @IdEventoTransizione;
 
-                                resolve(JSON.stringify("OK"));
+                                    SELECT HexColor
+                                    FROM dbo.TEventiTransizioni
+                                    WHERE IDEventoTransizione = @IdEventoTransizione;
+                                `, function (colorError, colorResult) {
+                                    if (colorError) {
+                                        reject(new exception(sender, colorError.message, colorError.name, colorError.stack));
+                                        return;
+                                    }
+                                    const savedColor = colorResult.recordset && colorResult.recordset[0] &&
+                                        colorResult.recordset[0].HexColor;
+                                    const normalizedSavedColor = String(savedColor || '').trim().toUpperCase();
+                                    if (normalizedSavedColor !== String(myRequest.HexColor).trim().toUpperCase()) {
+                                        reject(new exception(sender, 'Workflow node color was not saved.',
+                                            'ColorSaveError', null));
+                                        return;
+                                    }
+                                    resolve(JSON.stringify({ HexColor: normalizedSavedColor }));
+                                });
 
                             } else {
                                 reject(
